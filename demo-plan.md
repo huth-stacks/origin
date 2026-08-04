@@ -162,6 +162,7 @@ The application must not supply identity claims, attester hints, trust policy, o
 
 ### 2. Leather evaluator unit tests
 
+- Model evaluator output as a discriminated union. The unrecognized-claim variant must not contain an organization display-name field.
 - Current trusted claim -> Known origin.
 - Untrusted claim -> Unrecognized identity claim without its organization name.
 - No configured claim -> Unknown origin.
@@ -174,7 +175,7 @@ The application must not supply identity claims, attester hints, trust policy, o
 ### 3. Leather component tests
 
 - Each state renders the approved language and exact principal.
-- Known origin identifies the trusted attester and role.
+- Known origin uses neutral styling, identifies the trusted attester and role, and states that provenance is not a safety guarantee.
 - Unrecognized state does not render attacker-controlled brand text.
 - Lookalike warning is visually distinct from the Origin verdict.
 - Loading and unavailable behavior are neutral.
@@ -203,10 +204,10 @@ The first-half-day checkpoint is whether the approval surface can host the new s
 
 ### Phase 1: Pure evaluation and UI
 
-1. Define the five-state result model.
+1. Define the five-state result model as a discriminated union whose unrecognized-claim variant has no organization display-name field.
 2. Implement the evaluator without React or network dependencies.
 3. Add exhaustive evaluator tests.
-4. Implement the Origin approval section.
+4. Implement the Origin approval section with neutral known-origin styling and the explicit safety limitation.
 5. Add component tests, including attacker-name quarantine.
 
 ### Phase 2: Registry and fixtures

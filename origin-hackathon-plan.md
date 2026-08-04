@@ -284,7 +284,10 @@ Avoid:
 - **Unsigned contract**, because contract deployment and calls are already signed transactions.
 - **Safe contract**, because provenance is not security analysis.
 - **Verified contract**, because users may infer an audit or endorsement.
-- A generic green checkmark without naming the attester and claim.
+- Green success styling for **Known origin**, because users may read it as a recommendation to proceed.
+- A generic checkmark without naming the attester and claim.
+
+**Known origin** must use a neutral badge treatment. Reserve semantic warning color for warning and invalid states rather than using success-green for identity provenance.
 
 Every positive result should identify:
 
@@ -299,7 +302,7 @@ Expired and revoked records both render as **Attestation no longer valid**. The 
 
 Unrecognized claims must not display their claimed organization name in the default confirmation surface. The wallet may state that an untrusted identity claim exists, but it must not lend trusted chrome to attacker-selected brand text.
 
-Suggested limitation copy:
+Required limitation copy on the known-origin surface:
 
 > Origin verifies an identity claim from a trusted attester. It does not guarantee that this contract, wallet, or transaction is safe.
 

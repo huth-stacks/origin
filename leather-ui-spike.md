@@ -46,7 +46,7 @@ Passed after the spike:
 - Testing extension build.
 - Chromium Playwright contract-call suite: 3 of 3 tests.
 
-The Chromium integration test loads the built Manifest V3 extension, opens the real RPC contract-call approval popup, and confirms that `Known origin`, `Acme`, and the exact decoded principal `SP000000000000000000002Q6VF78.bns` render for requests with no post-conditions, explicit post-conditions, and post-condition warning mode.
+The Chromium integration suite loads the built Manifest V3 extension and passes all three existing contract-call modes. The new Origin assertions confirm that `Known origin`, `Acme`, and the exact decoded principal `SP000000000000000000002Q6VF78.bns` render in the no-post-conditions case. The explicit-post-conditions and warning-mode cases remain regression coverage but do not yet assert Origin content.
 
 ## Accepted Baseline Debt
 
@@ -60,4 +60,4 @@ The extension-scoped lint, typecheck, tests, build, and unused-export checks all
 
 ## Next Step
 
-Replace the hardcoded status with a pure five-state evaluator and deterministic test fixtures before adding network reads. The UI must retain the exact principal, quarantine untrusted names, remain neutral when lookups fail, and keep post-condition asset warnings independent of Origin.
+Replace the hardcoded status with a pure five-state evaluator and deterministic test fixtures before adding network reads. Model its output as a discriminated union whose unrecognized-claim variant has no organization display-name field. The UI must use neutral styling and explicit safety-limitation copy for known origin, retain the exact principal, remain neutral when lookups fail, and keep post-condition asset warnings independent of Origin.
