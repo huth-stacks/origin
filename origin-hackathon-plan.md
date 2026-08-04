@@ -78,7 +78,7 @@ Expired and revoked relationships share one **Attestation no longer valid** life
 - A pluggable attester story: automated domain-control first, with KYC/KYB providers able to join later.
 - A concrete proposal for standardizing the proven wallet behavior as a later Stacks Connect addendum.
 
-The scope budget is one registry contract, seven logical attestation fields, five wallet states, and three contract-call scenarios.
+The scope budget is one registry contract, seven logical attestation fields, four provenance verdicts, one independent lookalike warning, and three contract-call scenarios.
 
 ### 4.2 Out of scope
 
@@ -465,7 +465,7 @@ No new Connect or JSON-RPC field is required for the hackathon. After the Leathe
 ## 14. Suggested Build Order
 
 1. Confirm the Leather extension insertion point with a hardcoded dummy Origin card during the first half-day.
-2. Freeze the seven-field Clarity schema and five wallet states.
+2. Freeze the seven-field Clarity schema, four provenance verdicts, and independent lookalike signal.
 3. Implement and test the registry locally.
 4. Deploy the registry and three example contracts to Testnet.
 5. Build a small TypeScript lookup client.

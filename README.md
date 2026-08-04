@@ -12,14 +12,24 @@ This repository contains the hackathon product plan, demo application, Origin re
 - [Repository map](repository-map.md)
 - [Leather baseline](leather-baseline.md)
 - [Leather UI spike](leather-ui-spike.md)
+- [Clarity contracts](contracts/README.md)
 - [Original proposal](contract-provenance-certificate-plan.md)
+
+## Local contract verification
+
+```sh
+pnpm install --frozen-lockfile
+pnpm verify
+```
+
+This checks Clarity formatting and analysis, TypeScript test types, the Origin registry, and the harmless demo target in Clarinet Simnet.
 
 ## Proof-of-concept boundary
 
 - One Clarity registry contract
 - Seven logical attestation fields
 - Three harmless contract-call scenarios
-- Five provenance UI states
+- Four provenance verdicts plus an independent lookalike warning
 - One active Leather extension integration
 - Configured Testnet attesters; no claim indexer or application-supplied hints
 - A proposal path toward Stacks Connect after the proof of concept, with no Stacks.js or Connect changes during the hackathon

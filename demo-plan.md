@@ -80,15 +80,14 @@ apps/extension/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.tsx
 
 Place the Origin section immediately after `ContractCallDetailsLayout` and before fee and nonce controls. The existing post-condition section remains unchanged and independent.
 
-The Origin feature has five provenance states:
+The Origin feature has four mutually exclusive provenance verdicts:
 
 1. Known origin
 2. Unrecognized identity claim
 3. Unknown origin
-4. Potential lookalike contract
-5. Attestation no longer valid
+4. Attestation no longer valid
 
-Loading and registry-unavailable conditions are operational conditions rather than provenance verdicts. A failed lookup must never be rendered as Known origin.
+Potential lookalike is an independent heuristic warning and may coexist with any provenance verdict. Loading and registry-unavailable conditions are operational conditions rather than provenance verdicts. A failed lookup must never be rendered as Known origin.
 
 ## Data flow
 
@@ -204,7 +203,7 @@ The first-half-day checkpoint is whether the approval surface can host the new s
 
 ### Phase 1: Pure evaluation and UI
 
-1. Define the five-state result model as a discriminated union whose unrecognized-claim variant has no organization display-name field.
+1. Define the four-verdict result model as a discriminated union whose unrecognized-claim variant has no organization display-name field, with lookalike and lookup condition modeled separately.
 2. Implement the evaluator without React or network dependencies.
 3. Add exhaustive evaluator tests.
 4. Implement the Origin approval section with neutral known-origin styling and the explicit safety limitation.

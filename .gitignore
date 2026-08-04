@@ -2,7 +2,13 @@
 .env
 .env.*
 !.env.example
-node_modules/
-dist/
-coverage/
 .cache/
+coverage/
+deployments/default.simnet-plan.yaml
+dist/
+lcov.info
+node_modules/
+settings/Mainnet.toml
+settings/Testnet.toml
+costs-reports.json
+*.log
