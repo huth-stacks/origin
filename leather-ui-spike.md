@@ -6,7 +6,7 @@ Status: Phase 0 insertion-point spike completed locally on August 4, 2026.
 
 The active Leather extension can host an Origin section in its real `stx_callContract` approval flow without replacing or disrupting the existing contract details, fee controls, or post-condition behavior.
 
-This spike intentionally hardcodes one `Known origin` presentation. It validates the approval-surface insertion point and decoded-principal data path only. It is not the finished registry client, trust evaluator, or five-state UI.
+This spike intentionally hardcodes one `Known origin` presentation. It validates the approval-surface insertion point and decoded-principal data path only. It is not the finished registry client, trust evaluator, or multi-state UI.
 
 ## Source
 
@@ -60,4 +60,4 @@ The extension-scoped lint, typecheck, tests, build, and unused-export checks all
 
 ## Next Step
 
-Replace the hardcoded status with a pure five-state evaluator and deterministic test fixtures before adding network reads. Model its output as a discriminated union whose unrecognized-claim variant has no organization display-name field. The UI must use neutral styling and explicit safety-limitation copy for known origin, retain the exact principal, remain neutral when lookups fail, and keep post-condition asset warnings independent of Origin.
+Replace the hardcoded status with a pure four-verdict evaluator and deterministic test fixtures before adding network reads. Model its output as a discriminated union whose unrecognized-claim variant has no organization display-name field, while lookup availability and lookalike detection remain separate signals. The UI must use neutral styling and explicit safety-limitation copy for known origin, retain the exact principal, remain neutral when lookups fail, and keep post-condition asset warnings independent of Origin.

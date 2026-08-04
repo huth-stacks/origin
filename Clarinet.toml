@@ -1,0 +1,20 @@
+[project]
+name = "origin"
+description = "Origin provenance registry and harmless demo contracts"
+authors = []
+telemetry = false
+cache_dir = "./.cache"
+
+[repl.analysis]
+passes = ["check_checker"]
+check_checker = { trusted_sender = false, trusted_caller = false, callee_filter = false }
+
+[contracts.origin-registry]
+path = "contracts/origin-registry.clar"
+clarity_version = 5
+epoch = "latest"
+
+[contracts.origin-demo-target]
+path = "contracts/origin-demo-target.clar"
+clarity_version = 5
+epoch = "latest"

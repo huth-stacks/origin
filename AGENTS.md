@@ -12,7 +12,8 @@ Use these documents in this order:
 4. [Repository map](repository-map.md) — local checkouts, upstream repositories, and modification boundaries.
 5. [Leather baseline](leather-baseline.md) — known-good toolchain, build, tests, runtime smoke test, and pre-existing warnings.
 6. [Leather UI spike](leather-ui-spike.md) — completed approval-surface experiment, verification results, and the boundary between the hardcoded spike and real implementation.
-7. [Original proposal](contract-provenance-certificate-plan.md) — historical source only. It is intentionally superseded by the smaller hackathon plan and must not silently expand scope.
+7. [Clarity contracts](contracts/README.md) — registry behavior, fixture contract, verification commands, and the intentional permissionless-input analyzer warning.
+8. [Original proposal](contract-provenance-certificate-plan.md) — historical source only. It is intentionally superseded by the smaller hackathon plan and must not silently expand scope.
 
 When documents disagree, prefer this order: the user's latest instruction, `origin-hackathon-plan.md`, `demo-plan.md`, then the remaining references. Update the canonical document when a product decision changes instead of recording contradictory decisions elsewhere.
 
@@ -35,7 +36,7 @@ Build only what the three contract-call scenarios require:
 - One Clarity registry with the fixed seven-field logical attestation schema.
 - Three harmless Testnet contract fixtures.
 - One trusted mock attester and one configured demonstration-untrusted attester.
-- Five provenance UI states, with lookalike detection presented as a separate heuristic.
+- Four mutually exclusive provenance verdicts, with lookalike detection and lookup availability modeled as separate signals.
 - One mock site using the normal Leather request path.
 - One active Leather extension integration.
 
