@@ -6,10 +6,12 @@ This repository contains the hackathon product plan, demo application, Origin re
 
 ## Start here
 
+- [Agent project guide](AGENTS.md)
 - [Hackathon plan](origin-hackathon-plan.md)
 - [Executable demo plan](demo-plan.md)
 - [Repository map](repository-map.md)
 - [Leather baseline](leather-baseline.md)
+- [Leather UI spike](leather-ui-spike.md)
 - [Original proposal](contract-provenance-certificate-plan.md)
 
 ## Proof-of-concept boundary

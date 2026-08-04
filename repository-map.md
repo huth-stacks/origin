@@ -14,7 +14,7 @@
 - Extension package: `apps/extension`
 - Purpose: Origin evaluation, approval UI, and Leather tests
 
-The authenticated `huth-stacks` account has read but not push permission on `leather-io/mono`. Local work should use an `agent/origin-demo` branch. Before publishing Leather changes, create or select an authorized fork and retain `leather-io/mono` as the upstream remote.
+The authenticated `huth-stacks` account has read but not push permission on `leather-io/mono`. Local work currently uses the `agent/origin-ui-spike` branch. Before publishing Leather changes, create or select an authorized fork and retain `leather-io/mono` as the upstream remote.
 
 ## Archived extension reference
 
