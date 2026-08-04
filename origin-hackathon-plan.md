@@ -5,6 +5,7 @@
 **Primary ecosystem:** Stacks  
 **Primary wallet integration:** Leather  
 **Target network:** Stacks Testnet  
+**Proposed future home:** Stacks Connect addendum
 
 ## 1. Product Summary
 
@@ -15,7 +16,9 @@ A principal may be:
 - A Stacks wallet address.
 - A Stacks contract principal.
 
-The initial proof of concept will integrate Origin into Leather's transaction-confirmation flow. When a mock application requests a contract call, Leather will independently inspect the actual transaction target, query Origin attestations, apply its own trusted-attester configuration, and render one of several explicit provenance states.
+The initial proof of concept will integrate Origin directly into Leather's transaction-confirmation flow. When a mock application requests a contract call through the normal Stacks Connect-compatible request path, Leather will independently inspect the actual transaction target, query Origin attestations, apply its own trusted-attester configuration, and render one of several explicit provenance states.
+
+The broader proposal is a future Stacks Connect addendum for transaction-principal provenance. Leather is the first reference implementation, not the permanent product boundary. The hackathon does not modify Stacks.js or Stacks Connect.
 
 The core product promise is:
 
@@ -73,6 +76,7 @@ Expired and revoked relationships share one **Attestation no longer valid** life
 - Clear known, unrecognized, and unknown provenance UI states.
 - Revocation in the demo, with both revocation and expiration enforced by the contract.
 - A pluggable attester story: automated domain-control first, with KYC/KYB providers able to join later.
+- A concrete proposal for standardizing the proven wallet behavior as a later Stacks Connect addendum.
 
 The scope budget is one registry contract, seven logical attestation fields, five wallet states, and three contract-call scenarios.
 
@@ -90,6 +94,7 @@ The scope budget is one registry contract, seven logical attestation fields, fiv
 - A universal cross-chain identity standard.
 - Claims that Origin makes an interaction safe.
 - A wallet-recipient transfer demo. The schema remains principal-generic, but the proof of concept covers contract calls only.
+- Changes to Stacks.js, Stacks Connect, wallet JSON-RPC methods, or multi-wallet capability negotiation.
 
 ## 5. Demo Story
 
@@ -385,6 +390,24 @@ Stacks gives the proof of concept several useful properties:
 
 Leather already deserializes transaction requests and displays the exact contract principal in its approval flow. Origin augments that existing boundary with provenance rather than creating a separate destination application.
 
+### 12.1 Future Stacks Connect addendum
+
+[Stacks Connect](https://docs.stacks.co/reference/stacks.js/stacks-connect/request/request) already transports typed requests such as `stx_callContract` between applications and compatible wallets. Origin should be proposed as a later wallet-side verification addendum to that flow, inspired by [WalletConnect Verify](https://docs.walletconnect.network/wallet-sdk/web/verify) but focused on the exact transaction principal rather than only the requesting domain.
+
+The addendum should standardize:
+
+- How a wallet derives the relevant principal from each decoded Stacks request or serialized transaction.
+- A small provenance result model shared across compatible wallets.
+- The distinction between an existing claim and a claim from a wallet-recognized attester.
+- Lifecycle handling for expiration and revocation.
+- The requirement to keep provenance separate from post-conditions, simulation, and security warnings.
+- The prohibition on rendering attacker-controlled names from untrusted claims in trusted wallet chrome.
+- Neutral behavior when provenance infrastructure is unavailable.
+
+The addendum must not let the application provide the claimed organization, select the attester, supply the wallet's trust configuration, or submit a precomputed provenance verdict. Those remain wallet-derived or wallet-owned inputs.
+
+No new Connect or JSON-RPC field is required for the hackathon. After the Leather proof of concept validates the data model and UX, the reusable evaluator and types may be proposed for extraction into the appropriate Stacks Connect or Stacks.js package.
+
 ## 13. Implementation Workstreams
 
 ### Workstream A: Contract and tests
@@ -432,6 +455,8 @@ Leather already deserializes transaction requests and displays the exact contrac
 - Show the unrecognized-attester case prominently.
 - Describe automated domain control as the bootstrap attester and KYC/KYB as an optional future attester class.
 - State that production discovery is an event-indexing problem deliberately excluded from the proof of concept.
+- Present Leather as the first reference integration and Origin as a candidate future Stacks Connect addendum.
+- Make clear that the hackathon validates wallet behavior before proposing shared Stacks.js or Connect code.
 - State clearly that provenance is not a security guarantee.
 
 ## 14. Suggested Build Order
@@ -468,12 +493,14 @@ The proof of concept is complete when:
 - The user can still reject or approve the harmless Testnet transaction.
 - The pitch presents automated domain control as the bootstrap path and KYC/KYB issuance as optional expansion, neither as implemented production infrastructure.
 - The pitch identifies arbitrary production claim discovery as future event-indexing work.
+- The pitch distinguishes the direct Leather proof of concept from the later Stacks Connect standardization proposal.
 
 ## 16. Resolved Scope Decisions
 
 - The demo covers contract calls only. Wallet principals remain supported by the schema but are not a demo scenario.
 - The Testnet build pins both the trusted and demonstration-untrusted attesters. Arbitrary claim discovery is out of scope.
 - The implementation targets the Leather extension only. A standalone approval preview is a demo-survival fallback, not a second integration target.
+- Stacks.js and Stacks Connect are proposal targets after the hackathon, not current modification targets.
 - The hackathon uses direct attester-to-subject binding; organization countersignature is a production extension.
 - The hackathon keeps a bounded ASCII name on-chain but renders it only for trusted attesters.
 - Expiration uses `burn-block-height`.
@@ -486,3 +513,7 @@ The proof of concept is complete when:
 Short version:
 
 > **Origin: trusted identity for the principals in your Stacks transaction.**
+
+Ecosystem proposal:
+
+> **Origin is a proposed Stacks Connect addendum for WalletConnect Verify-style provenance of transaction principals, demonstrated first in Leather.**
