@@ -4,6 +4,8 @@
 
 A user initiates a harmless Stacks Testnet contract call from a mock site. A locally built Leather extension derives the exact contract principal from the transaction request and shows provenance from the Origin registry before approval.
 
+The proof of concept is intended to support a later proposal for an Origin addendum to Stacks Connect. The hackathon validates the wallet behavior directly in Leather; it does not modify Stacks.js, Connect, or the wallet request protocol.
+
 The demo must make one distinction memorable:
 
 ```text
@@ -134,6 +136,19 @@ The Leather modification owns:
 
 `leather-io/extension` is reference-only. It is archived, deprecated, and must not receive demo changes.
 
+### Future Stacks Connect proposal
+
+After the proof of concept, propose the stable parts as a Stacks Connect addendum:
+
+- Principal derivation rules for supported request types
+- Shared provenance result types
+- Attestation lifecycle semantics
+- Wallet-owned trust-policy requirements
+- Required separation from post-condition and security verdicts
+- Safe rendering rules for untrusted claim data
+
+The application must not supply identity claims, attester hints, trust policy, or a provenance verdict. No Stacks Connect or Stacks.js repository is a hackathon modification target.
+
 ## Test plan
 
 ### 1. Clarity contract tests
@@ -147,6 +162,7 @@ The Leather modification owns:
 
 ### 2. Leather evaluator unit tests
 
+- Model evaluator output as a discriminated union. The unrecognized-claim variant must not contain an organization display-name field.
 - Current trusted claim -> Known origin.
 - Untrusted claim -> Unrecognized identity claim without its organization name.
 - No configured claim -> Unknown origin.
@@ -159,7 +175,7 @@ The Leather modification owns:
 ### 3. Leather component tests
 
 - Each state renders the approved language and exact principal.
-- Known origin identifies the trusted attester and role.
+- Known origin uses neutral styling, identifies the trusted attester and role, and states that provenance is not a safety guarantee.
 - Unrecognized state does not render attacker-controlled brand text.
 - Lookalike warning is visually distinct from the Origin verdict.
 - Loading and unavailable behavior are neutral.
@@ -188,10 +204,10 @@ The first-half-day checkpoint is whether the approval surface can host the new s
 
 ### Phase 1: Pure evaluation and UI
 
-1. Define the five-state result model.
+1. Define the five-state result model as a discriminated union whose unrecognized-claim variant has no organization display-name field.
 2. Implement the evaluator without React or network dependencies.
 3. Add exhaustive evaluator tests.
-4. Implement the Origin approval section.
+4. Implement the Origin approval section with neutral known-origin styling and the explicit safety limitation.
 5. Add component tests, including attacker-name quarantine.
 
 ### Phase 2: Registry and fixtures
@@ -214,6 +230,13 @@ The first-half-day checkpoint is whether the approval surface can host the new s
 2. Run Leather's required format, lint, typecheck, dependency, and unused-export checks.
 3. Build the extension and run the three-scenario integration flow.
 4. Record the live Testnet demonstration and lifecycle coda.
+
+### Phase 5: Post-hackathon proposal
+
+1. Extract the validated principal-derivation and evaluation interfaces from the Leather implementation.
+2. Draft the Stacks Connect addendum without introducing application-supplied trust inputs.
+3. Propose the reusable types and evaluator for the appropriate Stacks Connect or Stacks.js package.
+4. Validate the addendum with at least one additional Stacks wallet before treating it as an ecosystem standard.
 
 ## Completion criteria
 
