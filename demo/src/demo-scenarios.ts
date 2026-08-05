@@ -1,36 +1,33 @@
 export const demoScenarios = [
   {
     id: "known",
-    index: "01",
-    eyebrow: "Reference contract",
-    title: "The expected deployer",
+    actionTitle: "Weekly check-in",
+    body: "Your regular check-in. Keeps the streak going and adds one stamp.",
+    from: "acme.example",
+    deployer: "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY",
     contractName: "acme-action",
     subject: "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action",
-    siteClaim: "Presented by this site as Acme’s demo action.",
-    walletPrompt:
-      "Wallet-owned trust policy can name the attester behind this exact claim.",
+    stampWeek: 10,
   },
   {
     id: "unrecognized",
-    index: "02",
-    eyebrow: "Unrecognized claim",
-    title: "Anyone can make a claim",
+    actionTitle: "Bonus check-in",
+    body: "Acme is running bonus week with Northwind. Adds one stamp, same as usual.",
+    from: "northwind.example",
+    deployer: "ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0",
     contractName: "claimed-action",
     subject: "ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0.claimed-action",
-    siteClaim: "Presented by this site as an official Acme contract.",
-    walletPrompt:
-      "The claim is surfaced without repeating its untrusted organization name.",
+    stampWeek: 10,
   },
   {
     id: "lookalike",
-    index: "03",
-    eyebrow: "Name collision",
-    title: "Same name, new deployer",
+    actionTitle: "Weekly check-in",
+    body: "Your regular check-in. Keeps the streak going and adds one stamp.",
+    from: "mail.acme-rewards.example",
+    deployer: "ST3B1B5SN96FXEP2EC2SE6K2XWEEBYR7TK70WF6XA",
     contractName: "acme-action",
     subject: "ST3B1B5SN96FXEP2EC2SE6K2XWEEBYR7TK70WF6XA.acme-action",
-    siteClaim: "Presented by this site under the familiar contract name.",
-    walletPrompt:
-      "Unknown origin and the name-collision heuristic remain separate signals.",
+    stampWeek: 10,
   },
 ] as const;
 

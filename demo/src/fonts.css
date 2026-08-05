@@ -1,0 +1,13 @@
+/* IBM Plex Sans Variable, latin subset only.
+   @fontsource-variable/ibm-plex-sans ships no `latin.css` entry point (only
+   per-axis bundles that declare all nine subsets), so the single latin face is
+   declared here against the package's own woff2. IBM Plex Mono's latin-400 /
+   latin-500 entry points do exist and are imported directly in main.tsx. */
+@font-face {
+  font-family: "IBM Plex Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url("@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2")
+    format("woff2-variations");
+}
