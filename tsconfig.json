@@ -3,8 +3,8 @@
     "target": "ESNext",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": ["ESNext"],
-    "types": ["node"],
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "types": ["node", "vite/client"],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -15,12 +15,15 @@
     "noImplicitAny": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "jsx": "react-jsx"
   },
   "include": [
     "node_modules/@stacks/clarinet-sdk/vitest-helpers/src/vitest.d.ts",
+    "demo",
     "scripts",
     "tests",
+    "vite.demo.config.ts",
     "vitest.config.ts"
   ]
 }
