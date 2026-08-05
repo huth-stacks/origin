@@ -24,6 +24,16 @@ pnpm verify
 
 This checks Clarity formatting and analysis, TypeScript test types, the Origin registry, and the harmless demo target in Clarinet Simnet.
 
+## Live Testnet fixtures
+
+The registry and all three harmless fixture contracts are deployed on Stacks Testnet. Their principals, transaction IDs, confirmation heights, configured attesters, and claim expirations are recorded in [the public fixture manifest](deployments/testnet-fixtures.json).
+
+```sh
+pnpm testnet:verify
+```
+
+This secret-free check compares every live source file with this checkout, reads both example claims, checks the current burn height against the trusted claim's expiration, and confirms the same-name lookalike has a different deployer and no trusted claim.
+
 ## Proof-of-concept boundary
 
 - One Clarity registry contract
