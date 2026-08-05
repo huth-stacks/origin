@@ -58,9 +58,8 @@ export function App() {
   const [requestState, setRequestState] = useState<RequestState>({
     status: "idle",
   });
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
-    () => (findLeatherProvider() ? "ready" : "unavailable"),
-  );
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatus>("ready");
 
   const activeScenario =
     demoScenarios.find((scenario) => scenario.id === activeId) ??
@@ -191,10 +190,7 @@ export function App() {
               <button
                 className="provider-control"
                 data-connected="false"
-                disabled={
-                  connectionStatus === "connecting" ||
-                  connectionStatus === "unavailable"
-                }
+                disabled={connectionStatus === "connecting"}
                 onClick={() => void connectWallet()}
                 type="button"
                 aria-live="polite"
