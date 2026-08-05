@@ -6,9 +6,13 @@ import {
   type DemoScenarioId,
 } from "./demo-scenarios";
 import {
+  connectLeather,
   findLeatherProvider,
   requestDemoContractCall,
 } from "./leather-provider";
+
+type ConnectionStatus =
+  "ready" | "connecting" | "connected" | "rejected" | "unavailable";
 
 type RequestState =
   | { status: "idle" }
@@ -34,27 +38,58 @@ function requestStatusLabel(state: RequestState, scenario: DemoScenario) {
   }
 }
 
+function connectionStatusLabel(status: ConnectionStatus) {
+  switch (status) {
+    case "ready":
+      return "Connect Leather";
+    case "connecting":
+      return "Approve in Leather";
+    case "connected":
+      return "Leather connected";
+    case "rejected":
+      return "Connection rejected — retry";
+    case "unavailable":
+      return "Leather required";
+  }
+}
+
 export function App() {
   const [activeId, setActiveId] = useState<DemoScenarioId>("known");
   const [requestState, setRequestState] = useState<RequestState>({
     status: "idle",
   });
-  const [hasLeather, setHasLeather] = useState(() =>
-    Boolean(findLeatherProvider()),
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
+    () => (findLeatherProvider() ? "ready" : "unavailable"),
   );
 
   const activeScenario =
     demoScenarios.find((scenario) => scenario.id === activeId) ??
     demoScenarios[0];
 
+  async function connectWallet() {
+    const provider = findLeatherProvider();
+    if (!provider) {
+      setConnectionStatus("unavailable");
+      return;
+    }
+
+    setConnectionStatus("connecting");
+    try {
+      await connectLeather(provider);
+      setConnectionStatus("connected");
+    } catch {
+      setConnectionStatus("rejected");
+    }
+  }
+
   async function inspectScenario(scenario: DemoScenario) {
     setRequestState({ status: "requesting", scenarioId: scenario.id });
     const provider = findLeatherProvider();
     if (!provider) {
+      setConnectionStatus("unavailable");
       setRequestState({ status: "unavailable", scenarioId: scenario.id });
       return;
     }
-    setHasLeather(true);
 
     try {
       await requestDemoContractCall(provider, scenario);
@@ -64,7 +99,10 @@ export function App() {
     }
   }
 
-  const buttonLabel = requestStatusLabel(requestState, activeScenario);
+  const isConnected = connectionStatus === "connected";
+  const buttonLabel = isConnected
+    ? requestStatusLabel(requestState, activeScenario)
+    : "Connect Leather first";
   const isRequesting =
     requestState.status === "requesting" &&
     requestState.scenarioId === activeScenario.id;
@@ -141,9 +179,29 @@ export function App() {
         <article className="request-panel" key={activeScenario.id}>
           <div className="panel-topline">
             <span>Scenario {activeScenario.index}</span>
-            <span className="provider-state" data-connected={hasLeather}>
-              {hasLeather ? "Leather detected" : "Leather required"}
-            </span>
+            {isConnected ? (
+              <span
+                className="provider-state"
+                data-connected="true"
+                aria-live="polite"
+              >
+                {connectionStatusLabel(connectionStatus)}
+              </span>
+            ) : (
+              <button
+                className="provider-control"
+                data-connected="false"
+                disabled={
+                  connectionStatus === "connecting" ||
+                  connectionStatus === "unavailable"
+                }
+                onClick={() => void connectWallet()}
+                type="button"
+                aria-live="polite"
+              >
+                {connectionStatusLabel(connectionStatus)}
+              </button>
+            )}
           </div>
 
           <div className="request-copy">
@@ -175,7 +233,7 @@ export function App() {
             <button
               className="inspect-button"
               data-loading={isRequesting}
-              disabled={isRequesting}
+              disabled={isRequesting || !isConnected}
               onClick={() => void inspectScenario(activeScenario)}
               type="button"
             >
@@ -189,9 +247,7 @@ export function App() {
       <section className="boundary" aria-labelledby="boundary-title">
         <div>
           <p className="kicker">Trust boundary</p>
-          <h2 id="boundary-title">
-            Only the transaction crosses into Leather.
-          </h2>
+          <h2 id="boundary-title">Identity data never crosses into Leather.</h2>
         </div>
         <ol>
           <li>

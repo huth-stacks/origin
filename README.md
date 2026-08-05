@@ -42,7 +42,7 @@ Build and locally load the Origin Leather extension first, then start the transa
 pnpm demo:dev
 ```
 
-Open `http://127.0.0.1:4173` in the browser profile running the local extension. Each scenario sends a normal `stx_callContract` request for one exact deployed Testnet fixture. The request includes no organization name, attester hint, trust policy, canonical-contract hint, or provenance verdict.
+Open `http://127.0.0.1:4173` in the browser profile running the local extension, select **Connect Leather**, and approve access to a disposable Stacks Testnet account. Each scenario then sends a normal `stx_callContract` request for one exact deployed Testnet fixture. The transaction request includes no organization name, attester hint, trust policy, canonical-contract hint, or provenance verdict.
 
 ## Proof-of-concept boundary
 

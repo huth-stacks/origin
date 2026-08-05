@@ -3,15 +3,34 @@ import { describe, expect, test } from "vitest";
 import {
   createDemoContractCall,
   demoScenarios,
-  type DemoContractCallRequest,
 } from "../demo/src/demo-scenarios";
 import {
+  connectLeather,
   requestDemoContractCall,
   type LeatherProvider,
 } from "../demo/src/leather-provider";
 import fixtures from "../deployments/testnet-fixtures.json";
 
 describe("Origin demo requests", () => {
+  test("connects to a Stacks Testnet account through the normal Leather method", async () => {
+    const calls: Array<{ method: string; params: unknown }> = [];
+    const provider: LeatherProvider = {
+      async request(method, params) {
+        calls.push({ method, params });
+        return { addresses: [] };
+      },
+    };
+
+    await connectLeather(provider);
+
+    expect(calls).toEqual([
+      {
+        method: "getAddresses",
+        params: { network: "testnet", chains: ["stacks"] },
+      },
+    ]);
+  });
+
   test("pins every scenario to its exact deployed fixture principal", () => {
     expect(
       demoScenarios.map((scenario) => [scenario.id, scenario.subject]),
@@ -49,8 +68,7 @@ describe("Origin demo requests", () => {
   );
 
   test("uses the normal Leather RPC method without attaching identity hints", async () => {
-    const calls: Array<{ method: string; params: DemoContractCallRequest }> =
-      [];
+    const calls: Array<{ method: string; params: unknown }> = [];
     const provider: LeatherProvider = {
       async request(method, params) {
         calls.push({ method, params });
