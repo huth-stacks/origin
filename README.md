@@ -34,6 +34,16 @@ pnpm testnet:verify
 
 This secret-free check compares every live source file with this checkout, reads both example claims, checks the current burn height against the trusted claim's expiration, and confirms the same-name lookalike has a different deployer and no trusted claim.
 
+## Run the mock dapp
+
+Build and locally load the Origin Leather extension first, then start the transaction lab:
+
+```sh
+pnpm demo:dev
+```
+
+Open `http://127.0.0.1:4173` in the browser profile running the local extension. Each scenario sends a normal `stx_callContract` request for one exact deployed Testnet fixture. The request includes no organization name, attester hint, trust policy, canonical-contract hint, or provenance verdict.
+
 ## Proof-of-concept boundary
 
 - One Clarity registry contract

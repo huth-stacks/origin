@@ -9,6 +9,7 @@ deployments/testnet-accounts.local.json
 dist/
 lcov.info
 node_modules/
+output/
 settings/Mainnet.toml
 settings/Testnet.toml
 costs-reports.json
