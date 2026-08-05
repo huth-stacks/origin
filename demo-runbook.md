@@ -11,7 +11,7 @@ The demonstration proves that the wallet can derive and label the exact transact
 | Surface                         | Checkpoint  | Evidence                                                                                             |
 | ------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
 | Origin registry and fixtures    | `a40d080`   | Four live contracts, two claims, and one unattested lookalike in `deployments/testnet-fixtures.json` |
-| Mock dapp                       | `4038b93`   | Explicit Testnet connection plus three manifest-pinned requests                                      |
+| Mock dapp                       | `8b0de1c`   | Retryable late provider injection, Testnet connection, and three manifest-pinned requests            |
 | Leather live registry client    | `2675a3142` | Configured-attester reads and fail-neutral evaluation                                                |
 | Leather three-scenario coverage | `ddee4f3e2` | Known, unrecognized, lookalike, and independent post-condition assertions                            |
 | Leather live mock-dapp flow     | `2f2dcaf02` | Fresh connection followed by all three live Testnet states                                           |
@@ -58,12 +58,20 @@ The development build currently completes with the baseline missing `.env`, stal
 
 ## Start the demo
 
+Open the hosted transaction lab in the browser profile containing the unpacked extension:
+
+```text
+https://origin-umber-six.vercel.app
+```
+
+For a fully local fallback:
+
 ```sh
 cd /Users/alexander/Code/contract-provenance-certificate
 pnpm demo:dev
 ```
 
-Open `http://127.0.0.1:4173` in the browser profile containing the unpacked extension.
+Then open `http://127.0.0.1:4173` in the same browser profile.
 
 1. Select **Connect Leather**.
 2. Approve the Stacks Testnet account request in Leather.
@@ -117,28 +125,19 @@ Rejecting each request avoids consuming Testnet fees. The fixtures are deliberat
 
 ## Automated end-to-end preflight
 
-The opt-in Leather test starts with no site permission, approves the dapp's normal `getAddresses` request, then checks all three approval states against live Testnet registry data.
-
-Terminal 1:
-
-```sh
-cd /Users/alexander/Code/contract-provenance-certificate
-pnpm demo:dev
-```
-
-Terminal 2:
+The opt-in Leather test starts with no site permission, approves the dapp's normal `getAddresses` request, then checks all three approval states against live Testnet registry data. The primary preflight targets the production deployment:
 
 ```sh
 cd /Users/alexander/Code/leather-origin-demo
 PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm --filter @leather.io/extension build:ext:test
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin ORIGIN_DEMO_URL=http://127.0.0.1:4173 pnpm --filter @leather.io/extension test:integration tests/specs/rpc-sip30-requests/origin-mock-dapp.spec.ts --project=chromium
+PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin ORIGIN_DEMO_URL=https://origin-umber-six.vercel.app pnpm --filter @leather.io/extension test:integration tests/specs/rpc-sip30-requests/origin-mock-dapp.spec.ts --project=chromium
 ```
 
-Without `ORIGIN_DEMO_URL`, this live-network test skips so normal Leather CI does not depend on a sibling repository or Testnet availability. The last verified fresh-site run passed all three scenarios in 13.5 seconds on August 4, 2026 Pacific time.
+To test the local fallback, run `pnpm demo:dev` in the Origin repository and replace `ORIGIN_DEMO_URL` with `http://127.0.0.1:4173`. Without `ORIGIN_DEMO_URL`, this live-network test skips so normal Leather CI does not depend on a sibling repository or Testnet availability. The final production-origin run passed fresh connection and all three live states in 14.0 seconds on August 4, 2026 Pacific time.
 
 ## Failure behavior
 
-- No injected provider: the dapp shows `Leather required` and does not enable scenario requests.
+- No injected provider: after a connection attempt, the dapp shows the retryable `Leather required` control and does not enable scenario requests.
 - Rejected connection: the dapp shows `Connection rejected — retry`.
 - Rejected transaction: the dapp shows `Request rejected — try again` and sends nothing.
 - Registry timeout or malformed response: Leather shows `Origin unavailable`, never `Known origin`.

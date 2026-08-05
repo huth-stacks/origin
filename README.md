@@ -38,13 +38,15 @@ This secret-free check compares every live source file with this checkout, reads
 
 ## Run the mock dapp
 
-Build and locally load the Origin Leather extension first, then start the transaction lab:
+Build and locally load the Origin Leather extension first, then open the [hosted Origin transaction lab](https://origin-umber-six.vercel.app) in that browser profile.
+
+For a fully local fallback, start the transaction lab from this checkout:
 
 ```sh
 pnpm demo:dev
 ```
 
-Open `http://127.0.0.1:4173` in the browser profile running the local extension, select **Connect Leather**, and approve access to a disposable Stacks Testnet account. Each scenario then sends a normal `stx_callContract` request for one exact deployed Testnet fixture. The transaction request includes no organization name, attester hint, trust policy, canonical-contract hint, or provenance verdict.
+Open `http://127.0.0.1:4173` in the browser profile running the local extension. On either origin, select **Connect Leather** and approve access to a disposable Stacks Testnet account. Each scenario then sends a normal `stx_callContract` request for one exact deployed Testnet fixture. The transaction request includes no organization name, attester hint, trust policy, canonical-contract hint, or provenance verdict.
 
 ## Proof-of-concept boundary
 
