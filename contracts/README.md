@@ -18,9 +18,21 @@ The public surface is intentionally limited to:
 
 Issuance replaces only the sender's record for the exact subject. Revocation changes only the sender's namespace. Both writes emit structured print events and move no assets.
 
+Both contracts pin Clarity 5 to Stacks epoch 3.4 in `Clarinet.toml`; deployment plans must retain that explicit epoch.
+
+## Testnet Accounts
+
+Run `pnpm testnet:accounts` once to create an ignored `settings/Testnet.toml` and an ignored public-address manifest. The command derives four dedicated, disposable Testnet accounts from one new mnemonic: registry/known-contract deployer, trusted attester, unrecognized issuer, and lookalike deployer. It refuses to overwrite either file. Never commit `settings/Testnet.toml`.
+
+After funding the deployer from the official Testnet faucet, `pnpm testnet:fund-accounts` transfers 10 Testnet STX to each remaining fixture account. These tokens have no real value, but the command writes to Testnet and should only be run for the demo wallet.
+
+After the deployment plan confirms, `pnpm testnet:issue-attestations` publishes the trusted claim for the reference contract and the deliberately unrecognized claim for the second fixture. The unrecognized record contains attacker-selected display text so the wallet can prove that it never renders that text.
+
+The public principals, transaction IDs, and confirmation heights live in `deployments/testnet-fixtures.json`. Run `pnpm testnet:verify` without any mnemonic to compare the live contract sources with this checkout, validate both claims, confirm the known claim is current, and prove the lookalike uses the same contract name under a different deployer with no trusted claim.
+
 ## Demo Target
 
-`origin-demo-target.clar` exposes one harmless state-only action that increments an invocation counter. The Testnet deployment plan will publish this source as three separate fixture principals for known, unrecognized, and lookalike scenarios. The fixture manifest will record the final deployers, contract names, transaction IDs, and burn heights.
+`origin-demo-target.clar` exposes one harmless state-only action that increments an invocation counter. The Testnet deployment publishes this source as three separate fixture principals for known, unrecognized, and lookalike scenarios. The fixture manifest records the final deployers, contract names, transaction IDs, and burn heights.
 
 ## Analyzer Warning
 

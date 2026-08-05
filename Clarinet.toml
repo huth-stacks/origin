@@ -12,9 +12,9 @@ check_checker = { trusted_sender = false, trusted_caller = false, callee_filter 
 [contracts.origin-registry]
 path = "contracts/origin-registry.clar"
 clarity_version = 5
-epoch = "latest"
+epoch = "3.4"
 
 [contracts.origin-demo-target]
 path = "contracts/origin-demo-target.clar"
 clarity_version = 5
-epoch = "latest"
+epoch = "3.4"

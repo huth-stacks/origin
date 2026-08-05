@@ -5,6 +5,7 @@
 .cache/
 coverage/
 deployments/default.simnet-plan.yaml
+deployments/testnet-accounts.local.json
 dist/
 lcov.info
 node_modules/

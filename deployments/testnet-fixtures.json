@@ -1,0 +1,53 @@
+{
+  "network": "testnet",
+  "apiUrl": "https://api.testnet.hiro.so",
+  "stacksEpoch": "3.4",
+  "clarityVersion": 5,
+  "registry": {
+    "principal": "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.origin-registry",
+    "txId": "0xbdbeffc944152c2fd3ef083edfc597970605af63c79e25d0c6600d1e2fa96eaa",
+    "stacksBlockHeight": 4058458,
+    "burnBlockHeight": 202273
+  },
+  "attesters": {
+    "trusted": {
+      "principal": "ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC",
+      "displayName": "Trusted Test Attester"
+    },
+    "unrecognized": {
+      "principal": "ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0"
+    }
+  },
+  "fixtures": {
+    "known": {
+      "subject": "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action",
+      "contractTxId": "0x5cd93a5a04f1cc930fd1a186ed969a4cb595437def3a6a96de8d058adfdbc865",
+      "stacksBlockHeight": 4058461,
+      "claim": {
+        "attester": "ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC",
+        "issuerName": "Acme",
+        "role": "Demo contract",
+        "expiresAt": 302274,
+        "txId": "0x199bbcda6be864d35ca295e968a113ed3e4196d0c23f7f73cc61c8960c7c1d8f"
+      }
+    },
+    "unrecognized": {
+      "subject": "ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0.claimed-action",
+      "contractTxId": "0x1aee05e783f94cbac6fd14063a709f71d6d41b522e361908972afcd17fc6e45b",
+      "stacksBlockHeight": 4058461,
+      "claim": {
+        "attester": "ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0",
+        "issuerName": "Definitely Acme",
+        "role": "Official contract",
+        "expiresAt": 302274,
+        "txId": "0x8614021f2cc2ecd1818b1f0205543b914db23b114d386e7a4ea2c75084a4bf9f"
+      }
+    },
+    "lookalike": {
+      "subject": "ST3B1B5SN96FXEP2EC2SE6K2XWEEBYR7TK70WF6XA.acme-action",
+      "referenceSubject": "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action",
+      "contractTxId": "0x87c5ddab572ec4aa7ac841f130c81b71c268cdb32f64095458056b606a77fd1f",
+      "stacksBlockHeight": 4058461
+    }
+  }
+}

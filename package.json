@@ -9,12 +9,17 @@
     "format:check": "clarinet format --check",
     "test": "vitest run",
     "test:report": "vitest run -- --coverage --costs",
+    "testnet:accounts": "node scripts/create-testnet-accounts.ts",
+    "testnet:fund-accounts": "node scripts/fund-testnet-accounts.ts",
+    "testnet:issue-attestations": "node scripts/issue-testnet-attestations.ts",
+    "testnet:verify": "node scripts/verify-testnet-deployment.ts",
     "typecheck": "tsc --noEmit",
     "verify": "pnpm format:check && pnpm check && pnpm typecheck && pnpm test"
   },
   "devDependencies": {
     "@stacks/clarinet-sdk": "3.23.1",
     "@stacks/transactions": "7.6.0",
+    "@stacks/wallet-sdk": "7.6.0",
     "@types/node": "24.4.0",
     "typescript": "7.0.2",
     "vitest": "4.0.7",
