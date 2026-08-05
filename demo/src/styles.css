@@ -90,7 +90,8 @@ a {
 }
 
 .network-status,
-.provider-state {
+.provider-state,
+.provider-control {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -99,6 +100,21 @@ a {
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.provider-control {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.provider-control:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.provider-control:disabled {
+  cursor: not-allowed;
 }
 
 .network-dot {
@@ -270,7 +286,8 @@ a:focus-visible {
   text-transform: uppercase;
 }
 
-.provider-state::before {
+.provider-state::before,
+.provider-control::before {
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -377,7 +394,8 @@ a:focus-visible {
 }
 
 .inspect-button:disabled {
-  cursor: wait;
+  opacity: 0.48;
+  cursor: not-allowed;
 }
 
 .inspect-button[data-loading="true"] {
