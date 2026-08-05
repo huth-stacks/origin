@@ -84,10 +84,12 @@ export function readTxId(response: unknown): string | undefined {
   return value.startsWith("0x") ? value : `0x${value}`;
 }
 
+export class LeatherTimeoutError extends Error {}
+
 export function withTimeout<T>(work: Promise<T>, ms: number) {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(
-      () => reject(new Error("Leather did not answer in time")),
+      () => reject(new LeatherTimeoutError("Leather did not answer in time")),
       ms,
     );
     work.then(resolve, reject).finally(() => clearTimeout(timer));

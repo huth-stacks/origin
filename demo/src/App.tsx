@@ -8,6 +8,7 @@ import {
 import {
   connectLeather,
   findLeatherProvider,
+  LeatherTimeoutError,
   readStxAddress,
   readTxId,
   requestDemoContractCall,
@@ -148,20 +149,22 @@ function EnvelopeGlyph() {
   );
 }
 
-function AddressGroups({ address }: { address: string }) {
+function AddressGroups({
+  address,
+  suffix,
+}: {
+  address: string;
+  suffix?: string;
+}) {
   return (
     <span className="address">
       {groupByFour(address).map((group, index) => (
         <Fragment key={`${group}-${index}`}>
           {index > 0 ? " " : null}
-          <span
-            className="address-group"
-            data-lead={index === 0 ? "true" : undefined}
-          >
-            {group}
-          </span>
+          <span className="address-group">{group}</span>
         </Fragment>
       ))}
+      {suffix ? <span className="address-group">.{suffix}</span> : null}
     </span>
   );
 }
@@ -297,6 +300,7 @@ export function App() {
   }
 
   async function checkIn(scenario: DemoScenario) {
+    if (connection.status === "connecting") return;
     const provider = findLeatherProvider();
     if (!provider) {
       setConnection({ status: "unavailable" });
@@ -341,14 +345,22 @@ export function App() {
         },
         ...rows,
       ]);
-    } catch {
-      setOutcome(scenario.id, { kind: "declined" });
+    } catch (error) {
+      setOutcome(
+        scenario.id,
+        error instanceof LeatherTimeoutError
+          ? { kind: "idle" }
+          : { kind: "declined" },
+      );
     } finally {
       setPendingId(null);
     }
   }
 
   const connected = connection.status === "connected";
+  const openLinks = demoScenarios.filter(
+    (scenario) => outcomes[scenario.id].kind !== "confirmed",
+  ).length;
   const notice =
     connection.status === "declined"
       ? "Connection declined in Leather. Connect whenever you're ready."
@@ -426,8 +438,9 @@ export function App() {
                   : "Nine weeks in a row."}
               </h1>
               <p className="hero-body">
-                Check in once this week to keep it going. A check-in records
-                that you showed up. No tokens move.
+                {stamped >= THIS_WEEK
+                  ? "This week's stamp is pressed. The streak is safe until Monday."
+                  : "Check in once this week to keep it going. A check-in records that you showed up. No tokens move."}
               </p>
               <p className="hero-meta">Started 3 June · Stacks Testnet</p>
               {notice ? (
@@ -451,10 +464,13 @@ export function App() {
           <section className="requests" aria-labelledby="requests-title">
             <div className="section-head">
               <h2 id="requests-title">Waiting for you</h2>
-              <p className="section-count">3 check-in links</p>
+              <p className="section-count">
+                {openLinks} check-in {openLinks === 1 ? "link" : "links"}
+              </p>
               <p className="section-sub">
-                Three check-in links arrived this week. Any one keeps your
-                streak.
+                {openLinks === demoScenarios.length
+                  ? "Three check-in links arrived this week. Any one keeps your streak."
+                  : "This week's stamp is already pressed. The other links stay open if you want them."}
               </p>
             </div>
 
@@ -472,8 +488,11 @@ export function App() {
                     <h3 className="card-title">{scenario.actionTitle}</h3>
                     <p className="card-body">{scenario.body}</p>
                     <hr className="rule" />
-                    <p className="label">Address</p>
-                    <AddressGroups address={scenario.deployer} />
+                    <p className="label">Exact target</p>
+                    <AddressGroups
+                      address={scenario.deployer}
+                      suffix={scenario.contractName}
+                    />
                     <p className="label label-spaced">Contract name</p>
                     <p className="contract-name">{scenario.contractName}</p>
                     <dl className="meta">
@@ -494,7 +513,10 @@ export function App() {
                       <button
                         aria-label={`Check in · ${scenario.actionTitle} from ${scenario.from}`}
                         className="check-in"
-                        disabled={pendingId !== null}
+                        disabled={
+                          pendingId !== null ||
+                          connection.status === "connecting"
+                        }
                         onClick={() => void checkIn(scenario)}
                         type="button"
                       >

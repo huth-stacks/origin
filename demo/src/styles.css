@@ -380,6 +380,7 @@ h1 {
 .streak-grid {
   display: grid;
   grid-template-columns: repeat(6, 56px);
+  justify-content: center;
   gap: 12px;
   margin: 0;
   padding: 0;
@@ -436,7 +437,7 @@ h1 {
 }
 
 .stamp[data-state="empty"] {
-  color: var(--ink-4);
+  color: var(--ink-3);
   background: var(--paper-2);
 }
 
@@ -529,10 +530,6 @@ h1 {
 
 .address-group {
   white-space: nowrap;
-}
-
-.address-group[data-lead="true"] {
-  color: var(--acme);
 }
 
 .label-spaced {
@@ -713,7 +710,6 @@ h1 {
   opacity: 0;
   pointer-events: none;
   background: rgba(20, 19, 26, 0.34);
-  backdrop-filter: blur(1.5px);
   transition: opacity 180ms var(--ease);
 }
 
@@ -949,6 +945,13 @@ body[data-handoff="true"] .scrim {
   animation-delay: 80ms;
 }
 
+/* A filled reveal animation creates a stacking context that would trap the
+   raised card underneath the fixed scrim during the wallet handoff. */
+body[data-handoff="true"] .reveal-chrome,
+body[data-handoff="true"] .reveal-content {
+  animation: none;
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -1128,6 +1131,12 @@ body[data-handoff="true"] .scrim {
     width: 32px;
     height: 32px;
   }
+
+  .outcome-link {
+    display: inline-block;
+    padding: 12px 8px;
+    margin: -12px -8px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1143,10 +1152,6 @@ body[data-handoff="true"] .scrim {
   .reveal-chrome,
   .reveal-content {
     animation: none;
-  }
-
-  .scrim {
-    backdrop-filter: none;
   }
 
   .waiting-indicator {

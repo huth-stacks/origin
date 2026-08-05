@@ -8,11 +8,13 @@ export default defineConfig({
     host: "127.0.0.1",
     port: 4173,
     strictPort: true,
+    allowedHosts: ["acme.example"],
   },
   preview: {
     host: "127.0.0.1",
     port: 4173,
     strictPort: true,
+    allowedHosts: ["acme.example"],
   },
   build: {
     outDir: "../dist/demo",
