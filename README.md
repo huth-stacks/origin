@@ -10,6 +10,7 @@ This repository contains the hackathon product plan, demo application, Origin re
 - [Hackathon plan](origin-hackathon-plan.md)
 - [Executable demo plan](demo-plan.md)
 - [Demo runbook](demo-runbook.md)
+- [Leather review manifest](leather-review-manifest.md)
 - [Repository map](repository-map.md)
 - [Leather baseline](leather-baseline.md)
 - [Leather UI spike](leather-ui-spike.md)

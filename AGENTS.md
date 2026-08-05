@@ -10,11 +10,12 @@ Use these documents in this order:
 2. [Hackathon product plan](origin-hackathon-plan.md) — canonical product, trust, scope, schema, and UX decisions.
 3. [Executable demo plan](demo-plan.md) — demo sequence, data flow, code ownership, delivery phases, and acceptance criteria.
 4. [Demo runbook](demo-runbook.md) — exact build, connection, presentation, live verification, and reset procedure.
-5. [Repository map](repository-map.md) — local checkouts, upstream repositories, and modification boundaries.
-6. [Leather baseline](leather-baseline.md) — known-good toolchain, build, tests, runtime smoke test, and pre-existing warnings.
-7. [Leather UI spike](leather-ui-spike.md) — completed approval-surface experiment, verification results, and the boundary between the hardcoded spike and real implementation.
-8. [Clarity contracts](contracts/README.md) — registry behavior, fixture contract, verification commands, and the intentional permissionless-input analyzer warning.
-9. [Original proposal](contract-provenance-certificate-plan.md) — historical source only. It is intentionally superseded by the smaller hackathon plan and must not silently expand scope.
+5. [Leather review manifest](leather-review-manifest.md) — exact local commit range, review boundary, security invariants, and verification evidence for the extension integration.
+6. [Repository map](repository-map.md) — local checkouts, upstream repositories, and modification boundaries.
+7. [Leather baseline](leather-baseline.md) — known-good toolchain, build, tests, runtime smoke test, and pre-existing warnings.
+8. [Leather UI spike](leather-ui-spike.md) — completed approval-surface experiment, verification results, and the boundary between the hardcoded spike and real implementation.
+9. [Clarity contracts](contracts/README.md) — registry behavior, fixture contract, verification commands, and the intentional permissionless-input analyzer warning.
+10. [Original proposal](contract-provenance-certificate-plan.md) — historical source only. It is intentionally superseded by the smaller hackathon plan and must not silently expand scope.
 
 When documents disagree, prefer this order: the user's latest instruction, `origin-hackathon-plan.md`, `demo-plan.md`, then the remaining references. Update the canonical document when a product decision changes instead of recording contradictory decisions elsewhere.
 
