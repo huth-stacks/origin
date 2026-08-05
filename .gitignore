@@ -14,3 +14,4 @@ settings/Mainnet.toml
 settings/Testnet.toml
 costs-reports.json
 *.log
+.vercel
