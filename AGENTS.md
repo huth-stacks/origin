@@ -7,15 +7,17 @@ This repository is the coordination and implementation home for the Origin hacka
 Use these documents in this order:
 
 1. [README](README.md) — project boundary and starting point.
-2. [Hackathon product plan](origin-hackathon-plan.md) — canonical product, trust, scope, schema, and UX decisions.
-3. [Executable demo plan](demo-plan.md) — demo sequence, data flow, code ownership, delivery phases, and acceptance criteria.
-4. [Demo runbook](demo-runbook.md) — exact build, connection, presentation, live verification, and reset procedure.
-5. [Leather review manifest](leather-review-manifest.md) — exact local commit range, review boundary, security invariants, and verification evidence for the extension integration.
-6. [Repository map](repository-map.md) — local checkouts, upstream repositories, and modification boundaries.
-7. [Leather baseline](leather-baseline.md) — known-good toolchain, build, tests, runtime smoke test, and pre-existing warnings.
-8. [Leather UI spike](leather-ui-spike.md) — completed approval-surface experiment, verification results, and the boundary between the hardcoded spike and real implementation.
-9. [Clarity contracts](contracts/README.md) — registry behavior, fixture contract, verification commands, and the intentional permissionless-input analyzer warning.
-10. [Original proposal](contract-provenance-certificate-plan.md) — historical source only. It is intentionally superseded by the smaller hackathon plan and must not silently expand scope.
+2. [Current project status](PROJECT-STATUS.md) — repositories, active branches, deployments, reviews, verification, and immediate next actions.
+3. [Hackathon product plan](origin-hackathon-plan.md) — canonical product, trust, scope, schema, and UX decisions.
+4. [Executable demo plan](demo-plan.md) — demo sequence, data flow, code ownership, delivery phases, and acceptance criteria.
+5. [Demo runbook](demo-runbook.md) — exact build, connection, presentation, live verification, and reset procedure.
+6. [Dated UX exercise plan](docs/ux-exercise-2026-08-06.md) — today's complete live and deterministic experience review.
+7. [Leather review manifest](leather-review-manifest.md) — exact local commit range, review boundary, security invariants, and verification evidence for the extension integration.
+8. [Repository map](repository-map.md) — local checkouts, upstream repositories, and modification boundaries.
+9. [Leather baseline](leather-baseline.md) — known-good toolchain, build, tests, runtime smoke test, and pre-existing warnings.
+10. [Leather UI spike](leather-ui-spike.md) — completed approval-surface experiment, verification results, and the boundary between the hardcoded spike and real implementation.
+11. [Clarity contracts](contracts/README.md) — registry behavior, fixture contract, verification commands, and the intentional permissionless-input analyzer warning.
+12. [Original proposal](contract-provenance-certificate-plan.md) — historical source only. It is intentionally superseded by the smaller hackathon plan and must not silently expand scope.
 
 When documents disagree, prefer this order: the user's latest instruction, `origin-hackathon-plan.md`, `demo-plan.md`, then the remaining references. Update the canonical document when a product decision changes instead of recording contradictory decisions elsewhere.
 
@@ -48,7 +50,9 @@ Do not add production KYC, attester governance, arbitrary claim discovery, a cla
 
 ### This repository
 
-Local path: `/Users/alexander/Code/contract-provenance-certificate`
+Primary local path: `/Users/alexander/Code/contract-provenance-certificate`
+
+Active visual-review worktree: `/Users/alexander/Code/origin-feat-demo-visual`
 
 Owns product and demo documentation, Clarity contracts and tests, Testnet deployment fixtures, the mock site, and cross-repository integration notes.
 
@@ -56,7 +60,7 @@ Owns product and demo documentation, Clarity contracts and tests, Testnet deploy
 
 Local path: `/Users/alexander/Code/leather-origin-demo`
 
-Owns decoded-principal derivation, Origin lookup and evaluation, wallet trust configuration, approval UI, and Leather tests. Before changing it, read its root `AGENTS.md` and follow its formatting, testing, and code-style rules. Work from Leather's `dev` baseline on the local `agent/origin-ui-spike` branch unless the branch strategy is deliberately changed.
+Owns decoded-principal derivation, Origin lookup and evaluation, wallet trust configuration, approval UI, and Leather tests. Before changing it, read its root `AGENTS.md` and follow its formatting, testing, and code-style rules. The active review branch is `agent/origin-visual-polish` in the `huth-stacks/leather-origin-demo` fork; rebase it onto current upstream `dev` before proposing it to Leather.
 
 The current approval insertion point is:
 

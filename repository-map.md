@@ -2,8 +2,10 @@
 
 ## Project repository
 
-- GitHub target: `huth-stacks/origin`
-- Local path: `/Users/alexander/Code/contract-provenance-certificate`
+- GitHub: `https://github.com/huth-stacks/origin`
+- Primary local checkout: `/Users/alexander/Code/contract-provenance-certificate`, branch `main`
+- Active local worktree: `/Users/alexander/Code/origin-feat-demo-visual`, branch `feat/demo-visual-redesign`
+- Design integration: `https://github.com/huth-stacks/origin/pull/11`
 - Purpose: product documentation, Clarity contracts, Testnet fixtures, mock site, and cross-repository integration notes
 
 ## Active Leather modification target
@@ -11,10 +13,17 @@
 - Upstream: `https://github.com/leather-io/mono`
 - Default branch: `dev`
 - Local path: `/Users/alexander/Code/leather-origin-demo`
+- Fork: `https://github.com/huth-stacks/leather-origin-demo`
+- Active branch: `agent/origin-visual-polish`
+- Approver integration: `https://github.com/huth-stacks/leather-origin-demo/pull/1`
 - Extension package: `apps/extension`
 - Purpose: Origin evaluation, approval UI, and Leather tests
 
-The authenticated `huth-stacks` account has read but not push permission on `leather-io/mono`. Local work currently uses the `agent/origin-ui-spike` branch. Before publishing Leather changes, create or select an authorized fork and retain `leather-io/mono` as the upstream remote.
+The authenticated `huth-stacks` account has read but not push permission on `leather-io/mono`, so
+reviewable changes are published to the `huth-stacks/leather-origin-demo` fork. Retain
+`leather-io/mono` as the `origin` upstream remote and the fork as the `huth` remote. Before an
+upstream proposal, consolidate the Origin branch stack, rebase onto current upstream `dev`, and run
+Leather's complete required verification.
 
 ## Archived extension reference
 
@@ -24,9 +33,12 @@ The authenticated `huth-stacks` account has read but not push permission on `lea
 - Status: archived and deprecated
 - Purpose: historical reference only; do not modify or build the demo here
 
-## Why there are two Leather checkouts
+## Why Leather is a separate repository
 
-The browser extension now lives in `leather-io/mono`. The older `leather-io/extension` repository remains available only as an archive. The active monorepo is both the Leather clone and the extension codebase for this project.
+The browser extension lives in `leather-io/mono`, so its integration must remain independently
+reviewable against that upstream. Origin consolidates the project through pinned commits and the
+Leather review manifest rather than vendoring a copy of Leather. The older `leather-io/extension`
+repository remains available only as an archive.
 
 ## Future Stacks Connect proposal target
 

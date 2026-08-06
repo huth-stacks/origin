@@ -22,6 +22,8 @@
     "verify": "pnpm format:check && pnpm format:demo:check && pnpm check && pnpm typecheck && pnpm test && pnpm demo:build"
   },
   "devDependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
     "@stacks/clarinet-sdk": "3.23.1",
     "@stacks/transactions": "7.6.0",
     "@stacks/wallet-sdk": "7.6.0",

@@ -2,17 +2,22 @@
 
 ## Review target
 
-The Origin extension implementation is a local branch because this workspace has no authorized writable Leather fork.
+The Origin extension implementation is published to a writable fork while retaining
+`leather-io/mono` as upstream.
 
-| Item        | Value                                                           |
-| ----------- | --------------------------------------------------------------- |
-| Repository  | `/Users/alexander/Code/leather-origin-demo`                     |
-| Branch      | `agent/origin-three-scenario-flow`                              |
-| Base        | `d98bd9a61` (`leather-io/mono` development baseline)            |
-| Head        | `2f2dcaf02` (fresh mock-site connection and live scenario test) |
-| Review diff | `git diff d98bd9a61..2f2dcaf02`                                 |
+| Item                 | Value                                                              |
+| -------------------- | ------------------------------------------------------------------ |
+| Repository           | `/Users/alexander/Code/leather-origin-demo`                        |
+| Fork                 | `https://github.com/huth-stacks/leather-origin-demo`               |
+| Branch               | `agent/origin-visual-polish`                                       |
+| Upstream base        | `d98bd9a61` (`leather-io/mono` development baseline)               |
+| Head                 | `e6675e94d` (final approver redesign and adversarial-review fixes) |
+| Complete review diff | `git diff d98bd9a61..e6675e94d`                                    |
+| Layered fork review  | `https://github.com/huth-stacks/leather-origin-demo/pull/1`        |
 
-The range changes 12 extension files: 1,462 insertions and 49 deletions. It does not modify signing, transaction serialization, broadcast, key management, or account state.
+The complete range changes 25 files: 1,840 insertions and 51 deletions. It does not modify signing,
+transaction serialization, key management, or account state. The live screenshot journey uses the
+existing broadcast path once for the harmless Testnet fixture.
 
 ## Commit sequence
 
@@ -23,6 +28,8 @@ The range changes 12 extension files: 1,462 insertions and 49 deletions. It does
 5. `ddee4f3e2` — deterministic three-scenario browser coverage
 6. `102da3e86` — opt-in live mock-dapp browser flow
 7. `2f2dcaf02` — fresh-site Leather connection in the live flow
+8. `826686d4b` — native Leather approver-section redesign and advanced details
+9. `e6675e94d` — final visual, spacing, attribution, and exact-principal review fixes
 
 ## Security review questions
 
@@ -66,16 +73,24 @@ All paths above are under `apps/extension/src/app/features/rpc-stacks-transactio
 Run with Node 22 from the Leather repository.
 
 ```sh
+PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm format
 PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm lint
 PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm typecheck
 PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm --filter @leather.io/extension lint
 PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm --filter @leather.io/extension typecheck
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm --filter @leather.io/extension check-for-unused-exports
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm --filter @leather.io/extension test:unit src/app/features/rpc-stacks-transaction-request/stacks/origin/origin-registry-client.spec.ts
+PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm knip
+PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm --filter @leather.io/extension lint:unused-exports
+PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm --filter @leather.io/extension test:unit src/app/features/rpc-stacks-transaction-request/stacks/origin
 PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm --filter @leather.io/extension build:ext:test
 PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm --filter @leather.io/extension test:integration tests/specs/rpc-sip30-requests/rpc-stx-call-contract.spec.ts --project=chromium
+PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin ORIGIN_DEMO_URL=http://127.0.0.1:4173 pnpm --filter @leather.io/extension test:integration tests/specs/rpc-sip30-requests/origin-mock-dapp.spec.ts --project=chromium
 ```
 
-The final deterministic browser run passed all five cases. The opt-in fresh-site run against the local mock dapp and live Testnet registry passed connection plus all three provenance states in 13.5 seconds.
+The final targeted Origin suite passed 27 tests. The full extension unit suite passed 600 tests. The
+deterministic browser run passed all five cases, the Acme assertion journey passed against live
+Testnet, and the full screenshot journey passed with one approved harmless Testnet broadcast.
 
-Root lint retains four documented pre-existing `apps/web` failures, and root Knip retains its baseline unused `tools` findings. Extension lint, typecheck, unused-export checks, the targeted registry test, both builds, and the Origin browser suites pass.
+The branch author recorded `pnpm format`, extension lint and typecheck, the full extension test suite,
+and unused-export checks as green. Root web-app lint and Knip findings were reproduced identically
+without the Origin changes and remain documented baseline failures. Before an upstream PR, rebase
+onto current `leather-io/mono` `dev` and rerun every command required by Leather's root `AGENTS.md`.
