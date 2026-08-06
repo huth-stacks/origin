@@ -41,17 +41,13 @@ contract, or verdict. Origin establishes provenance claims, not contract or tran
 
 ## Deployment and integration state
 
-- `huth-stacks/origin` `main` contains the registry, Testnet fixtures, original transaction-lab demo,
-  and operational documentation through `d31e9b2`.
-- Origin PR #11 is the integration unit for the final Acme visual redesign, adversarial-review
-  fixes, consolidated handoff, and dated UX plan. Its Vercel checks were green before merge.
-- The public deployment may temporarily serve the older transaction-lab UI while Vercel promotes
-  the merged Acme build. If its page title is `Origin · Transaction Lab`, use the local Acme demo
-  until the production deployment completes.
-- The PR #11 Vercel preview is protected by Vercel SSO, so local review remains the unrestricted
-  fallback.
-- Leather PR #1 is the integration unit for the final native approver-section redesign. It targets
-  `agent/origin-three-scenario-flow` in the fork rather than upstream Leather.
+- `huth-stacks/origin` `main` contains the complete registry, Testnet fixtures, Acme demo,
+  consolidated handoff, and dated UX plan at `29bec1f`.
+- Origin PR #11 merged on August 6, 2026 after its Vercel checks and fresh live-Testnet browser
+  journey passed.
+- `https://origin-umber-six.vercel.app` serves the merged `Acme · Check in` build.
+- Leather PR #1 merged the final native approver-section redesign into
+  `agent/origin-three-scenario-flow` in the fork at `c91732064`. It did not modify upstream Leather.
 - No PR has been opened against `leather-io/mono`.
 - The Leather work started at upstream `dev` commit `d98bd9a61`; upstream `dev` is currently four
   commits ahead at `4976c2a75`. Rebase and full verification are required before an upstream PR.
@@ -89,10 +85,9 @@ violate the design.
 
 1. Run the dated UX review in `docs/ux-exercise-2026-08-06.md`.
 2. Resolve any findings in the repository that owns the affected surface.
-3. Confirm Origin PR #11 is merged and the Acme build is promoted to the public production URL.
-4. Consolidate the Leather branch stack, rebase it onto current upstream `dev`, and run Leather's
+3. Rebase the consolidated Leather staging branch onto current upstream `dev` and run Leather's
    complete required verification.
-5. Open an upstream Leather PR with `leather-review-manifest.md` as the review guide.
+4. Open an upstream Leather PR with `leather-review-manifest.md` as the review guide.
 
 Stacks Connect standardization, arbitrary claim discovery/indexing, and production attester
 governance remain post-hackathon work rather than unfinished proof-of-concept requirements.
