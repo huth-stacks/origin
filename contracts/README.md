@@ -26,9 +26,11 @@ Run `pnpm testnet:accounts` once to create an ignored `settings/Testnet.toml` an
 
 After funding the deployer from the official Testnet faucet, `pnpm testnet:fund-accounts` transfers 10 Testnet STX to each remaining fixture account. These tokens have no real value, but the command writes to Testnet and should only be run for the demo wallet.
 
-After the deployment plan confirms, `pnpm testnet:issue-attestations` publishes the trusted claim for the reference contract and the deliberately unrecognized claim for the second fixture. The unrecognized record contains attacker-selected display text so the wallet can prove that it never renders that text.
+Run `pnpm testnet:deploy-fixtures` to publish the registry and all three fixture contracts directly with Stacks.js. After those transactions confirm, `pnpm testnet:issue-attestations` publishes the trusted claim for the reference contract and the deliberately unrecognized claim for the second fixture. The unrecognized record contains attacker-selected display text so the wallet can prove that it never renders that text.
 
 The public principals, transaction IDs, and confirmation heights live in `deployments/testnet-fixtures.json`. Run `pnpm testnet:verify` without any mnemonic to compare the live contract sources with this checkout, validate both claims, confirm the known claim is current, and prove the lookalike uses the same contract name under a different deployer with no trusted claim.
+
+Stacks Testnet reset on August 6, 2026. The fixture manifest records the replacement deployments from burn height 2,745. The principals stayed stable because the same ignored disposable accounts were reused; every transaction ID and block height changed.
 
 ## Demo Target
 

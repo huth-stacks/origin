@@ -107,7 +107,7 @@ The site requests a call to an example contract attested as an Acme demo contrac
 Leather displays:
 
 > **Known origin: Acme**  
-> Trusted Test Attester says Acme is responsible for this exact contract.
+> Origin Testnet Attester says Acme is responsible for this exact contract.
 
 ### Scenario B: Unrecognized identity claim
 
@@ -241,20 +241,20 @@ Stacks post-conditions are consensus-enforced constraints on asset movements pro
 
 Origin and post-conditions therefore answer different questions:
 
-| Signal | Question answered |
-| --- | --- |
-| Origin | Who does a trusted attester say controls this exact principal? |
+| Signal          | Question answered                                                      |
+| --------------- | ---------------------------------------------------------------------- |
+| Origin          | Who does a trusted attester say controls this exact principal?         |
 | Post-conditions | What asset outflows will consensus permit this transaction to produce? |
-| Simulation | What is this transaction likely to do against current chain state? |
+| Simulation      | What is this transaction likely to do against current chain state?     |
 
 Leather must not combine these into a single safety verdict:
 
-| Origin state | Asset guard | Wallet interpretation |
-| --- | --- | --- |
-| Known origin | Restrictive post-conditions | Identified and asset-bounded, but not guaranteed safe |
-| Known origin | Allow mode | Identified but not comprehensively asset-bounded; retain the warning |
-| Unknown origin | Restrictive post-conditions | Unidentified but asset-bounded |
-| Unknown origin | Allow mode | Unidentified and weakly bounded; show both concerns |
+| Origin state   | Asset guard                 | Wallet interpretation                                                |
+| -------------- | --------------------------- | -------------------------------------------------------------------- |
+| Known origin   | Restrictive post-conditions | Identified and asset-bounded, but not guaranteed safe                |
+| Known origin   | Allow mode                  | Identified but not comprehensively asset-bounded; retain the warning |
+| Unknown origin | Restrictive post-conditions | Unidentified but asset-bounded                                       |
+| Unknown origin | Allow mode                  | Unidentified and weakly bounded; show both concerns                  |
 
 Implementation rules:
 

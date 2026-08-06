@@ -15,6 +15,7 @@
     "test": "vitest run",
     "test:report": "vitest run -- --coverage --costs",
     "testnet:accounts": "node scripts/create-testnet-accounts.ts",
+    "testnet:deploy-fixtures": "node scripts/deploy-testnet-fixtures.ts",
     "testnet:fund-accounts": "node scripts/fund-testnet-accounts.ts",
     "testnet:issue-attestations": "node scripts/issue-testnet-attestations.ts",
     "testnet:verify": "node scripts/verify-testnet-deployment.ts",

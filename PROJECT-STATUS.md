@@ -11,10 +11,10 @@ This file is the current handoff record. Product decisions remain canonical in
 
 Origin is one project with two intentionally separate Git repositories:
 
-| Responsibility                                                                                                   | Repository and local checkout                                                                                                                    | Current review target                                                                                           |
-| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
-| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`; active worktree `/Users/alexander/Code/origin-feat-demo-visual` | `feat/demo-visual-redesign` at `8b9251d`, [PR #11](https://github.com/huth-stacks/origin/pull/11)               |
-| Leather lookup, evaluator, approval UX, and extension tests                                                      | `huth-stacks/leather-origin-demo` at `/Users/alexander/Code/leather-origin-demo`, with `leather-io/mono` retained as upstream                    | `agent/origin-visual-polish` at `e6675e94d`, [PR #1](https://github.com/huth-stacks/leather-origin-demo/pull/1) |
+| Responsibility                                                                                                   | Repository and local checkout                                                                                                 | Current review target                                                                                             |
+| ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`                                               | `main`; the last merged product release is [PR #12](https://github.com/huth-stacks/origin/pull/12)                |
+| Leather lookup, evaluator, approval UX, and extension tests                                                      | `huth-stacks/leather-origin-demo` at `/Users/alexander/Code/leather-origin-demo`, with `leather-io/mono` retained as upstream | `agent/origin-demo-build`, based on the merged [PR #1](https://github.com/huth-stacks/leather-origin-demo/pull/1) |
 
 Leather remains separate because it is an upstream product monorepo. Vendoring its source here
 would obscure the review boundary and make future rebases harder. This repository consolidates the
@@ -34,6 +34,8 @@ not part of the active project.
 - Wallet UX for known, unrecognized, unknown, no-longer-valid, loading, and unavailable states.
 - An independent same-contract-name/different-deployer lookalike warning.
 - Advanced details showing the exact checked principal, attester, block heights, and registry.
+- Testnet Explorer links for the trusted attester and registry, making the evidence independently
+  inspectable from the approval screen.
 - Deterministic unit, component, and browser coverage plus an opt-in live Testnet journey.
 
 The requesting application never supplies the displayed organization, attester policy, canonical
@@ -58,9 +60,12 @@ Fresh checks on August 6, 2026:
 
 - Origin `pnpm verify`: passed, including format checks, two Clarity contracts, typecheck, 17 tests,
   and the production demo build.
-- Origin `pnpm testnet:verify`: passed at burn height `202852`, confirming four contracts, two claims,
-  and the unattested same-name/different-deployer fixture.
+- Stacks Testnet reset on August 6, invalidating the original disposable fixtures. The canonical
+  fixtures were redeployed and re-attested without changing the demo identities.
+- Origin `pnpm testnet:verify`: passed at burn height `2745`, confirming four contracts, two claims,
+  and the unattested same-name/different-deployer fixture after the reset.
 - Leather targeted Origin suite: 27 of 27 tests passed across evaluator, registry client, and layout.
+- The live Acme/Leather/Testnet three-scenario journey passed against the restored fixtures.
 
 Recorded final-branch evidence:
 
@@ -73,18 +78,11 @@ Clarinet reports three expected permissionless-input analyzer warnings for `subj
 and `role`. `contracts/README.md` documents why treating those fields as intrinsically trusted would
 violate the design.
 
-## Working-tree state at handoff
-
-- Origin `main`: clean and synchronized with `origin/main`.
-- Origin `feat/demo-visual-redesign`: clean and synchronized with its remote branch before this
-  documentation update.
-- Leather `agent/origin-visual-polish`: synchronized with its remote branch; `output/` is untracked
-  review evidence only and contains no source changes.
-
 ## Immediate next actions
 
-1. Run the dated UX review in `docs/ux-exercise-2026-08-06.md`.
-2. Resolve any findings in the repository that owns the affected surface.
+1. Review the scrollable UX storybook at `docs/storybook/index.html` and run the dated UX review in
+   `docs/ux-exercise-2026-08-06.md` when hands-on testing is convenient.
+2. Use `docs/testnet-attester-and-four-day-roadmap.md` to choose the next Testnet product slice.
 3. Rebase the consolidated Leather staging branch onto current upstream `dev` and run Leather's
    complete required verification.
 4. Open an upstream Leather PR with `leather-review-manifest.md` as the review guide.

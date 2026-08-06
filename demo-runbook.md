@@ -91,7 +91,7 @@ Leather must show:
 
 - `Known origin`
 - `Acme`
-- `Trusted Test Attester`
+- `Origin Testnet Attester`
 - `ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action`
 - The explicit statement that the identity claim does not guarantee contract or transaction safety
 - The separate Deny-mode post-condition statement that only fees can move

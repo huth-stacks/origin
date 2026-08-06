@@ -8,6 +8,7 @@ This repository contains the hackathon product plan, demo application, Origin re
 
 - [Current project status](PROJECT-STATUS.md)
 - [Scrollable UX storybook](docs/storybook/index.html)
+- [Testnet attester and four-day roadmap](docs/testnet-attester-and-four-day-roadmap.md)
 - [UX exercise plan for August 6, 2026](docs/ux-exercise-2026-08-06.md)
 - [Agent project guide](AGENTS.md)
 - [Hackathon plan](origin-hackathon-plan.md)

@@ -134,7 +134,7 @@ Use Chrome with the unpacked extension from
 
 - Select `Check in` on the `acme.example` weekly card.
 - Confirm the exact `acme-action` principal, `Known origin`, `Acme`, and
-  `Trusted Test Attester` are visible.
+  `Origin Testnet Attester` are visible.
 - Confirm the safety-limitation sentence and the independent deny-mode post-condition message.
 - Open Advanced details and inspect subject, attester, issued block, expiry block, and registry.
 - Reject once and verify `Declined in Leather. Nothing was signed.` appears under the correct card.
