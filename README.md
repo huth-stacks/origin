@@ -40,7 +40,7 @@ This secret-free check compares every live source file with this checkout, reads
 
 ## Run the Acme demo
 
-The final Acme redesign was integrated through [Origin PR #11](https://github.com/huth-stacks/origin/pull/11). Its preview is protected by Vercel SSO, and the public deployment may briefly lag the merged source. For an unrestricted review of the exact checkout, build and locally load the Origin Leather extension, then run the Acme demo locally.
+The final Acme redesign was integrated through [Origin PR #11](https://github.com/huth-stacks/origin/pull/11) and is live at [origin-umber-six.vercel.app](https://origin-umber-six.vercel.app). For a review pinned to the exact checkout, build and locally load the Origin Leather extension, then run the Acme demo locally.
 
 Start the current demo from the `feat/demo-visual-redesign` worktree:
 
