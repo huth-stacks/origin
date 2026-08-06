@@ -6,6 +6,8 @@ This repository contains the hackathon product plan, demo application, Origin re
 
 ## Start here
 
+- [Current project status](PROJECT-STATUS.md)
+- [UX exercise plan for August 6, 2026](docs/ux-exercise-2026-08-06.md)
 - [Agent project guide](AGENTS.md)
 - [Hackathon plan](origin-hackathon-plan.md)
 - [Executable demo plan](demo-plan.md)
@@ -36,13 +38,14 @@ pnpm testnet:verify
 
 This secret-free check compares every live source file with this checkout, reads both example claims, checks the current burn height against the trusted claim's expiration, and confirms the same-name lookalike has a different deployer and no trusted claim.
 
-## Run the mock dapp
+## Run the Acme demo
 
-Build and locally load the Origin Leather extension first, then open the [hosted Origin transaction lab](https://origin-umber-six.vercel.app) in that browser profile.
+The final Acme redesign was integrated through [Origin PR #11](https://github.com/huth-stacks/origin/pull/11). Its preview is protected by Vercel SSO, and the public deployment may briefly lag the merged source. For an unrestricted review of the exact checkout, build and locally load the Origin Leather extension, then run the Acme demo locally.
 
-For a fully local fallback, start the transaction lab from this checkout:
+Start the current demo from the `feat/demo-visual-redesign` worktree:
 
 ```sh
+cd /Users/alexander/Code/origin-feat-demo-visual
 pnpm demo:dev
 ```
 
