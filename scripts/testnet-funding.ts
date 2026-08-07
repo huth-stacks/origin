@@ -2,6 +2,7 @@ import { fetchJsonWithTimeout } from "../demo/src/fetch-with-timeout.ts";
 import type { PreparedTransactionRecord } from "./testnet-transaction-utils.ts";
 
 export const testnetRoleTargetBalance = 10_000_000n;
+export const testnetFundingTransferFee = 1_000n;
 
 export function fundingJournalPrefix(sender: string, recipient: string) {
   return `fund:${sender}:${recipient}`;
@@ -82,6 +83,7 @@ export function planFundingTopUp(
   return {
     journalKey: fundingJournalKey(sender, recipient, completedSequenceCount),
     amount,
+    fee: testnetFundingTransferFee,
   };
 }
 
@@ -136,4 +138,24 @@ export function readJournaledFundingAmount(
   if (amount <= 0n)
     throw new Error(`Invalid funding amount for ${expectedJournalKey}`);
   return amount;
+}
+
+export function readJournaledFundingFee(
+  intent: unknown,
+  expectedJournalKey: string,
+) {
+  if (
+    typeof intent !== "object" ||
+    intent === null ||
+    !("journalKey" in intent) ||
+    intent.journalKey !== expectedJournalKey ||
+    !("fee" in intent) ||
+    typeof intent.fee !== "string" ||
+    !/^\d+$/.test(intent.fee)
+  )
+    throw new Error(`Invalid funding fee for ${expectedJournalKey}`);
+  const fee = BigInt(intent.fee);
+  if (fee <= 0n)
+    throw new Error(`Invalid funding fee for ${expectedJournalKey}`);
+  return fee;
 }

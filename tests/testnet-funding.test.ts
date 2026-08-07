@@ -8,6 +8,7 @@ import {
   orderFundingJournals,
   planFundingTopUp,
   readJournaledFundingAmount,
+  readJournaledFundingFee,
   readStxBalance,
 } from "../scripts/testnet-funding";
 
@@ -51,6 +52,7 @@ describe(planFundingTopUp.name, () => {
     expect(planFundingTopUp("STSENDER", "STRECIPIENT", 9_000_000n, 1)).toEqual({
       journalKey: "fund:STSENDER:STRECIPIENT:1",
       amount: 1_000_000n,
+      fee: 1_000n,
     });
   });
 
@@ -106,6 +108,22 @@ describe(readJournaledFundingAmount.name, () => {
         fundingJournalKey("STSENDER", "STRECIPIENT", 0),
       ),
     ).toThrow("Invalid funding journal");
+  });
+});
+
+describe(readJournaledFundingFee.name, () => {
+  test("recovers the exact fixed fee from the semantic funding key", () => {
+    const key = fundingJournalKey("STSENDER", "STRECIPIENT", 0);
+    expect(readJournaledFundingFee({ journalKey: key, fee: "1000" }, key)).toBe(
+      1_000n,
+    );
+  });
+
+  test("rejects a funding journal without its reviewed fee", () => {
+    const key = fundingJournalKey("STSENDER", "STRECIPIENT", 0);
+    expect(() => readJournaledFundingFee({ journalKey: key }, key)).toThrow(
+      "Invalid funding fee",
+    );
   });
 });
 

@@ -15,6 +15,7 @@ import {
   orderFundingJournals,
   planFundingTopUp,
   readJournaledFundingAmount,
+  readJournaledFundingFee,
   readStxBalance,
   testnetRoleTargetBalance,
 } from "./testnet-funding.ts";
@@ -97,11 +98,13 @@ for (const recipient of recipients) {
       sequence,
     );
     const amount = readJournaledFundingAmount(journaled.intent, journalKey);
+    const fee = readJournaledFundingFee(journaled.intent, journalKey);
     if (broadcast) {
       const deployer = await loadTestnetAccount("registry_deployer");
       const transaction = await makeSTXTokenTransfer({
         recipient: recipient.address,
         amount,
+        fee,
         nonce,
         senderKey: deployer.account.stxPrivateKey,
         network: "testnet",
@@ -153,7 +156,7 @@ for (const recipient of recipients) {
     );
     continue;
   }
-  const { amount, journalKey } = topUp;
+  const { amount, fee, journalKey } = topUp;
   const nonce = allocateNonce();
   const intent = {
     journalKey,
@@ -162,6 +165,7 @@ for (const recipient of recipients) {
     recipient: recipient.address,
     targetBalance: testnetRoleTargetBalance.toString(),
     amount: amount.toString(),
+    fee: fee.toString(),
     nonce: nonce.toString(),
   };
   if (!broadcast) {
@@ -172,6 +176,7 @@ for (const recipient of recipients) {
   const transaction = await makeSTXTokenTransfer({
     recipient: recipient.address,
     amount,
+    fee,
     nonce,
     senderKey: deployer.account.stxPrivateKey,
     network: "testnet",

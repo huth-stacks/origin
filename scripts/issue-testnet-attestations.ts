@@ -63,6 +63,7 @@ const currentManifest = JSON.parse(
 ) as CurrentManifest;
 const registryAddress = publicAccounts.registry_deployer.address;
 const registryName = "origin-registry-v2";
+const issuanceFee = 10_000n;
 
 const networkInfoResponse = await fetchJsonWithTimeout(
   fetch,
@@ -192,6 +193,7 @@ for (const issuance of issuances) {
     expiresAt: issuance.expiresAt,
     requestId: issuance.request.value,
     nonce: nonce.toString(),
+    fee: issuanceFee.toString(),
   };
   if (!broadcast) {
     console.log(JSON.stringify({ state: "dry-run", ...intent }));
@@ -211,6 +213,7 @@ for (const issuance of issuances) {
       issuance.request,
     ],
     nonce,
+    fee: issuanceFee,
     senderKey: signer.account.stxPrivateKey,
     network: "testnet",
   });
