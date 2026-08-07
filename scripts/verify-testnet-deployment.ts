@@ -13,6 +13,7 @@ interface ClaimFixture {
   attester: string;
   issuerName: string;
   role: string;
+  issuedAt: number;
   expiresAt: number;
   txId: string;
 }
@@ -68,6 +69,7 @@ async function verifyClaim(fixture: ContractFixture & { claim: ClaimFixture }) {
   const claim = value.value.value;
   assert.deepEqual(claim['issuer-name'], Cl.stringAscii(fixture.claim.issuerName));
   assert.deepEqual(claim.role, Cl.stringAscii(fixture.claim.role));
+  assert.deepEqual(claim['issued-at'], Cl.uint(fixture.claim.issuedAt));
   assert.deepEqual(claim['expires-at'], Cl.uint(fixture.claim.expiresAt));
   assert.deepEqual(claim.revoked, Cl.bool(false));
 }

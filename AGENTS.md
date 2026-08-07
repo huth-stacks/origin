@@ -9,16 +9,17 @@ Use these documents in this order:
 1. [README](README.md) — project boundary and starting point.
 2. [Current project status](PROJECT-STATUS.md) — repositories, active branches, deployments, reviews, verification, and immediate next actions.
 3. [Testnet attester and four-day roadmap](docs/testnet-attester-and-four-day-roadmap.md) — current issuer mechanics, trust boundary, future attester design, and the recommended short build.
-4. [Hackathon product plan](origin-hackathon-plan.md) — canonical product, trust, scope, schema, and UX decisions.
-5. [Executable demo plan](demo-plan.md) — demo sequence, data flow, code ownership, delivery phases, and acceptance criteria.
-6. [Demo runbook](demo-runbook.md) — exact build, connection, presentation, live verification, and reset procedure.
-7. [Dated UX exercise plan](docs/ux-exercise-2026-08-06.md) — today's complete live and deterministic experience review.
-8. [Leather review manifest](leather-review-manifest.md) — exact local commit range, review boundary, security invariants, and verification evidence for the extension integration.
-9. [Repository map](repository-map.md) — local checkouts, upstream repositories, and modification boundaries.
-10. [Leather baseline](leather-baseline.md) — known-good toolchain, build, tests, runtime smoke test, and pre-existing warnings.
-11. [Leather UI spike](leather-ui-spike.md) — completed approval-surface experiment, verification results, and the boundary between the hardcoded spike and real implementation.
-12. [Clarity contracts](contracts/README.md) — registry behavior, fixture contract, verification commands, and the intentional permissionless-input analyzer warning.
-13. [Original proposal](contract-provenance-certificate-plan.md) — historical source only. It is intentionally superseded by the smaller hackathon plan and must not silently expand scope.
+4. [Domain-control fetch security](docs/domain-control-fetch-security.md) — required SSRF, redirect, DNS-rebinding, response, signer, and test controls for the future attester.
+5. [Hackathon product plan](origin-hackathon-plan.md) — canonical product, trust, scope, schema, and UX decisions.
+6. [Executable demo plan](demo-plan.md) — demo sequence, data flow, code ownership, delivery phases, and acceptance criteria.
+7. [Demo runbook](demo-runbook.md) — exact build, connection, presentation, live verification, and reset procedure.
+8. [Dated UX exercise plan](docs/ux-exercise-2026-08-06.md) — today's complete live and deterministic experience review.
+9. [Leather review manifest](leather-review-manifest.md) — exact local commit range, review boundary, security invariants, and verification evidence for the extension integration.
+10. [Repository map](repository-map.md) — local checkouts, upstream repositories, and modification boundaries.
+11. [Leather baseline](leather-baseline.md) — known-good toolchain, build, tests, runtime smoke test, and pre-existing warnings.
+12. [Leather UI spike](leather-ui-spike.md) — completed approval-surface experiment, verification results, and the boundary between the hardcoded spike and real implementation.
+13. [Clarity contracts](contracts/README.md) — registry behavior, fixture contract, verification commands, and the intentional permissionless-input analyzer warning.
+14. [Original proposal](contract-provenance-certificate-plan.md) — historical source only. It is intentionally superseded by the smaller hackathon plan and must not silently expand scope.
 
 When documents disagree, prefer this order: the user's latest instruction, `origin-hackathon-plan.md`, `demo-plan.md`, then the remaining references. Update the canonical document when a product decision changes instead of recording contradictory decisions elsewhere.
 

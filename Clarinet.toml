@@ -14,6 +14,16 @@ path = "contracts/origin-registry.clar"
 clarity_version = 5
 epoch = "3.4"
 
+[contracts.origin-registry-v2]
+path = "contracts/origin-registry-v2.clar"
+clarity_version = 5
+epoch = "3.4"
+
+[contracts.origin-registry-caller]
+path = "contracts/origin-registry-caller.clar"
+clarity_version = 5
+epoch = "3.4"
+
 [contracts.origin-demo-target]
 path = "contracts/origin-demo-target.clar"
 clarity_version = 5

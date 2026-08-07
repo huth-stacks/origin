@@ -18,15 +18,17 @@ The public surface is intentionally limited to:
 
 Issuance replaces only the sender's record for the exact subject. Revocation changes only the sender's namespace. Both writes emit structured print events and move no assets.
 
+`origin-registry-v2.clar` is the single planned migration bundle and is not the currently deployed registry. It adds a direct-call guard requiring `tx-sender` and `contract-caller` to match, persists `revoked-at`, and emits full record data for both issuance and revocation so an external event index can reconstruct lifecycle history. Reissuing a claim replaces the prior record, sets `revoked` to false, and clears `revoked-at` to `none`. `origin-registry-caller.clar` exists only to prove the write guard in Simnet tests and must not be deployed as a fixture.
+
 Both contracts pin Clarity 5 to Stacks epoch 3.4 in `Clarinet.toml`; deployment plans must retain that explicit epoch.
 
 ## Testnet Accounts
 
-Run `pnpm testnet:accounts` once to create an ignored `settings/Testnet.toml` and an ignored public-address manifest. The command derives four dedicated, disposable Testnet accounts from one new mnemonic: registry/known-contract deployer, trusted attester, unrecognized issuer, and lookalike deployer. It refuses to overwrite either file. Never commit `settings/Testnet.toml`.
+Run `pnpm testnet:accounts` once to create an ignored `settings/Testnet.toml` and an ignored public-address manifest. The command creates four dedicated, disposable Testnet accounts with four independent seed phrases: registry/known-contract deployer, trusted attester, unrecognized issuer, and lookalike deployer. It refuses to overwrite either file. Never commit `settings/Testnet.toml`.
 
 After funding the deployer from the official Testnet faucet, `pnpm testnet:fund-accounts` transfers 10 Testnet STX to each remaining fixture account. These tokens have no real value, but the command writes to Testnet and should only be run for the demo wallet.
 
-Run `pnpm testnet:deploy-fixtures` to publish the registry and all three fixture contracts directly with Stacks.js. After those transactions confirm, `pnpm testnet:issue-attestations` publishes the trusted claim for the reference contract and the deliberately unrecognized claim for the second fixture. The unrecognized record contains attacker-selected display text so the wallet can prove that it never renders that text.
+Run `pnpm testnet:deploy-fixtures` to publish the registry and all three fixture contracts directly with Stacks.js. The script requires an explicit broadcast flag through the package command, refuses principals that already exist, and treats a node rejection as failure even though rejected responses also contain a transaction ID. After those transactions confirm, `pnpm testnet:issue-attestations` publishes the trusted claim for the reference contract and the deliberately unrecognized claim for the second fixture. The unrecognized record contains attacker-selected display text so the wallet can prove that it never renders that text.
 
 The public principals, transaction IDs, and confirmation heights live in `deployments/testnet-fixtures.json`. Run `pnpm testnet:verify` without any mnemonic to compare the live contract sources with this checkout, validate both claims, confirm the known claim is current, and prove the lookalike uses the same contract name under a different deployer with no trusted claim.
 
