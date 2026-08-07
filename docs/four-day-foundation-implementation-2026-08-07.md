@@ -18,7 +18,7 @@ The consolidated G1 review identified six issues, all fixed before preparation o
 
 1. The verifier accepts only schema 1 or 2, reaches the v2 getter/tuple branches, checks the exclusive `validUntilBurnBlock` boundary, and requires/verifies the domain-proof, lifecycle, and short-expiry fixtures in every v2 manifest.
 2. Issuance request IDs derive from a persisted reviewed intent ID plus exact issuance arguments. Retrying the same intent recovers the same IDs and semantic transaction journals; reissue or renewal requires a fresh intent ID.
-3. Funding journals form a contiguous sequence per `{sender, recipient}`. Every existing attempt must confirm before the script re-reads the live balance; any post-fee shortfall opens the next journal sequence and tops up only to the packet minimum. Pending or uncertain attempts remain idempotent and block a new transfer.
+3. Funding journals form a contiguous sequence per `{sender, recipient}`. Every existing attempt must confirm before the script re-reads the live balance; any post-fee shortfall opens the next journal sequence and tops up only to the packet minimum. Pending or uncertain attempts remain idempotent and block a new transfer. The funding script scans the complete `fund:` namespace and aborts on a legacy or malformed unsequenced key instead of silently ignoring it.
 4. Deployment and transaction preflights have hard per-request deadlines covering both headers and response-body consumption. The cursor index has both per-request and total pagination budgets. Direct contract, balance, network-info, and verifier HTTP reads are bounded as well.
 5. The domain-proof contract rejects forwarded calls and uses insert-once proof records. Tests prove a failed overwrite retains the original evidence.
 6. The v2 manifest validator requires request IDs and trusted-policy compliance for canonical, lifecycle, and expiry claims, and requires the expiry fixture to be shorter-lived than the canonical claim.
@@ -91,7 +91,7 @@ Leather:
 Before any external write, prepare and review all of the following together:
 
 1. secure backup confirmation for the seven private local account files;
-2. read-only balances and the exact funding amounts/fees/nonces;
+2. read-only balances and the exact funding amounts/fees/nonces, plus a first-run operator check confirming `deployments/testnet-transactions/` is absent or empty (verified absent on August 7, 2026); later runs must reconcile every existing journal rather than require emptiness;
 3. exact contract principals, sources, hashes, fees, nonces, and locally computed transaction IDs;
 4. exact canonical and short-expiry integers with current burn-height arithmetic;
 5. the complete issuance argument set and request IDs;

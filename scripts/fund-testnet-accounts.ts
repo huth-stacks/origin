@@ -9,6 +9,7 @@ import {
   testnetAccountRoles,
 } from "./testnet-account-utils.ts";
 import {
+  assertSequencedFundingJournalKeys,
   fundingJournalKey,
   fundingJournalPrefix,
   orderFundingJournals,
@@ -45,6 +46,9 @@ const recipients = testnetAccountRoles
       journalPrefix: fundingJournalPrefix(deployerAddress, address),
     };
   });
+const fundingJournals =
+  await findPreparedTransactionsByJournalKeyPrefix("fund:");
+assertSequencedFundingJournalKeys(fundingJournals);
 const journaledByRecipient = new Map(
   await Promise.all(
     recipients.map(
@@ -52,8 +56,15 @@ const journaledByRecipient = new Map(
         [
           recipient.address,
           orderFundingJournals(
-            await findPreparedTransactionsByJournalKeyPrefix(
-              `${recipient.journalPrefix}:`,
+            fundingJournals.filter(
+              (record) =>
+                typeof record.intent === "object" &&
+                record.intent !== null &&
+                "journalKey" in record.intent &&
+                typeof record.intent.journalKey === "string" &&
+                record.intent.journalKey.startsWith(
+                  `${recipient.journalPrefix}:`,
+                ),
             ),
             recipient.journalPrefix,
           ),

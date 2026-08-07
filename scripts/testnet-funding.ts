@@ -17,6 +17,27 @@ export function fundingJournalKey(
   return `${fundingJournalPrefix(sender, recipient)}:${sequence}`;
 }
 
+export function assertSequencedFundingJournalKeys(
+  records: readonly PreparedTransactionRecord[],
+) {
+  for (const record of records) {
+    const journalKey =
+      typeof record.intent === "object" &&
+      record.intent !== null &&
+      "journalKey" in record.intent &&
+      typeof record.intent.journalKey === "string"
+        ? record.intent.journalKey
+        : undefined;
+    if (
+      journalKey === undefined ||
+      !/^fund:[^:]+:[^:]+:(0|[1-9]\d*)$/.test(journalKey)
+    )
+      throw new Error(
+        `Unsupported funding journal key${journalKey ? `: ${journalKey}` : ""}; reconcile it before funding`,
+      );
+  }
+}
+
 export function orderFundingJournals(
   records: readonly PreparedTransactionRecord[],
   prefix: string,

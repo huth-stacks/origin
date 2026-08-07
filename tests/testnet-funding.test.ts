@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  assertSequencedFundingJournalKeys,
   fundingAmountForBalance,
   fundingJournalKey,
   fundingJournalPrefix,
@@ -9,6 +10,30 @@ import {
   readJournaledFundingAmount,
   readStxBalance,
 } from "../scripts/testnet-funding";
+
+describe(assertSequencedFundingJournalKeys.name, () => {
+  const record = (journalKey: string) => ({
+    state: "signed" as const,
+    txId: "tx-id",
+    serializedTransaction: "00",
+    intent: { journalKey, nonce: "0" },
+    path: "journal.local.json",
+  });
+
+  test("accepts the sequenced funding journal format", () => {
+    expect(() =>
+      assertSequencedFundingJournalKeys([
+        record("fund:STSENDER:STRECIPIENT:0"),
+      ]),
+    ).not.toThrow();
+  });
+
+  test("fails loudly on a legacy unsequenced funding journal", () => {
+    expect(() =>
+      assertSequencedFundingJournalKeys([record("fund:STSENDER:STRECIPIENT")]),
+    ).toThrow("reconcile it before funding");
+  });
+});
 
 describe(fundingAmountForBalance.name, () => {
   test.each([
