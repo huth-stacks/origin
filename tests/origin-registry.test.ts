@@ -17,28 +17,35 @@ const contractSubject = Cl.contractPrincipal(deployer, 'origin-demo-target');
 
 function issueAttestation(
   attester: string,
-  subject: ReturnType<typeof Cl.principal> | ReturnType<typeof Cl.contractPrincipal>,
+  subject:
+    ReturnType<typeof Cl.principal> | ReturnType<typeof Cl.contractPrincipal>,
   issuerName = 'Acme',
   role = 'Demo contract',
-  expiresAt = simnet.burnBlockHeight + 100
+  expiresAt = simnet.burnBlockHeight + 100,
 ) {
   return simnet.callPublicFn(
     'origin-registry',
     'issue-attestation',
-    [subject, Cl.stringAscii(issuerName), Cl.stringAscii(role), Cl.uint(expiresAt)],
-    attester
+    [
+      subject,
+      Cl.stringAscii(issuerName),
+      Cl.stringAscii(role),
+      Cl.uint(expiresAt),
+    ],
+    attester,
   );
 }
 
 function getAttestation(
   attester: string,
-  subject: ReturnType<typeof Cl.principal> | ReturnType<typeof Cl.contractPrincipal>
+  subject:
+    ReturnType<typeof Cl.principal> | ReturnType<typeof Cl.contractPrincipal>,
 ) {
   return simnet.callReadOnlyFn(
     'origin-registry',
     'get-attestation',
     [Cl.principal(attester), subject],
-    deployer
+    deployer,
   );
 }
 
@@ -48,7 +55,7 @@ describe('origin-registry', () => {
 
     expect(receipt.result).toBeOk(Cl.bool(true));
     expect(receipt.events).toHaveLength(1);
-    expect(receipt.events.map(event => event.event)).toEqual(['print_event']);
+    expect(receipt.events.map((event) => event.event)).toEqual(['print_event']);
     expect(getAttestation(attesterA, contractSubject).result).toBeSome(
       Cl.tuple({
         'issuer-name': Cl.stringAscii('Acme'),
@@ -56,7 +63,7 @@ describe('origin-registry', () => {
         'issued-at': Cl.uint(simnet.burnBlockHeight),
         'expires-at': Cl.uint(simnet.burnBlockHeight + 100),
         revoked: Cl.bool(false),
-      })
+      }),
     );
   });
 
@@ -71,7 +78,7 @@ describe('origin-registry', () => {
         'issued-at': Cl.uint(simnet.burnBlockHeight),
         'expires-at': Cl.uint(simnet.burnBlockHeight + 100),
         revoked: Cl.bool(false),
-      })
+      }),
     );
     expect(getAttestation(attesterB, contractSubject).result).toBeSome(
       Cl.tuple({
@@ -80,7 +87,7 @@ describe('origin-registry', () => {
         'issued-at': Cl.uint(simnet.burnBlockHeight),
         'expires-at': Cl.uint(simnet.burnBlockHeight + 100),
         revoked: Cl.bool(false),
-      })
+      }),
     );
   });
 
@@ -90,7 +97,7 @@ describe('origin-registry', () => {
       'origin-registry',
       'revoke-attestation',
       [contractSubject],
-      attesterA
+      attesterA,
     );
     issueAttestation(attesterA, contractSubject, 'Acme', 'Current role');
 
@@ -102,7 +109,7 @@ describe('origin-registry', () => {
         'issued-at': Cl.uint(simnet.burnBlockHeight),
         'expires-at': Cl.uint(simnet.burnBlockHeight + 100),
         revoked: Cl.bool(false),
-      })
+      }),
     );
   });
 
@@ -114,12 +121,12 @@ describe('origin-registry', () => {
       'origin-registry',
       'revoke-attestation',
       [contractSubject],
-      attesterA
+      attesterA,
     );
 
     expect(receipt.result).toBeOk(Cl.bool(true));
     expect(receipt.events).toHaveLength(1);
-    expect(receipt.events.map(event => event.event)).toEqual(['print_event']);
+    expect(receipt.events.map((event) => event.event)).toEqual(['print_event']);
     const attesterARecord = getAttestation(attesterA, contractSubject).result;
     const attesterBRecord = getAttestation(attesterB, contractSubject).result;
     expect(attesterARecord).toBeSome(
@@ -129,7 +136,7 @@ describe('origin-registry', () => {
         'issued-at': Cl.uint(simnet.burnBlockHeight),
         'expires-at': Cl.uint(simnet.burnBlockHeight + 100),
         revoked: Cl.bool(true),
-      })
+      }),
     );
     expect(attesterBRecord).toBeSome(
       Cl.tuple({
@@ -138,7 +145,7 @@ describe('origin-registry', () => {
         'issued-at': Cl.uint(simnet.burnBlockHeight),
         'expires-at': Cl.uint(simnet.burnBlockHeight + 100),
         revoked: Cl.bool(false),
-      })
+      }),
     );
   });
 
@@ -148,11 +155,33 @@ describe('origin-registry', () => {
       contractSubject,
       'Acme',
       'Demo contract',
-      simnet.burnBlockHeight
+      simnet.burnBlockHeight,
     );
 
     expect(receipt.result).toBeErr(Cl.uint(400));
     expect(getAttestation(attesterA, contractSubject).result).toBeNone();
+  });
+
+  test('retains an expired record for consumers to evaluate against burn height', () => {
+    const issuedAt = simnet.burnBlockHeight;
+    issueAttestation(
+      attesterA,
+      contractSubject,
+      'Acme',
+      'Demo contract',
+      issuedAt + 1,
+    );
+    simnet.mineEmptyBlocks(1);
+
+    expect(getAttestation(attesterA, contractSubject).result).toBeSome(
+      Cl.tuple({
+        'issuer-name': Cl.stringAscii('Acme'),
+        role: Cl.stringAscii('Demo contract'),
+        'issued-at': Cl.uint(issuedAt),
+        'expires-at': Cl.uint(issuedAt + 1),
+        revoked: Cl.bool(false),
+      }),
+    );
   });
 
   test('returns not found when the sender has no record to revoke', () => {
@@ -160,7 +189,7 @@ describe('origin-registry', () => {
       'origin-registry',
       'revoke-attestation',
       [contractSubject],
-      attesterA
+      attesterA,
     );
 
     expect(receipt.result).toBeErr(Cl.uint(404));
@@ -177,7 +206,7 @@ describe('origin-registry', () => {
         'issued-at': Cl.uint(simnet.burnBlockHeight),
         'expires-at': Cl.uint(simnet.burnBlockHeight + 100),
         revoked: Cl.bool(false),
-      })
+      }),
     );
   });
 });

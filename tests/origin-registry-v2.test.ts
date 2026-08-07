@@ -134,6 +134,36 @@ describe("origin-registry-v2", () => {
     );
   });
 
+  test("does not emit a second event when an already-revoked record is revoked again", () => {
+    issueAttestation();
+    expect(revokeAttestation().result).toBeOk(Cl.bool(true));
+
+    const receipt = revokeAttestation();
+
+    expect(receipt.result).toBeOk(Cl.bool(false));
+    expect(receipt.events).toHaveLength(0);
+  });
+
+  test.each([
+    ["issuer name", "", "Demo contract"],
+    ["role", "Acme", ""],
+  ])("rejects an empty %s", (_, issuerName, role) => {
+    const receipt = simnet.callPublicFn(
+      "origin-registry-v2",
+      "issue-attestation",
+      [
+        contractSubject,
+        Cl.stringAscii(issuerName),
+        Cl.stringAscii(role),
+        Cl.uint(simnet.burnBlockHeight + 100),
+      ],
+      attester,
+    );
+
+    expect(receipt.result).toBeErr(Cl.uint(422));
+    expect(getAttestation().result).toBeNone();
+  });
+
   test("rejects issue calls forwarded by another contract", () => {
     const receipt = simnet.callPublicFn(
       "origin-registry-caller",

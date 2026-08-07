@@ -1,6 +1,7 @@
 (define-constant ERR_INVALID_EXPIRATION (err u400))
 (define-constant ERR_DIRECT_CALL_REQUIRED (err u403))
 (define-constant ERR_NOT_FOUND (err u404))
+(define-constant ERR_EMPTY_DISPLAY_FIELD (err u422))
 
 (define-map attestations
   {
@@ -26,6 +27,8 @@
   (begin
     (asserts! (is-eq tx-sender contract-caller) ERR_DIRECT_CALL_REQUIRED)
     (asserts! (> expires-at burn-block-height) ERR_INVALID_EXPIRATION)
+    (asserts! (> (len issuer-name) u0) ERR_EMPTY_DISPLAY_FIELD)
+    (asserts! (> (len role) u0) ERR_EMPTY_DISPLAY_FIELD)
     (map-set attestations {
       attester: tx-sender,
       subject: subject,
@@ -60,25 +63,28 @@
         subject: subject,
       }))
       (match (map-get? attestations key)
-        attestation (begin
-          (map-set attestations key
-            (merge attestation {
+        attestation (if (get revoked attestation)
+          (ok false)
+          (begin
+            (map-set attestations key
+              (merge attestation {
+                revoked: true,
+                revoked-at: (some burn-block-height),
+              })
+            )
+            (print {
+              event: "origin-attestation-revoked",
+              attester: tx-sender,
+              subject: subject,
+              issuer-name: (get issuer-name attestation),
+              role: (get role attestation),
+              issued-at: (get issued-at attestation),
+              expires-at: (get expires-at attestation),
               revoked: true,
               revoked-at: (some burn-block-height),
             })
+            (ok true)
           )
-          (print {
-            event: "origin-attestation-revoked",
-            attester: tx-sender,
-            subject: subject,
-            issuer-name: (get issuer-name attestation),
-            role: (get role attestation),
-            issued-at: (get issued-at attestation),
-            expires-at: (get expires-at attestation),
-            revoked: true,
-            revoked-at: (some burn-block-height),
-          })
-          (ok true)
         )
         ERR_NOT_FOUND
       )

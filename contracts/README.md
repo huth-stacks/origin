@@ -18,9 +18,11 @@ The public surface is intentionally limited to:
 
 Issuance replaces only the sender's record for the exact subject. Revocation changes only the sender's namespace. Both writes emit structured print events and move no assets.
 
-`origin-registry-v2.clar` is the single planned migration bundle and is not the currently deployed registry. It adds a direct-call guard requiring `tx-sender` and `contract-caller` to match, persists `revoked-at`, and emits full record data for both issuance and revocation so an external event index can reconstruct lifecycle history. Reissuing a claim replaces the prior record, sets `revoked` to false, and clears `revoked-at` to `none`. `origin-registry-caller.clar` exists only to prove the write guard in Simnet tests and must not be deployed as a fixture.
+`origin-registry-v2.clar` is the single planned migration bundle and is not the currently deployed registry. It adds a direct-call guard requiring `tx-sender` and `contract-caller` to match, rejects empty display fields, persists `revoked-at`, and emits full record data for both issuance and revocation so an external event index can reconstruct lifecycle history. Reissuing a claim replaces the prior record, sets `revoked` to false, and clears `revoked-at` to `none`. Revoking an already-revoked record returns `(ok false)` without another event, keeping event ingestion idempotent. `origin-registry-caller.clar` exists only to prove the write guard in Simnet tests and must not be deployed as a fixture.
 
-Both contracts pin Clarity 5 to Stacks epoch 3.4 in `Clarinet.toml`; deployment plans must retain that explicit epoch.
+`get-attestation` intentionally returns stored records even after their expiration height. Every consumer must compare `expires-at` with the current Bitcoin burn block height; the wallet evaluator owns that check. Simnet tests mine through expiration to pin this contract.
+
+Both registry contracts and their two test fixtures pin Clarity 5 to Stacks epoch 3.4 in `Clarinet.toml`; deployment plans must retain that explicit epoch.
 
 ## Testnet Accounts
 

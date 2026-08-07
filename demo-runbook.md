@@ -100,7 +100,7 @@ Narration: the site supplied the transaction, but Leather derived the exact prin
 
 ### 2. Unrecognized identity claim
 
-Reject or close the first request; the card reports "Declined in Leather. Nothing was signed." On the **Bonus check-in** card from `northwind.example`, select **Check in**.
+Reject or close the first request; the card reports "Leather closed without returning a transaction." On the **Bonus check-in** card from `northwind.example`, select **Check in**.
 
 Leather must show:
 
@@ -163,7 +163,9 @@ The Vite demo config allows the `acme.example` host, so the Leather approver hea
 
 - No injected provider: after a connection attempt, the dapp shows the retryable `Leather required` control and does not enable scenario requests.
 - Rejected connection: the dapp shows `Connection rejected — retry`.
-- Rejected transaction: the card shows `Declined in Leather. Nothing was signed.` and sends nothing.
+- Closed request: the card shows `Leather closed without returning a transaction.` It does not claim whether Leather signed when the site received no transaction response.
+- Timed-out request: the card tells the user to check Leather before trying again because the original request may still settle.
+- Successful response: fresh activity says `Broadcast`, not `Confirmed`; confirmation remains an Explorer fact.
 - Registry timeout or malformed response: Leather shows `Origin unavailable`, never `Known origin`.
 - Slow Testnet response: allow up to 20 seconds before treating the live lookup as failed.
 - Wrong scenario wiring: `tests/demo-scenarios.test.ts` fails when a dapp subject diverges from the public fixture manifest.

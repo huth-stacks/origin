@@ -74,7 +74,8 @@ Expired and revoked relationships share one **Attestation no longer valid** life
 - A mock web application that requests harmless transactions.
 - A Leather integration that evaluates the actual transaction target.
 - Clear known, unrecognized, and unknown provenance UI states.
-- Revocation in the demo, with both revocation and expiration enforced by the contract.
+- Revocation in the demo, with revocation persisted by the contract and expiration enforced by every wallet consumer against Bitcoin burn height.
+- One minimal event index for the Origin registry so the claim explorer does not depend on a manually edited fixture manifest.
 - A pluggable attester story: automated domain-control first, with KYC/KYB providers able to join later.
 - A concrete proposal for standardizing the proven wallet behavior as a later Stacks Connect addendum.
 
@@ -95,6 +96,7 @@ The scope budget is one registry contract, seven logical attestation fields, fou
 - Claims that Origin makes an interaction safe.
 - A wallet-recipient transfer demo. The schema remains principal-generic, but the proof of concept covers contract calls only.
 - Changes to Stacks.js, Stacks Connect, wallet JSON-RPC methods, or multi-wallet capability negotiation.
+- General-purpose credential discovery or indexing outside the single Origin registry.
 
 ## 5. Demo Story
 
@@ -207,7 +209,7 @@ The contract should emit structured `print` events for issuance and revocation. 
 
 Direct lookup is straightforward because the Testnet build configures both the trusted and demonstration-untrusted attester principals. Leather queries those configured attesters for the transaction subject; the requesting site supplies no attestation hints.
 
-Discovering arbitrary unrecognized claims is an event-indexing problem deliberately left out of the proof of concept. A production design should use event indexing rather than a globally overwritable `subject -> claim` map or an unbounded on-chain list.
+The claim explorer enumerates the single Origin registry through its versioned issuance and revocation events, then uses the read-only getter as current-state truth. General-purpose credential discovery remains out of scope; a production design should extend event indexing rather than add a globally overwritable `subject -> claim` map or an unbounded on-chain list.
 
 ## 8. Leather Evaluation
 
@@ -457,7 +459,7 @@ No new Connect or JSON-RPC field is required for the hackathon. After the Leathe
 - Explain permissionless issuance versus wallet-controlled trust.
 - Show the unrecognized-attester case prominently.
 - Describe automated domain control as the bootstrap attester and KYC/KYB as an optional future attester class.
-- State that production discovery is an event-indexing problem deliberately excluded from the proof of concept.
+- Show that the narrow Origin event index is an explorer data source, not a wallet trust input or general-purpose discovery protocol.
 - Present Leather as the first reference integration and Origin as a candidate future Stacks Connect addendum.
 - Make clear that the hackathon validates wallet behavior before proposing shared Stacks.js or Connect code.
 - State clearly that provenance is not a security guarantee.
@@ -495,13 +497,13 @@ The proof of concept is complete when:
 - Revoked or expired attestations produce the single no-longer-valid state rather than known-origin status.
 - The user can still reject or approve the harmless Testnet transaction.
 - The pitch presents automated domain control as the bootstrap path and KYC/KYB issuance as optional expansion, neither as implemented production infrastructure.
-- The pitch identifies arbitrary production claim discovery as future event-indexing work.
+- The pitch distinguishes the narrow Origin claim index from arbitrary production credential discovery.
 - The pitch distinguishes the direct Leather proof of concept from the later Stacks Connect standardization proposal.
 
 ## 16. Resolved Scope Decisions
 
 - The demo covers contract calls only. Wallet principals remain supported by the schema but are not a demo scenario.
-- The Testnet build pins both the trusted and demonstration-untrusted attesters. Arbitrary claim discovery is out of scope.
+- The Testnet build pins both the trusted and demonstration-untrusted attesters. The claim explorer may index the one Origin registry, while arbitrary credential discovery remains out of scope.
 - The implementation targets the Leather extension only. A standalone approval preview is a demo-survival fallback, not a second integration target.
 - Stacks.js and Stacks Connect are proposal targets after the hackathon, not current modification targets.
 - The hackathon uses direct attester-to-subject binding; organization countersignature is a production extension.

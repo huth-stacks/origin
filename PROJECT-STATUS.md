@@ -2,7 +2,7 @@
 
 - **As of:** August 7, 2026
 - **Canonical repository:** `https://github.com/huth-stacks/origin`
-- **Product state:** complete hackathon proof of concept with surfaced Tier 1 hardening implemented; coordinated Testnet cutover pending; not integrated into upstream Leather
+- **Product state:** complete hackathon proof of concept with all 17 aggregate review findings dispositioned; coordinated Testnet cutover pending; not integrated into upstream Leather
 
 This file is the current handoff record. Product decisions remain canonical in
 `origin-hackathon-plan.md`; operational instructions remain canonical in `demo-runbook.md`.
@@ -67,17 +67,18 @@ contract, or verdict. Origin establishes provenance claims, not contract or tran
 
 Fresh checks on August 7, 2026:
 
-- Origin `pnpm verify`: passed, including format checks, four Clarity contracts, typecheck, 28 tests,
+- Origin `pnpm verify`: passed, including format checks, four Clarity contracts, typecheck, 32 tests,
   and the production demo build.
 - Stacks Testnet reset on August 6, invalidating the original disposable fixtures. The canonical
   fixtures were redeployed and re-attested without changing the demo identities.
-- Origin `pnpm testnet:verify`: passed at burn height `2996`, confirming four live v1 contracts, two
+- Origin `pnpm testnet:verify`: passed at burn height `3003`, confirming four live v1 contracts, two
   claims including their manifest-recorded issue heights, and the unattested
   same-name/different-deployer fixture.
-- Leather targeted Origin suite: 28 of 28 tests passed across evaluator, registry client, and layout.
+- Leather targeted Origin and packaging suite: 36 of 36 tests passed across evaluator, registry client, network gating, layout, and manifest generation.
 - The live Acme/Leather/Testnet three-scenario journey passed against the restored fixtures.
-- A fresh extension build and non-broadcasting storybook capture passed from the Tier 1 branch. The
-  rendered trusted views visibly include both attester and registry Explorer evidence links.
+- A fresh production-style extension build and non-broadcasting local storybook capture passed from
+  the review-response branch. The rendered views visibly include the complete warning, the
+  `Leather Origin Demo` extension label, and both attester and registry Explorer evidence links.
 
 Recorded final-branch evidence:
 
@@ -92,7 +93,7 @@ fields as intrinsically trusted would violate the design.
 
 ## Immediate next actions
 
-1. Review and commit the Tier 1 response tracked in `docs/review-response-2026-08-07.md`.
+1. Review the complete ranked response tracked in `docs/review-response-2026-08-07.md`.
 2. Execute the coordinated v2 Testnet cutover only after explicitly approving its new principals
    and external writes.
 3. Build the Day 2 event index, attester profile, and claim explorer before enabling Day 3 issuance.

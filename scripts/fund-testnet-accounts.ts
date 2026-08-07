@@ -4,8 +4,8 @@ import {
   makeSTXTokenTransfer,
 } from "@stacks/transactions";
 import {
-  loadPublicTestnetAccounts,
   loadTestnetAccount,
+  testnetAccountRoles,
 } from "./testnet-account-utils";
 import {
   acceptedTxId,
@@ -14,29 +14,35 @@ import {
 
 requireExplicitTestnetBroadcast(process.argv);
 
-const publicAccounts = await loadPublicTestnetAccounts();
 const deployer = await loadTestnetAccount("deployer");
 
-const recipients = Object.entries(publicAccounts).filter(
-  ([role]) => role !== "deployer",
+const recipients = await Promise.all(
+  testnetAccountRoles
+    .filter((role) => role !== "deployer")
+    .map(async (role) => {
+      const account = await loadTestnetAccount(role);
+      return { role, address: account.address };
+    }),
 );
 const firstNonce = await fetchNonce({
   address: deployer.address,
   network: "testnet",
 });
 
-for (const [index, [role, account]] of recipients.entries()) {
+for (const [index, recipient] of recipients.entries()) {
   const transaction = await makeSTXTokenTransfer({
-    recipient: account.address,
+    recipient: recipient.address,
     amount: 10_000_000n,
     nonce: firstNonce + BigInt(index),
     senderKey: deployer.account.stxPrivateKey,
     network: "testnet",
-    memo: `Origin ${role}`,
+    memo: `Origin ${recipient.role}`,
   });
   const result = await broadcastTransaction({
     transaction,
     network: "testnet",
   });
-  console.log(`${role}: ${acceptedTxId(result, `Funding ${role}`)}`);
+  console.log(
+    `${recipient.role}: ${acceptedTxId(result, `Funding ${recipient.role}`)}`,
+  );
 }

@@ -46,7 +46,7 @@ Build only what the three contract-call scenarios require:
 - One mock site using the normal Leather request path.
 - One active Leather extension integration.
 
-Do not add production KYC, attester governance, arbitrary claim discovery, a claim indexer, wallet-recipient demo UI, application-supplied hints, custom signatures, NFTs, assurance levels, multiple schemas, or Stacks.js/Stacks Connect changes during the hackathon. Automated domain control is the plausible bootstrap attester; KYC/KYB providers are an optional future attester class.
+Do not add production KYC, attester governance, generalized claim discovery, wallet-recipient demo UI, application-supplied hints, custom signature schemes, NFTs, assurance levels, multiple schemas, or Stacks.js/Stacks Connect changes during the hackathon. The Day 2 exception is a minimal event index for the single Origin registry so the claim explorer does not depend on a stale manifest. Automated domain control is the plausible bootstrap attester; KYC/KYB providers are an optional future attester class.
 
 ## Repository Boundaries
 

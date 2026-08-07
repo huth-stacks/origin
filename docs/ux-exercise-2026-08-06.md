@@ -137,7 +137,7 @@ Use Chrome with the unpacked extension from
   `Origin Testnet Attester` are visible.
 - Confirm the safety-limitation sentence and the independent deny-mode post-condition message.
 - Open Advanced details and inspect subject, attester, issued block, expiry block, and registry.
-- Reject once and verify `Declined in Leather. Nothing was signed.` appears under the correct card.
+- Reject once and verify `Leather closed without returning a transaction.` appears under the correct card without claiming whether Leather signed.
 - Repeat and approve once. Verify the streak reaches ten and a new activity row appears.
 
 ### Unrecognized claim

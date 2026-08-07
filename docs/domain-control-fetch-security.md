@@ -9,6 +9,7 @@ This specification is normative for the prototype. A Day 3 implementation is inc
 ## Fixed request shape
 
 - The applicant supplies a normalized DNS domain, not a URL.
+- The domain must be a registrable eTLD+1 according to the current Public Suffix List. A delegated subdomain is accepted only when a challenge at the eTLD+1 explicitly names that exact subdomain.
 - The service constructs exactly `https://<domain>/.well-known/stacks-origin.json`.
 - Only HTTPS on port 443 is permitted.
 - Userinfo, fragments, query strings, alternate ports, IP literals, wildcard hostnames, Unicode ambiguity, and embedded credentials are rejected.
@@ -53,6 +54,10 @@ The service signs nothing unless the fetched document:
 7. passes the configured role and display-name bounds before those strings enter a transaction.
 
 Nonce consumption and issuance recording must be atomic from the service's perspective. A retry after an uncertain broadcast must reconcile the transaction by its locally computed transaction ID or request ID rather than issue a second claim blindly.
+
+The off-chain signature is one versioned SIP-018 structured-data message with an Origin-specific domain separator. If the deployer is a multisig or contract principal that cannot produce that signature, it must instead broadcast the nonce through the designated on-chain proof contract. The attester verifies the confirmed transaction sender and the same domain, subject, nonce, attester, and policy bindings before signing.
+
+The Day 3 policy caps claim expiry at submission burn height plus 4,320 blocks and allows renewal only after 80% of that interval has elapsed. Confirmation drift may shorten but never extend the effective lifetime.
 
 ## Signing-key boundary
 
