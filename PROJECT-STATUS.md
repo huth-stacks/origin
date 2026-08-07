@@ -13,7 +13,7 @@ Origin is one project with two intentionally separate Git repositories:
 
 | Responsibility                                                                                                   | Repository and local checkout                                                                                                 | Current review target                                                            |
 | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`                                               | `agent/four-day-foundation` at `3bd85da`, based on `main` at `b602551`           |
+| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`                                               | `agent/four-day-foundation` at `e7e2ead`, based on `main` at `b602551`           |
 | Leather lookup, evaluator, approval UX, and extension tests                                                      | `huth-stacks/leather-origin-demo` at `/Users/alexander/Code/leather-origin-demo`, with `leather-io/mono` retained as upstream | `agent/four-day-foundation` at `9c48792b5`, based on fork staging at `64a1353c6` |
 
 Leather remains separate because it is an upstream product monorepo. Vendoring its source here
@@ -67,9 +67,10 @@ contract, or verdict. Origin establishes provenance claims, not contract or tran
 
 Current v2 foundation checks on August 7, 2026:
 
-- Origin `pnpm verify`: passed, including 15 test files and 121 tests.
+- Origin `pnpm verify`: passed, including 15 test files and 124 tests.
 - Seven future roles are independently seeded in separate ignored mode-`0600` files; the transaction journal directory is absent.
 - Funding and issuance fees are fixed in their persisted intents, removing fee-estimator drift from reviewed transaction identities.
+- Funding, deployment, and issuance each have separate dry-run, local prepare, and broadcast modes. Preparation journals exact signed bytes without network I/O; broadcast marks the journal attempted before network I/O and preserves fail-closed reconciliation after uncertainty.
 - Read-only Testnet snapshot at burn height `3,093`: all seven future roles have zero balance, nonce `0`, and no mempool activity.
 - The pre-signing [v2 cutover packet](docs/testnet-v2-cutover-approval-packet-2026-08-07.md) records principals, source hashes, funding, nonces, fixed fees, expiry arithmetic, request IDs, trust cutover, stop conditions, and staged approvals.
 - No recoverable seed backup or controlled custom domain is configured. No faucet request, transaction signing, funding, deployment, issuance, or promotion has occurred.

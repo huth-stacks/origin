@@ -43,6 +43,8 @@ pnpm testnet:verify
 
 This secret-free check compares every live source file with this checkout, reads both example claims, checks the current burn height against the trusted claim's expiration, and confirms the same-name lookalike has a different deployer and no trusted claim.
 
+Future v2 transaction commands have three explicit modes: the unsuffixed command is a read-only dry run, `:prepare` signs and journals exact bytes locally without network broadcast, and `:broadcast` revalidates and broadcasts only the matching prepared transaction. Do not run a `:prepare` command until the isolated seeds have a verified backup, or a `:broadcast` command until its exact transaction IDs are approved.
+
 ## Run the Acme demo
 
 The final Acme redesign was integrated through [Origin PR #11](https://github.com/huth-stacks/origin/pull/11) and is live at [origin-umber-six.vercel.app](https://origin-umber-six.vercel.app). For a review pinned to the exact checkout, build and locally load the Origin Leather extension, then run the Acme demo locally.

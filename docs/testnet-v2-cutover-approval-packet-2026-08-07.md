@@ -20,7 +20,7 @@ This packet is the G2 review boundary. It does not authorize a faucet request, s
 
 ## Repository and baseline pins
 
-- Origin fee-freeze implementation: `agent/four-day-foundation` at `3bd85da`.
+- Origin cutover implementation: `agent/four-day-foundation` at `e7e2ead`.
 - Leather branch: `agent/four-day-foundation` at `9c48792b5`.
 - Live v1 fixture manifest SHA-256: `d93cc95c0f647d28a5259a3aa62144556edd74e4d5dcffc93c605fb02ae3b925`.
 - Live v1 remains canonical until the complete v2 wallet journey passes.
@@ -90,7 +90,7 @@ Issuance fee exposure is `40,000` micro-STX. Combined fixed fee exposure for fun
 
 ## Signed transaction IDs
 
-This section must be complete before funding or cutover approval. It is intentionally empty because no recoverable backup is confirmed and no local signing is authorized.
+The funding row must be complete before funding approval. Deployment and issuance rows must be complete before cutover approval. They are intentionally empty because no recoverable backup is confirmed and no local signing is authorized.
 
 | Class      | Count | Transaction IDs                             |
 | ---------- | ----: | ------------------------------------------- |
@@ -98,7 +98,7 @@ This section must be complete before funding or cutover approval. It is intentio
 | Deployment |   `4` | **Pending backup confirmation and signing** |
 | Issuance   |   `4` | **Pending backup confirmation and signing** |
 
-The signed bytes, exact nonce, fixed fee, semantic intent, and locally computed transaction ID must be persisted mode `0600` before any broadcast network request. A reviewer must compare all fourteen IDs and intent fields with the replacement final packet.
+The signed bytes, exact nonce, fixed fee, semantic intent, and locally computed transaction ID must be persisted mode `0600` before any broadcast network request. `:prepare` performs only that local operation. `:broadcast` reconstructs and compares the exact transaction, atomically marks its journal `broadcast-attempted`, reruns the pending-aware preflight, and only then sends the network request. A reviewer must compare the six funding IDs before funding and the remaining eight IDs before cutover.
 
 ## Atomic compatibility cutover
 
@@ -143,9 +143,10 @@ Stop without another broadcast if any of the following occurs:
 1. **Backup approval:** identify the independent encrypted backup location and confirm a recovery check for all seven seed files without pasting seed material into chat or Git.
 2. **Domain approval:** choose a controlled fictional eTLD+1 and a separate evidence/profile hostname; shared tenant suffixes such as `vercel.app` do not satisfy the applicant-domain proof.
 3. **Faucet approval:** approve the Testnet faucet request to the registry deployer, then regenerate the live packet.
-4. **Signing approval:** approve local preparation of all fourteen signed transactions with no broadcasts.
-5. **Funding approval:** approve the six exact funding transaction IDs after review and confirmation of the funding-source balance.
-6. **Cutover approval:** after funding confirms, approve the four deployments and four issuances in dependency order.
-7. **Promotion approval:** after live verification and the complete installed-wallet journey, approve the atomic manifest/config promotion.
+4. **Funding preparation approval:** approve `pnpm testnet:fund-accounts:prepare`, which locally signs and journals the six funding transactions without broadcasting.
+5. **Funding approval:** approve the six exact funding transaction IDs after review and confirmation of the funding-source balance, then run the separate broadcast command.
+6. **Cutover preparation approval:** after funding confirms and live nonces are refreshed, approve local preparation of the four deployments and four issuances with their `:prepare` commands and no broadcasts.
+7. **Cutover approval:** approve the eight exact deployment/issuance transaction IDs and execute them in dependency order with the separate broadcast commands.
+8. **Promotion approval:** after live verification and the complete installed-wallet journey, approve the atomic manifest/config promotion.
 
 Approval of one stage does not authorize a later stage.
