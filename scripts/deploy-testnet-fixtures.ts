@@ -22,10 +22,15 @@ import {
   acceptedTxId,
   hasPreparedTransaction,
   isExplicitTestnetBroadcast,
+  isExplicitTestnetPrepare,
+  markPreparedTransactionBroadcastAttempted,
   persistPreparedTransaction,
+  wasPreparedTransactionBroadcastAttempted,
 } from "./testnet-transaction-utils.ts";
 
 const broadcast = isExplicitTestnetBroadcast(process.argv);
+const prepare = isExplicitTestnetPrepare(process.argv);
+const shouldSign = prepare || broadcast;
 
 const apiUrl = "https://api.testnet.hiro.so";
 const publicAccounts = await loadPublicTestnetAccounts();
@@ -105,7 +110,7 @@ for (const deployment of deployments) {
     nextNonceByAddress.get(address) ??
     (await fetchNonce({ address, network: "testnet" }));
   const intent = {
-    state: broadcast ? "ready-to-sign" : "dry-run",
+    state: shouldSign ? "ready-to-sign" : "dry-run",
     role: deployment.role,
     principal,
     nonce: nonce.toString(),
@@ -113,7 +118,7 @@ for (const deployment of deployments) {
     sourcePath: deployment.sourcePath,
     sourceSha256,
   };
-  if (!broadcast) {
+  if (!shouldSign) {
     console.log(JSON.stringify(intent));
     continue;
   }
@@ -140,7 +145,8 @@ for (const deployment of deployments) {
       nonce: Number(nonce),
       principal,
       sourceSha256,
-      previouslyJournaled: await hasPreparedTransaction(plannedTxId),
+      previouslyJournaled:
+        await wasPreparedTransactionBroadcastAttempted(plannedTxId),
     },
     ...evidence,
   });
@@ -149,6 +155,17 @@ for (const deployment of deployments) {
       `Deployment preflight ${preflight.action}: ${preflight.reason} for ${principal}`,
     );
   const prepared = await persistPreparedTransaction(transaction, intent);
+  if (prepare) {
+    console.log(
+      JSON.stringify({
+        state: "prepared",
+        principal,
+        txId: prepared.txId,
+      }),
+    );
+    continue;
+  }
+  await markPreparedTransactionBroadcastAttempted(prepared.txId);
   const result = await broadcastTransaction({
     transaction,
     network: "testnet",

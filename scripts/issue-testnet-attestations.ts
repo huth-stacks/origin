@@ -22,10 +22,12 @@ import {
 import {
   acceptedTxId,
   findPreparedTransactionByJournalKey,
-  hasPreparedTransaction,
   isExplicitTestnetBroadcast,
+  isExplicitTestnetPrepare,
+  markPreparedTransactionBroadcastAttempted,
   persistPreparedTransaction,
   readJournaledNonce,
+  wasPreparedTransactionBroadcastAttempted,
 } from "./testnet-transaction-utils.ts";
 
 interface CurrentManifest {
@@ -53,6 +55,8 @@ function readStringArgument(name: string) {
 }
 
 const broadcast = isExplicitTestnetBroadcast(process.argv);
+const prepare = isExplicitTestnetPrepare(process.argv);
+const shouldSign = prepare || broadcast;
 const issuanceIntentId = readStringArgument("--intent-id");
 const apiUrl = "https://api.testnet.hiro.so";
 const canonicalExpiresAt = readUintArgument("--canonical-expires-at");
@@ -195,7 +199,7 @@ for (const issuance of issuances) {
     nonce: nonce.toString(),
     fee: issuanceFee.toString(),
   };
-  if (!broadcast) {
+  if (!shouldSign) {
     console.log(JSON.stringify({ state: "dry-run", ...intent }));
     continue;
   }
@@ -226,7 +230,8 @@ for (const issuance of issuances) {
       sender: publicAccount.address,
       nonce: Number(nonce),
       previouslyJournaled:
-        journaled !== undefined || (await hasPreparedTransaction(plannedTxId)),
+        journaled?.state === "broadcast-attempted" ||
+        (await wasPreparedTransactionBroadcastAttempted(plannedTxId)),
     },
     ...(await readTransactionPreflightEvidence({
       apiUrl,
@@ -250,6 +255,18 @@ for (const issuance of issuances) {
       `Issuance preflight ${preflight.action}: ${preflight.reason} for ${issuance.subject}`,
     );
   const prepared = await persistPreparedTransaction(transaction, intent);
+  if (prepare) {
+    console.log(
+      JSON.stringify({
+        state: "prepared",
+        attester: publicAccount.address,
+        subject: issuance.subject,
+        txId: prepared.txId,
+      }),
+    );
+    continue;
+  }
+  await markPreparedTransactionBroadcastAttempted(prepared.txId);
   const result = await broadcastTransaction({
     transaction,
     network: "testnet",

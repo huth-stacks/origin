@@ -1,4 +1,11 @@
-import { access, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import {
+  access,
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  writeFile,
+} from "node:fs/promises";
 import { resolve } from "node:path";
 
 import {
@@ -8,11 +15,21 @@ import {
 import type { TxBroadcastResult } from "@stacks/transactions";
 
 export interface PreparedTransactionRecord {
-  state: "signed";
+  state: "signed" | "broadcast-attempted";
   txId: string;
   serializedTransaction: string;
   intent: unknown;
   path: string;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isPreparedTransactionState(
+  state: unknown,
+): state is PreparedTransactionRecord["state"] {
+  return state === "signed" || state === "broadcast-attempted";
 }
 
 export function acceptedTxId(result: TxBroadcastResult, action: string) {
@@ -30,6 +47,12 @@ export function requireExplicitTestnetBroadcast(args: string[]) {
 
 export function isExplicitTestnetBroadcast(args: string[]) {
   return args.includes("--broadcast");
+}
+
+export function isExplicitTestnetPrepare(args: string[]) {
+  if (args.includes("--prepare") && args.includes("--broadcast"))
+    throw new Error("Choose either --prepare or --broadcast, not both");
+  return args.includes("--prepare");
 }
 
 export async function persistPreparedTransaction(
@@ -61,9 +84,43 @@ export async function persistPreparedTransaction(
     )
       throw error;
     const existing = JSON.parse(await readFile(path, "utf8")) as unknown;
-    if (JSON.stringify(existing) !== JSON.stringify(record))
+    if (
+      !isObject(existing) ||
+      !isPreparedTransactionState(existing.state) ||
+      existing.txId !== record.txId ||
+      existing.serializedTransaction !== record.serializedTransaction ||
+      JSON.stringify(existing.intent) !== JSON.stringify(record.intent)
+    )
       throw new Error(`Prepared transaction journal conflict for ${txId}`);
+    return { txId, path, state: existing.state };
   }
+  return { txId, path, state: record.state };
+}
+
+export async function markPreparedTransactionBroadcastAttempted(
+  txId: string,
+  directory = resolve("deployments/testnet-transactions"),
+) {
+  const path = resolve(directory, `${txId}.local.json`);
+  const value = JSON.parse(await readFile(path, "utf8")) as unknown;
+  if (
+    !isObject(value) ||
+    !isPreparedTransactionState(value.state) ||
+    typeof value.txId !== "string" ||
+    value.txId !== txId ||
+    typeof value.serializedTransaction !== "string" ||
+    !("intent" in value)
+  )
+    throw new Error(`Invalid prepared transaction journal at ${path}`);
+  if (value.state === "broadcast-attempted") return { txId, path };
+  const attempted = { ...value, state: "broadcast-attempted" };
+  const temporaryPath = resolve(directory, `${txId}.attempted.tmp.local.json`);
+  await writeFile(temporaryPath, `${JSON.stringify(attempted, null, 2)}\n`, {
+    encoding: "utf8",
+    flag: "wx",
+    mode: 0o600,
+  });
+  await rename(temporaryPath, path);
   return { txId, path };
 }
 
@@ -79,8 +136,27 @@ export async function hasPreparedTransaction(
   }
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+export async function wasPreparedTransactionBroadcastAttempted(
+  txId: string,
+  directory = resolve("deployments/testnet-transactions"),
+) {
+  const path = resolve(directory, `${txId}.local.json`);
+  let value: unknown;
+  try {
+    value = JSON.parse(await readFile(path, "utf8")) as unknown;
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "ENOENT"
+    )
+      return false;
+    throw error;
+  }
+  if (!isObject(value) || !isPreparedTransactionState(value.state))
+    throw new Error(`Invalid prepared transaction journal at ${path}`);
+  return value.state === "broadcast-attempted";
 }
 
 export async function findPreparedTransactionByJournalKey(
@@ -126,13 +202,13 @@ export async function findPreparedTransactionsByJournalKeyPrefix(
     )
       continue;
     if (
-      value.state !== "signed" ||
+      !isPreparedTransactionState(value.state) ||
       typeof value.txId !== "string" ||
       typeof value.serializedTransaction !== "string"
     )
       throw new Error(`Invalid prepared transaction journal at ${path}`);
     matches.push({
-      state: "signed",
+      state: value.state,
       txId: value.txId,
       serializedTransaction: value.serializedTransaction,
       intent: value.intent,

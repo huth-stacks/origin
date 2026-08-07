@@ -26,13 +26,17 @@ import {
 import {
   acceptedTxId,
   findPreparedTransactionsByJournalKeyPrefix,
-  hasPreparedTransaction,
   isExplicitTestnetBroadcast,
+  isExplicitTestnetPrepare,
+  markPreparedTransactionBroadcastAttempted,
   persistPreparedTransaction,
   readJournaledNonce,
+  wasPreparedTransactionBroadcastAttempted,
 } from "./testnet-transaction-utils.ts";
 
 const broadcast = isExplicitTestnetBroadcast(process.argv);
+const prepare = isExplicitTestnetPrepare(process.argv);
+const shouldSign = prepare || broadcast;
 const apiUrl = "https://api.testnet.hiro.so";
 const publicAccounts = await loadPublicTestnetAccounts();
 const deployerAddress = publicAccounts.registry_deployer.address;
@@ -90,6 +94,7 @@ function allocateNonce() {
 
 for (const recipient of recipients) {
   const journals = journaledByRecipient.get(recipient.address) ?? [];
+  let awaitingConfirmation = false;
   for (const [sequence, journaled] of journals.entries()) {
     const nonce = readJournaledNonce(journaled);
     const journalKey = fundingJournalKey(
@@ -99,9 +104,11 @@ for (const recipient of recipients) {
     );
     const amount = readJournaledFundingAmount(journaled.intent, journalKey);
     const fee = readJournaledFundingFee(journaled.intent, journalKey);
-    if (broadcast) {
+    let transaction:
+      Awaited<ReturnType<typeof makeSTXTokenTransfer>> | undefined;
+    if (shouldSign) {
       const deployer = await loadTestnetAccount("registry_deployer");
-      const transaction = await makeSTXTokenTransfer({
+      transaction = await makeSTXTokenTransfer({
         recipient: recipient.address,
         amount,
         fee,
@@ -118,7 +125,7 @@ for (const recipient of recipients) {
         txId: journaled.txId,
         sender: deployerAddress,
         nonce: Number(nonce),
-        previouslyJournaled: true,
+        previouslyJournaled: journaled.state === "broadcast-attempted",
       },
       ...(await readTransactionPreflightEvidence({
         apiUrl,
@@ -126,18 +133,61 @@ for (const recipient of recipients) {
         sender: deployerAddress,
       })),
     });
-    if (preflight.action !== "continue")
+    if (preflight.action === "continue") {
+      console.log(
+        JSON.stringify({
+          state: "confirmed",
+          recipientRole: recipient.role,
+          txId: journaled.txId,
+        }),
+      );
+      continue;
+    }
+    if (preflight.action !== "broadcast")
       throw new Error(
         `Funding preflight ${preflight.action}: ${preflight.reason} for ${recipient.role}`,
       );
-    console.log(
-      JSON.stringify({
-        state: "confirmed",
-        recipientRole: recipient.role,
-        txId: journaled.txId,
-      }),
+    if (!transaction) {
+      console.log(
+        JSON.stringify({
+          state: "prepared",
+          recipientRole: recipient.role,
+          txId: journaled.txId,
+        }),
+      );
+      awaitingConfirmation = true;
+      break;
+    }
+    const prepared = await persistPreparedTransaction(
+      transaction,
+      journaled.intent,
     );
+    if (prepare) {
+      console.log(
+        JSON.stringify({
+          state: "prepared",
+          recipientRole: recipient.role,
+          txId: prepared.txId,
+        }),
+      );
+      awaitingConfirmation = true;
+      break;
+    }
+    await markPreparedTransactionBroadcastAttempted(prepared.txId);
+    const result = await broadcastTransaction({
+      transaction,
+      network: "testnet",
+    });
+    const txId = acceptedTxId(result, `Funding ${recipient.role}`);
+    if (txId.replace(/^0x/, "") !== prepared.txId.replace(/^0x/, ""))
+      throw new Error(
+        `Broadcast transaction ID mismatch for ${recipient.role}`,
+      );
+    console.log(`${recipient.role}: ${txId}`);
+    awaitingConfirmation = true;
+    break;
   }
+  if (awaitingConfirmation) continue;
 
   const topUp = planFundingTopUp(
     deployerAddress,
@@ -168,7 +218,7 @@ for (const recipient of recipients) {
     fee: fee.toString(),
     nonce: nonce.toString(),
   };
-  if (!broadcast) {
+  if (!shouldSign) {
     console.log(JSON.stringify({ state: "dry-run", ...intent }));
     continue;
   }
@@ -188,7 +238,8 @@ for (const recipient of recipients) {
       txId: plannedTxId,
       sender: deployerAddress,
       nonce: Number(nonce),
-      previouslyJournaled: await hasPreparedTransaction(plannedTxId),
+      previouslyJournaled:
+        await wasPreparedTransactionBroadcastAttempted(plannedTxId),
     },
     ...(await readTransactionPreflightEvidence({
       apiUrl,
@@ -211,6 +262,17 @@ for (const recipient of recipients) {
       `Funding preflight ${preflight.action}: ${preflight.reason} for ${recipient.role}`,
     );
   const prepared = await persistPreparedTransaction(transaction, intent);
+  if (prepare) {
+    console.log(
+      JSON.stringify({
+        state: "prepared",
+        recipientRole: recipient.role,
+        txId: prepared.txId,
+      }),
+    );
+    continue;
+  }
+  await markPreparedTransactionBroadcastAttempted(prepared.txId);
   const result = await broadcastTransaction({
     transaction,
     network: "testnet",

@@ -1,15 +1,22 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { TxBroadcastResult } from "@stacks/transactions";
+import {
+  makeRandomPrivKey,
+  makeSTXTokenTransfer,
+  type TxBroadcastResult,
+} from "@stacks/transactions";
 import { describe, expect, test } from "vitest";
 
 import {
   acceptedTxId,
   findPreparedTransactionByJournalKey,
   findPreparedTransactionsByJournalKeyPrefix,
+  isExplicitTestnetPrepare,
   isExplicitTestnetBroadcast,
+  markPreparedTransactionBroadcastAttempted,
+  persistPreparedTransaction,
   readJournaledNonce,
   requireExplicitTestnetBroadcast,
 } from "../scripts/testnet-transaction-utils";
@@ -44,6 +51,57 @@ describe(isExplicitTestnetBroadcast.name, () => {
     expect(isExplicitTestnetBroadcast(["node", "script", "--broadcast"])).toBe(
       true,
     );
+  });
+});
+
+describe(isExplicitTestnetPrepare.name, () => {
+  test("recognizes the local signing-only mode", () => {
+    expect(isExplicitTestnetPrepare(["node", "script", "--prepare"])).toBe(
+      true,
+    );
+  });
+
+  test("rejects an invocation that also requests broadcast", () => {
+    expect(() =>
+      isExplicitTestnetPrepare(["node", "script", "--prepare", "--broadcast"]),
+    ).toThrow("either --prepare or --broadcast");
+  });
+});
+
+describe(markPreparedTransactionBroadcastAttempted.name, () => {
+  test("preserves the exact prepared transaction while recording network intent", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "origin-journal-"));
+    const transaction = await makeSTXTokenTransfer({
+      recipient: "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM",
+      amount: 1n,
+      fee: 1_000n,
+      nonce: 0n,
+      senderKey: makeRandomPrivKey(),
+      network: "testnet",
+    });
+    const intent = { journalKey: "fund:sender:recipient:0", nonce: "0" };
+    const prepared = await persistPreparedTransaction(
+      transaction,
+      intent,
+      directory,
+    );
+
+    expect(prepared.state).toBe("signed");
+    await markPreparedTransactionBroadcastAttempted(
+      transaction.txid(),
+      directory,
+    );
+    const repeated = await persistPreparedTransaction(
+      transaction,
+      intent,
+      directory,
+    );
+    const stored = JSON.parse(await readFile(prepared.path, "utf8")) as {
+      state: string;
+    };
+
+    expect(repeated.state).toBe("broadcast-attempted");
+    expect(stored.state).toBe("broadcast-attempted");
   });
 });
 
