@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "network": "stacks-testnet",
+  "displayName": "Origin Testnet Attester",
+  "operator": "Origin project maintainers",
+  "status": "active-demo",
+  "verificationMethod": "Operator-reviewed fixture issuance",
+  "policyVersion": "testnet-fixture-v1",
+  "policyEffectiveDate": "2026-08-06",
+  "supportedClaimTypes": ["Exact-principal provenance"],
+  "evidenceFormat": "Origin registry lifecycle events and current map state",
+  "revocationPolicy": "The attester may revoke an on-chain claim. Wallets must evaluate current registry state and expiration independently.",
+  "responseTarget": "Best effort during the Testnet demonstration",
+  "securityContact": "https://github.com/huth-stacks/origin/issues",
+  "principals": [
+    {
+      "principal": "ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC",
+      "validFromBurnBlock": 2745,
+      "maxClaimLifetimeBurnBlocks": 100000,
+      "state": "current-v1"
+    }
+  ],
+  "rotationHistory": [
+    {
+      "principal": "ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC",
+      "note": "Disposable shared-mnemonic Testnet fixture; scheduled for removal at the atomic v2 cutover."
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 - **As of:** August 7, 2026
 - **Canonical repository:** `https://github.com/huth-stacks/origin`
-- **Product state:** complete hackathon proof of concept plus reviewed v2 cutover foundation; pre-signing approval packet prepared; coordinated Testnet cutover pending; not integrated into upstream Leather
+- **Product state:** complete hackathon proof of concept, reviewed v2 cutover foundation, and locally verified Testnet profile/explorer; pre-signing approval packet prepared; coordinated Testnet cutover and public evidence host pending; not integrated into upstream Leather
 
 This file is the current handoff record. Product decisions remain canonical in
 `origin-hackathon-plan.md`; operational instructions remain canonical in `demo-runbook.md`.
@@ -13,7 +13,7 @@ Origin is one project with two intentionally separate Git repositories:
 
 | Responsibility                                                                                                   | Repository and local checkout                                                                                                 | Current review target                                                            |
 | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`                                               | `agent/four-day-foundation` at `e7e2ead`, based on `main` at `b602551`           |
+| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`                                               | `agent/four-day-foundation`, based on `main` at `b602551`                        |
 | Leather lookup, evaluator, approval UX, and extension tests                                                      | `huth-stacks/leather-origin-demo` at `/Users/alexander/Code/leather-origin-demo`, with `leather-io/mono` retained as upstream | `agent/four-day-foundation` at `9c48792b5`, based on fork staging at `64a1353c6` |
 
 Leather remains separate because it is an upstream product monorepo. Vendoring its source here
@@ -43,6 +43,11 @@ not part of the active project.
   index-complete lifecycle events, and explicit reissue semantics.
 - Independently seeded future Testnet roles and broadcast scripts that reject node errors even when
   the rejection response contains a transaction ID.
+- A browser-side registry event index, direct current-map reconciliation, human-readable attester
+  profile, versioned machine profile, and exact subject/attester/registry-transaction explorer.
+- Evidence containment that strips controls, caps display strings, quarantines unrecognized issuer
+  text, never autolinks claim values, marks replaced issuance history, and fails neutrally when
+  registry evidence is unavailable.
 
 The requesting application never supplies the displayed organization, attester policy, canonical
 contract, or verdict. Origin establishes provenance claims, not contract or transaction safety.
@@ -67,7 +72,10 @@ contract, or verdict. Origin establishes provenance claims, not contract or tran
 
 Current v2 foundation checks on August 7, 2026:
 
-- Origin `pnpm verify`: passed, including 15 test files and 124 tests.
+- Origin `pnpm verify`: passed, including 18 test files and 137 tests.
+- The live local evidence route discovered both v1 claims from registry events, reconciled current
+  map state at burn height `3,100`, and rendered complete desktop and 390-pixel mobile warnings,
+  exact principals, approved-attester links, and hostile-text quarantine.
 - Seven future roles are independently seeded in separate ignored mode-`0600` files; the transaction journal directory is absent.
 - Funding and issuance fees are fixed in their persisted intents, removing fee-estimator drift from reviewed transaction identities.
 - Funding, deployment, and issuance each have separate dry-run, local prepare, and broadcast modes. Preparation journals exact signed bytes without network I/O; broadcast marks the journal attempted before network I/O and preserves fail-closed reconciliation after uncertainty.
@@ -106,7 +114,8 @@ fields as intrinsically trusted would violate the design.
 1. Back up and recovery-check all seven isolated seed files without placing seed material in Git or chat.
 2. Select a controlled fictional eTLD+1 and a distinct evidence/profile host.
 3. Review the pre-signing v2 packet, then separately approve the faucet request, local transaction signing, funding, cutover, and final promotion stages.
-4. Build the Day 2 event index, attester profile, and claim explorer before enabling Day 3 issuance.
+4. Provision the distinct public evidence host, then replace the checked-in v1 profile values only
+   as part of the reviewed atomic v2 compatibility promotion.
 5. Implement every control and adversarial test in `docs/domain-control-fetch-security.md` before
    connecting the domain fetcher to an isolated signing key.
 6. Rebase the consolidated Leather staging branch onto current upstream `dev` and run Leather's

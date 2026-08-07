@@ -58,6 +58,18 @@ pnpm demo:dev
 
 Open `http://127.0.0.1:4173` in the browser profile running the local extension. On either origin, select **Connect Leather** and approve access to a disposable Stacks Testnet account. Each scenario then sends a normal `stx_callContract` request for one exact deployed Testnet fixture. The transaction request includes no organization name, attester hint, trust policy, canonical-contract hint, or provenance verdict.
 
+## Run the Testnet evidence site
+
+The same local Vite build exposes the attester profile and browser-side claim explorer at:
+
+```text
+http://127.0.0.1:4173/evidence
+```
+
+The explorer enumerates lifecycle events from the configured registry rather than from the fixture manifest, then reads `get-attestation` directly for current status. Exact subject, attester, and registry-transaction searches are supported. Unrecognized issuer strings are control-stripped, length-capped, never autolinked, and rendered only inside a dominant quarantine treatment. A registry or current-state read failure renders unavailable rather than “no claim.”
+
+The versioned machine profile is available at `/origin-attester-profile.json`. It is explanatory and is tested against the current compatibility record; Leather&rsquo;s bundled configuration remains authoritative. The public evidence hostname and v2 profile values must be promoted only with the reviewed atomic v2 cutover.
+
 ## Proof-of-concept boundary
 
 - One Clarity registry contract
@@ -65,7 +77,7 @@ Open `http://127.0.0.1:4173` in the browser profile running the local extension.
 - Three harmless contract-call scenarios
 - Four provenance verdicts plus an independent lookalike warning
 - One active Leather extension integration
-- Configured Testnet attesters; no claim indexer or application-supplied hints
+- Configured Testnet attesters and a browser-side event index; no application-supplied hints
 - A proposal path toward Stacks Connect after the proof of concept, with no Stacks.js or Connect changes during the hackathon
 
 Origin provides provenance, not a security guarantee. Wallet trust policy remains wallet-owned, and Stacks post-conditions remain an independent asset-protection signal.
