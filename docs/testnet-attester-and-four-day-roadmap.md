@@ -190,14 +190,14 @@ Each Leather trust entry is a wallet-owned ordered list of principals with inclu
 
 All known state-model changes are bundled in `origin-registry-v2.clar` so Testnet pays one redeployment and re-issuance cost:
 
-- write calls require `tx-sender` to equal `contract-caller`, preventing an intermediary contract from forwarding a user's transaction authority into issuance or revocation;
+- write calls require `tx-sender` to equal `contract-caller`, preventing cross-principal writes and user-misattribution through an intermediary; contract-principal attesters can still self-issue through their own public code paths, so the initial wallet trust list uses standard principals;
 - organization and role strings must be non-empty;
 - records persist `revoked-at` as an optional burn height;
 - issuance and revocation events both contain the complete lifecycle record required by the event index;
 - a repeated revoke returns `(ok false)` without emitting another lifecycle event;
 - reissuance explicitly replaces the prior record, sets `revoked` to false, and clears `revoked-at` to `none`.
 
-The v2 contract and its direct-call test proxy run only in Simnet today. Deployment, isolated-attester rotation, fixture predeployment, manifest replacement, re-issuance, Leather configuration changes, and a fresh live verification are one coordinated Day 2 cutover. The current live v1 registry remains the canonical demo until that decision is executed.
+The v2 contract and its cross-principal-write test proxy run only in Simnet today. Deployment, isolated-attester rotation, fixture predeployment, manifest replacement, re-issuance, Leather configuration changes, and a fresh live verification are one coordinated Day 2 cutover. The cutover plan must exclude the proxy, account for pending deploys that still return 404 from the confirmed-contract endpoint, and update the issuance script's hardcoded registry contract name. The current live v1 registry remains the canonical demo until that decision is executed.
 
 ### Optional KYB providers
 

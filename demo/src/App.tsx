@@ -33,7 +33,13 @@ interface Connection {
 }
 
 type OutcomeKind =
-  "idle" | "pending" | "broadcast" | "closed" | "timeout" | "unavailable";
+  | "idle"
+  | "pending"
+  | "broadcast"
+  | "submitted"
+  | "closed"
+  | "timeout"
+  | "unavailable";
 
 interface Outcome {
   kind: OutcomeKind;
@@ -250,6 +256,17 @@ function OutcomeLine({ outcome }: { outcome: Outcome }) {
     );
   }
 
+  if (outcome.kind === "submitted") {
+    return (
+      <>
+        <span aria-hidden="true" className="dot dot-open" />
+        <span>
+          Leather completed the request without returning a transaction.
+        </span>
+      </>
+    );
+  }
+
   if (outcome.kind === "timeout") {
     return (
       <>
@@ -345,19 +362,23 @@ export function App() {
       );
       const txid = readTxId(response);
       const at = new Date();
-      setOutcome(scenario.id, { kind: "broadcast", txid, at });
-      setStamped((weeks) => Math.max(weeks, scenario.stampWeek));
-      setActivity((rows) => [
-        {
-          key: `${scenario.id}-${at.getTime()}`,
-          when: clockTime(at),
-          action: scenario.actionTitle,
-          host: scenario.from,
-          hash: txid ? truncateMiddle(txid, 6, 4) : undefined,
-          txid,
-        },
-        ...rows,
-      ]);
+      if (!txid) {
+        setOutcome(scenario.id, { kind: "submitted", at });
+      } else {
+        setOutcome(scenario.id, { kind: "broadcast", txid, at });
+        setStamped((weeks) => Math.max(weeks, scenario.stampWeek));
+        setActivity((rows) => [
+          {
+            key: `${scenario.id}-${at.getTime()}`,
+            when: clockTime(at),
+            action: scenario.actionTitle,
+            host: scenario.from,
+            hash: truncateMiddle(txid, 6, 4),
+            txid,
+          },
+          ...rows,
+        ]);
+      }
     } catch (error) {
       setOutcome(
         scenario.id,
@@ -372,7 +393,8 @@ export function App() {
 
   const connected = connection.status === "connected";
   const openLinks = demoScenarios.filter(
-    (scenario) => outcomes[scenario.id].kind !== "broadcast",
+    (scenario) =>
+      !["broadcast", "submitted"].includes(outcomes[scenario.id].kind),
   ).length;
   const notice =
     connection.status === "declined"

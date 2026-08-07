@@ -146,18 +146,17 @@ Repeat the same command with `ORIGIN_DEMO_URL=https://origin-umber-six.vercel.ap
 
 ## Screenshot capture
 
-`tests/specs/rpc-sip30-requests/origin-screenshots.spec.ts` in the Leather repository walks the full journey (site, connect, all three approval states with the advanced disclosure, one approved broadcast, mobile) and writes PNGs to `ORIGIN_SHOT_DIR`. Vercel preview deployments sit behind SSO, so captures run against the local dev server with a company-shaped hostname mapped inside the capture browser:
+`tests/specs/rpc-sip30-requests/origin-storybook.spec.ts` in the Leather repository captures the install label, site, connection request, all three approval states, and every advanced disclosure. It closes every transaction request without approval, so the evidence run never broadcasts.
 
 ```sh
 cd /Users/alexander/Code/leather-origin-demo
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin \
-ORIGIN_DEMO_URL=http://acme.example:4173 \
-PLAYWRIGHT_CHROMIUM_EXTRA_ARGS='--host-resolver-rules=MAP acme.example 127.0.0.1' \
-ORIGIN_SHOT_DIR=output/playwright/shots \
-pnpm --filter @leather.io/extension test:integration tests/specs/rpc-sip30-requests/origin-screenshots.spec.ts --project=chromium
+pnpm build:origin-demo
+ORIGIN_DEMO_URL=http://127.0.0.1:4173 \
+ORIGIN_STORYBOOK_DIR=/Users/alexander/Code/contract-provenance-certificate/docs/storybook/assets \
+pnpm --filter @leather.io/extension test:integration tests/specs/rpc-sip30-requests/origin-storybook.spec.ts --project=chromium
 ```
 
-The Vite demo config allows the `acme.example` host, so the Leather approver header reads `Requested by acme.example` in captures. The known-origin scenario approves and broadcasts one real Testnet transaction; the other two scenarios reject.
+Start the Origin demo server on port 4173 before the capture command. The command builds the unmistakable production manifest on the telemetry-safe testing runtime, then replaces the checked-in storybook images only after the final bundle exists.
 
 ## Failure behavior
 
@@ -168,6 +167,7 @@ The Vite demo config allows the `acme.example` host, so the Leather approver hea
 - Successful response: fresh activity says `Broadcast`, not `Confirmed`; confirmation remains an Explorer fact.
 - Registry timeout or malformed response: Leather shows `Origin unavailable`, never `Known origin`.
 - Slow Testnet response: allow up to 20 seconds before treating the live lookup as failed.
+- Deployment retry: a mempool-pending contract still returns 404 from the confirmed-contract endpoint, so wait for the prior transaction to settle before rerunning a deployment command.
 - Wrong scenario wiring: `tests/demo-scenarios.test.ts` fails when a dapp subject diverges from the public fixture manifest.
 
 ## Reset

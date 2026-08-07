@@ -134,6 +134,34 @@ describe("origin-registry-v2", () => {
     );
   });
 
+  test("retains an expired lifecycle record for consumers to evaluate", () => {
+    const issuedAt = simnet.burnBlockHeight;
+    const receipt = simnet.callPublicFn(
+      "origin-registry-v2",
+      "issue-attestation",
+      [
+        contractSubject,
+        Cl.stringAscii("Acme"),
+        Cl.stringAscii("Demo contract"),
+        Cl.uint(issuedAt + 1),
+      ],
+      attester,
+    );
+    expect(receipt.result).toBeOk(Cl.bool(true));
+    simnet.mineEmptyBlocks(1);
+
+    expect(getAttestation().result).toBeSome(
+      Cl.tuple({
+        "issuer-name": Cl.stringAscii("Acme"),
+        role: Cl.stringAscii("Demo contract"),
+        "issued-at": Cl.uint(issuedAt),
+        "expires-at": Cl.uint(issuedAt + 1),
+        revoked: Cl.bool(false),
+        "revoked-at": Cl.none(),
+      }),
+    );
+  });
+
   test("does not emit a second event when an already-revoked record is revoked again", () => {
     issueAttestation();
     expect(revokeAttestation().result).toBeOk(Cl.bool(true));
@@ -182,6 +210,7 @@ describe("origin-registry-v2", () => {
   });
 
   test("rejects revoke calls forwarded by another contract", () => {
+    const issuedAt = simnet.burnBlockHeight;
     issueAttestation();
     const receipt = simnet.callPublicFn(
       "origin-registry-caller",
@@ -195,8 +224,8 @@ describe("origin-registry-v2", () => {
       Cl.tuple({
         "issuer-name": Cl.stringAscii("Acme"),
         role: Cl.stringAscii("Demo contract"),
-        "issued-at": Cl.uint(simnet.burnBlockHeight),
-        "expires-at": Cl.uint(simnet.burnBlockHeight + 100),
+        "issued-at": Cl.uint(issuedAt),
+        "expires-at": Cl.uint(issuedAt + 100),
         revoked: Cl.bool(false),
         "revoked-at": Cl.none(),
       }),

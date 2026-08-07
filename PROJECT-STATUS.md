@@ -67,16 +67,16 @@ contract, or verdict. Origin establishes provenance claims, not contract or tran
 
 Fresh checks on August 7, 2026:
 
-- Origin `pnpm verify`: passed, including format checks, four Clarity contracts, typecheck, 32 tests,
+- Origin `pnpm verify`: passed, including format checks, four Clarity contracts, typecheck, 33 tests,
   and the production demo build.
 - Stacks Testnet reset on August 6, invalidating the original disposable fixtures. The canonical
   fixtures were redeployed and re-attested without changing the demo identities.
-- Origin `pnpm testnet:verify`: passed at burn height `3003`, confirming four live v1 contracts, two
+- Origin `pnpm testnet:verify`: passed at burn height `3018`, confirming four live v1 contracts, two
   claims including their manifest-recorded issue heights, and the unattested
   same-name/different-deployer fixture.
-- Leather targeted Origin and packaging suite: 36 of 36 tests passed across evaluator, registry client, network gating, layout, and manifest generation.
+- Leather targeted Origin and packaging suite: 40 of 40 tests passed across evaluator, registry client, network gating, layout, and manifest generation; the complete extension unit suite passes 613 of 613 tests.
 - The live Acme/Leather/Testnet three-scenario journey passed against the restored fixtures.
-- A fresh production-style extension build and non-broadcasting local storybook capture passed from
+- A fresh production-manifest/testing-runtime extension build and non-broadcasting local storybook capture passed after the follow-up fixes on
   the review-response branch. The rendered views visibly include the complete warning, the
   `Leather Origin Demo` extension label, and both attester and registry Explorer evidence links.
 
