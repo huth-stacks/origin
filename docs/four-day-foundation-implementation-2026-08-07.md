@@ -23,6 +23,8 @@ The consolidated G1 review identified six issues, all fixed before preparation o
 5. The domain-proof contract rejects forwarded calls and uses insert-once proof records. Tests prove a failed overwrite retains the original evidence.
 6. The v2 manifest validator requires request IDs and trusted-policy compliance for canonical, lifecycle, and expiry claims, and requires the expiry fixture to be shorter-lived than the canonical claim.
 
+The final pre-signing hardening freezes funding-transfer fees at `1,000` micro-STX and issuance-call fees at `10,000` micro-STX. Both values are persisted in their transaction intents, so fee-estimator changes cannot alter an approved transaction identity. The complete public values and staged approvals are in the [Testnet v2 cutover approval packet](testnet-v2-cutover-approval-packet-2026-08-07.md).
+
 ## Reviewer findings disposition
 
 | Review cluster                | Implemented response                                                                                                                                                                                                                                                                                                                                                                             | Remaining gate                                                                                                           |

@@ -2,7 +2,7 @@
 
 - **As of:** August 7, 2026
 - **Canonical repository:** `https://github.com/huth-stacks/origin`
-- **Product state:** complete hackathon proof of concept with all 17 aggregate review findings dispositioned; coordinated Testnet cutover pending; not integrated into upstream Leather
+- **Product state:** complete hackathon proof of concept plus reviewed v2 cutover foundation; pre-signing approval packet prepared; coordinated Testnet cutover pending; not integrated into upstream Leather
 
 This file is the current handoff record. Product decisions remain canonical in
 `origin-hackathon-plan.md`; operational instructions remain canonical in `demo-runbook.md`.
@@ -11,10 +11,10 @@ This file is the current handoff record. Product decisions remain canonical in
 
 Origin is one project with two intentionally separate Git repositories:
 
-| Responsibility                                                                                                   | Repository and local checkout                                                                                                 | Current review target                                                              |
-| ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`                                               | `agent/tier-1-hardening`, based on `main` at `acc1d39`                             |
-| Leather lookup, evaluator, approval UX, and extension tests                                                      | `huth-stacks/leather-origin-demo` at `/Users/alexander/Code/leather-origin-demo`, with `leather-io/mono` retained as upstream | `agent/origin-tier-1-hardening`, based on `agent/origin-demo-build` at `f1e2aad7b` |
+| Responsibility                                                                                                   | Repository and local checkout                                                                                                 | Current review target                                                            |
+| ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`                                               | `agent/four-day-foundation` at `3bd85da`, based on `main` at `b602551`           |
+| Leather lookup, evaluator, approval UX, and extension tests                                                      | `huth-stacks/leather-origin-demo` at `/Users/alexander/Code/leather-origin-demo`, with `leather-io/mono` retained as upstream | `agent/four-day-foundation` at `9c48792b5`, based on fork staging at `64a1353c6` |
 
 Leather remains separate because it is an upstream product monorepo. Vendoring its source here
 would obscure the review boundary and make future rebases harder. This repository consolidates the
@@ -65,6 +65,15 @@ contract, or verdict. Origin establishes provenance claims, not contract or tran
 
 ## Verification snapshot
 
+Current v2 foundation checks on August 7, 2026:
+
+- Origin `pnpm verify`: passed, including 15 test files and 121 tests.
+- Seven future roles are independently seeded in separate ignored mode-`0600` files; the transaction journal directory is absent.
+- Funding and issuance fees are fixed in their persisted intents, removing fee-estimator drift from reviewed transaction identities.
+- Read-only Testnet snapshot at burn height `3,093`: all seven future roles have zero balance, nonce `0`, and no mempool activity.
+- The pre-signing [v2 cutover packet](docs/testnet-v2-cutover-approval-packet-2026-08-07.md) records principals, source hashes, funding, nonces, fixed fees, expiry arithmetic, request IDs, trust cutover, stop conditions, and staged approvals.
+- No recoverable seed backup or controlled custom domain is configured. No faucet request, transaction signing, funding, deployment, issuance, or promotion has occurred.
+
 Fresh checks on August 7, 2026:
 
 - Origin `pnpm verify`: passed, including format checks, four Clarity contracts, typecheck, 33 tests,
@@ -93,15 +102,15 @@ fields as intrinsically trusted would violate the design.
 
 ## Immediate next actions
 
-1. Review the complete ranked response tracked in `docs/review-response-2026-08-07.md`.
-2. Execute the coordinated v2 Testnet cutover only after explicitly approving its new principals
-   and external writes.
-3. Build the Day 2 event index, attester profile, and claim explorer before enabling Day 3 issuance.
-4. Implement every control and adversarial test in `docs/domain-control-fetch-security.md` before
+1. Back up and recovery-check all seven isolated seed files without placing seed material in Git or chat.
+2. Select a controlled fictional eTLD+1 and a distinct evidence/profile host.
+3. Review the pre-signing v2 packet, then separately approve the faucet request, local transaction signing, funding, cutover, and final promotion stages.
+4. Build the Day 2 event index, attester profile, and claim explorer before enabling Day 3 issuance.
+5. Implement every control and adversarial test in `docs/domain-control-fetch-security.md` before
    connecting the domain fetcher to an isolated signing key.
-5. Rebase the consolidated Leather staging branch onto current upstream `dev` and run Leather's
+6. Rebase the consolidated Leather staging branch onto current upstream `dev` and run Leather's
    complete required verification.
-6. Open an upstream Leather PR with `leather-review-manifest.md` as the review guide.
+7. Open an upstream Leather PR with `leather-review-manifest.md` as the review guide.
 
 Stacks Connect standardization and production attester governance remain post-hackathon work rather
 than unfinished proof-of-concept requirements.
