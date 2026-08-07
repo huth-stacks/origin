@@ -9,10 +9,13 @@ import {
 } from "@stacks/wallet-sdk";
 
 export const testnetAccountRoles = [
-  "deployer",
-  "trusted_attester",
+  "registry_deployer",
+  "canonical_attester",
+  "domain_attester",
   "unrecognized_issuer",
-  "lookalike_deployer",
+  "proof_deployer",
+  "lifecycle_deployer",
+  "expiry_deployer",
 ] as const;
 
 export type TestnetAccountRole = (typeof testnetAccountRoles)[number];
@@ -20,6 +23,7 @@ export type TestnetAccountRole = (typeof testnetAccountRoles)[number];
 interface AccountSettings {
   derivation: string;
   mnemonic: string;
+  role: TestnetAccountRole;
 }
 
 export interface PublicAccount {
@@ -33,40 +37,36 @@ interface LoadedTestnetAccount extends PublicAccount {
   account: Account;
 }
 
-const settingsPath = resolve("settings/Testnet.toml");
-const publicAccountsPath = resolve("deployments/testnet-accounts.local.json");
+const accountSet = "testnet-v2";
+const publicAccountsPath = resolve(
+  `deployments/${accountSet}-accounts.local.json`,
+);
 
-function isTestnetAccountRole(value: string): value is TestnetAccountRole {
-  return testnetAccountRoles.some((role) => role === value);
+export function privateAccountPath(role: TestnetAccountRole) {
+  return resolve(`settings/${accountSet}-${role}.local.json`);
 }
 
-export function parseTestnetAccountSettings(source: string) {
-  const accounts = new Map<TestnetAccountRole, Partial<AccountSettings>>();
-  let currentRole: TestnetAccountRole | null = null;
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
-  for (const line of source.split("\n")) {
-    const section = line.match(/^\[accounts\.([^\]]+)\]$/)?.[1];
-    if (section) {
-      currentRole = isTestnetAccountRole(section) ? section : null;
-      if (currentRole) accounts.set(currentRole, {});
-      continue;
-    }
-    if (!currentRole) continue;
-
-    const mnemonic = line.match(/^mnemonic = "([^"]+)"$/)?.[1];
-    if (mnemonic) accounts.get(currentRole)!.mnemonic = mnemonic;
-    const derivation = line.match(/^derivation = "([^"]+)"$/)?.[1];
-    if (derivation) accounts.get(currentRole)!.derivation = derivation;
-  }
-
-  return Object.fromEntries(
-    testnetAccountRoles.map((role) => {
-      const account = accounts.get(role);
-      if (!account?.mnemonic || !account.derivation)
-        throw new Error(`Missing ${role} settings in ${settingsPath}`);
-      return [role, account as AccountSettings];
-    }),
-  ) as Record<TestnetAccountRole, AccountSettings>;
+export function parseTestnetRoleSettings(
+  source: string,
+  expectedRole: TestnetAccountRole,
+): AccountSettings {
+  const value: unknown = JSON.parse(source);
+  if (
+    !isObject(value) ||
+    value.role !== expectedRole ||
+    typeof value.mnemonic !== "string" ||
+    typeof value.derivation !== "string"
+  )
+    throw new Error(`Invalid ${expectedRole} private account settings`);
+  return {
+    role: expectedRole,
+    mnemonic: value.mnemonic,
+    derivation: value.derivation,
+  };
 }
 
 export async function loadPublicTestnetAccounts() {
@@ -78,9 +78,11 @@ export async function loadPublicTestnetAccounts() {
 export async function loadTestnetAccount(
   role: TestnetAccountRole,
 ): Promise<LoadedTestnetAccount> {
-  const settings = parseTestnetAccountSettings(
-    await readFile(settingsPath, "utf8"),
-  )[role];
+  const rolePath = privateAccountPath(role);
+  const settings = parseTestnetRoleSettings(
+    await readFile(rolePath, "utf8"),
+    role,
+  );
   const publicAccount = (await loadPublicTestnetAccounts())[role];
   if (!publicAccount)
     throw new Error(`Missing ${role} account in ${publicAccountsPath}`);

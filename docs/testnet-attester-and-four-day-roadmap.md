@@ -92,17 +92,17 @@ The known-origin surface now links directly to the attester's Testnet Explorer p
 
 ## How issuance works today
 
-The current process is operator-driven:
+The restored v1 process was operator-driven:
 
 1. `scripts/create-testnet-accounts.ts` creates four disposable accounts from four independent seed phrases and writes them only to ignored local files.
 2. The deployer receives faucet STX.
-3. `pnpm testnet:fund-accounts` funds the attester and fixture deployers.
-4. `pnpm testnet:deploy-fixtures` publishes the registry and three harmless fixture contracts.
-5. `pnpm testnet:issue-attestations` signs and broadcasts one trusted claim and one deliberately unrecognized claim.
+3. The operator funded the attester and fixture deployers.
+4. The operator published the registry and three harmless fixture contracts.
+5. The operator signed and broadcast one trusted claim and one deliberately unrecognized claim.
 6. The operator records the confirmed public transaction IDs and block heights in the fixture manifest.
 7. `pnpm testnet:verify` performs a secret-free live check of four contract sources, two claims, claim expiry, and the unknown lookalike.
 
-The fixture issuer script sets expiration to the submission burn height plus 100,000 Bitcoin blocks so the narrated demo survives Testnet scheduling and resets. This is a long-lived fixture policy, not the Day 3 issuance policy. The registry derives `issued-at` from the confirmation block's `burn-block-height`; callers cannot choose an arbitrary issue time, so automation must record the confirmed issue height rather than infer an exact lifetime from submission time.
+The restored fixture claims expire 100,000 Bitcoin blocks after their submission height so the narrated demo survives Testnet scheduling and resets. This is a long-lived fixture policy, not the Day 3 issuance policy. V2 tooling requires packet-approved absolute expiry integers, derives `validFromBurnBlock` from the confirmed claim's chain-read `issued-at`, and journals signed transactions before broadcast. The registry derives `issued-at` from the confirmation block's `burn-block-height`; callers cannot choose an arbitrary issue time.
 
 The currently restored fixtures predate the isolated-seed generator and were derived from one shared disposable mnemonic. They remain safe for the narrated offline demo, but that trusted attester must not be placed in a network service. Day 2 rotates the trusted attester to a new independently seeded principal before Day 3 can issue.
 
@@ -134,7 +134,7 @@ Organization
 
 Origin attester
   -> fetches the statement over HTTPS
-  -> checks domain, freshness, nonce, role, subject, and deployer signature
+  -> checks the eTLD+1, freshness, nonce, domain-derived name, enumerated role, subject, and deployer signature
   -> records its evidence hash and policy version
   -> issues a Testnet attestation bounded to 4,320 burn blocks
 
@@ -146,9 +146,9 @@ Leather
 
 The fetch is a signing authorization boundary, not ordinary application data loading. [`domain-control-fetch-security.md`](domain-control-fetch-security.md) defines the required fixed URL shape, redirect denial, SSRF and metadata-address blocking, DNS-rebinding resistance, response limits, signer separation, logging, and adversarial test gate.
 
-For a contract principal, the proof must come from the standard principal that deployed the contract. The off-chain path uses one versioned SIP-018 structured-data message with an Origin-specific domain separator. A multisig or contract deployer that cannot produce that signature uses the on-chain alternative: it broadcasts the server nonce through a dedicated proof fixture, and the attester verifies the confirmed transaction sender before issuance. Both paths bind the exact domain, subject, nonce, attester, and policy version.
+For a contract principal, the proof must come from the standard principal that deployed the contract. The off-chain path uses one versioned SIP-018 structured-data message with an Origin-specific domain separator. It binds the exact eTLD+1, domain-derived `issuer-name`, enumerated `role`, subject, request ID, nonce, intended attester, absolute expiry, and policy version. The signer enforces byte-for-byte agreement. The on-chain proof fixture may be predeployed, but multisig/contract-deployer verification is designed-not-implemented during the four-day build.
 
-The prototype accepts only a registrable eTLD+1 derived with the Public Suffix List. A subdomain may host the file only when the eTLD+1 challenge explicitly delegates that exact canonical subdomain. Shared-platform suffixes such as `github.io` and `vercel.app` do not establish control of the organization named in a claim merely because a tenant controls one hosted subdomain.
+The prototype accepts only a registrable eTLD+1 derived with the Public Suffix List and does not support delegated subdomains. Shared-platform suffixes such as `github.io` and `vercel.app` do not establish control of the organization named in a claim merely because a tenant controls one hosted subdomain.
 
 Day 3 claims last at most 4,320 Bitcoin burn blocks from submission, approximately one month at the target cadence. Renewal repeats domain and deployer control after 80% of that window has elapsed. A claim never renews silently, and confirmation drift can only shorten the resulting lifetime.
 
@@ -170,7 +170,7 @@ status page
 security contact
 ```
 
-The wallet should link to this profile and to the attester principal on Explorer. The profile explains who operates the attester and what it checks; Explorer verifies which principal actually issued the on-chain record. Profile text fetched at runtime is never rendered in trusted wallet chrome. Trusted display names and policy are bundled with Leather; the runtime profile is only an outbound destination unless a future wallet release pins its content hash.
+The wallet should link from wallet-owned configuration to this attester-operated profile and to the attester principal on Explorer. The profile explains who operates the attester and what it checks; Explorer verifies which principal actually issued the on-chain record. Profile text fetched at runtime is never rendered in trusted wallet chrome. Trusted display names and policy are bundled with Leather; the runtime profile is only an outbound destination unless a future wallet release pins its content hash.
 
 ### Evidence and privacy
 
@@ -184,7 +184,7 @@ Leather can directly query every trusted attester because the trust list should 
 
 A production operator should separate the public service from the signing key, use an HSM or managed signer, maintain explicit key-rotation records, monitor issuance, and support prompt revocation. The network-facing fetcher must never receive a mnemonic. High-assurance providers may use multisig or governed signing policies, but the wallet still needs an unambiguous mapping from operator profile to active attester principal.
 
-Each Leather trust entry is a wallet-owned ordered list of principals with inclusive `valid-from` and optional exclusive `valid-until` burn heights. A claim is eligible only when its chain-derived `issued-at` falls inside that principal's interval. Rotation adds the new principal and closes the old interval; claims issued by the old key before its cutoff remain eligible only until their own expiry. A compromise may instead remove the old interval entirely, making all of its claims immediately untrusted. For this four-day build the policy ships with the extension; the profile makes no rapid-response SLA promise. A signed out-of-band policy channel is production follow-up, not an untrusted profile fetch.
+Each Leather trust entry is a wallet-owned ordered list of principals with inclusive `valid-from`, optional exclusive `valid-until`, and a maximum claim lifetime in burn blocks. A claim is eligible only when its chain-derived `issued-at` falls inside that principal's interval and `expires-at - issued-at` stays within its wallet policy. Rotation replaces the whole versioned configuration, adds the new principal, and removes or closes the old interval atomically. The shared-mnemonic fixture attester is removed entirely at v2 cutover. A compromise may remove an interval, making all of its claims immediately untrusted. For this four-day build the policy ships with the extension; compromise response therefore requires rebuild and redistribution. A signed out-of-band policy channel is production follow-up, not an untrusted profile fetch.
 
 ### Registry v2 migration decision
 
@@ -193,11 +193,13 @@ All known state-model changes are bundled in `origin-registry-v2.clar` so Testne
 - write calls require `tx-sender` to equal `contract-caller`, preventing cross-principal writes and user-misattribution through an intermediary; contract-principal attesters can still self-issue through their own public code paths, so the initial wallet trust list uses standard principals;
 - organization and role strings must be non-empty;
 - records persist `revoked-at` as an optional burn height;
+- issue/revoke operations carry an attester-scoped, replay-protected 32-byte request ID;
+- lifecycle events carry `version: u2`, and `get-schema-version` returns `u2`;
 - issuance and revocation events both contain the complete lifecycle record required by the event index;
 - a repeated revoke returns `(ok false)` without emitting another lifecycle event;
 - reissuance explicitly replaces the prior record, sets `revoked` to false, and clears `revoked-at` to `none`.
 
-The v2 contract and its cross-principal-write test proxy run only in Simnet today. Deployment, isolated-attester rotation, fixture predeployment, manifest replacement, re-issuance, Leather configuration changes, and a fresh live verification are one coordinated Day 2 cutover. The cutover plan must exclude the proxy, account for pending deploys that still return 404 from the confirmed-contract endpoint, and update the issuance script's hardcoded registry contract name. The current live v1 registry remains the canonical demo until that decision is executed.
+The v2 contract and its cross-principal-write test proxy run only in Simnet today. Deployment, isolated-attester rotation, fixture predeployment, candidate manifest/config generation, re-issuance, and fresh live verification are one coordinated Day 2 cutover. The cutover excludes the proxy, uses a pending-aware crash-safe journal, and parameterizes all deployment/issuance/verifier tooling by contract name and schema. The candidate manifest and atomic Leather configuration are promoted only after the wallet journey passes. The current live v1 registry remains canonical until then.
 
 ### Optional KYB providers
 
@@ -220,14 +222,14 @@ Status: substantially complete.
 
 Acceptance: every provenance state is legible, every trusted result has inspectable on-chain anchors, and the live verifier passes.
 
-### Day 2 — Public attester profile and claim explorer
+### Day 2 — Coordinated cutover, profile, and claim explorer
 
-- Publish a wallet-owned attester profile page and machine-readable profile document.
+- Publish an attester-operated profile page and machine-readable profile document on an evidence origin distinct from the Acme dapp; Leather links to it from wallet-owned configuration.
 - Show operator, principal validity intervals, method, policy version, revocation policy, and status. Treat this page only as linked explanatory content; trusted Leather labels remain bundled.
-- Build the minimal event index now. Fetch the [Hiro contract-events endpoint](https://docs.hiro.so/en/apis/stacks-blockchain-api/reference/smart-contracts/events), retain only this registry's `print` events, decode the versioned issue/revoke tuples, page to the last stored event, and use `get-attestation` as current-state truth.
+- Build the browser-side event index around one cursor-paginated Hiro smart-contract-logs API, retain only the exactly configured registry's `print` events, validate versioned tuples, deduplicate by transaction/event index, and use `get-attestation` as current-state truth.
 - Build a small claim explorer on that index for subject, organization, role, issue height, expiry, status, issuance transaction, and registry. The checked-in manifest remains deployment evidence, not the enumeration source.
 - Link the Leather known-origin state to both the profile and Explorer.
-- Freeze and deploy the bundled v2 registry once, rotate the trusted attester to an independently seeded principal, and reissue the canonical claims.
+- Freeze and deploy the complete v2 ABI once, rotate to independently seeded canonical and Day 3 attesters, explicitly remove the shared-mnemonic principal from the atomic Leather configuration, and reissue the canonical claims.
 - Predeploy the Day 3 organization and Day 4 lifecycle fixture contracts so later work does not wait on Testnet confirmation.
 
 Acceptance: a user can answer “who did Leather trust, what do they claim to verify, and where is the on-chain proof?” without reading source code; a newly issued claim appears without editing the manifest; and v2 plus the isolated key pass a fresh live verification.
@@ -237,7 +239,7 @@ Acceptance: a user can answer “who did Leather trust, what do they claim to ve
 - Define one canonical, versioned `stacks-origin.json` challenge document rather than a general-purpose claim schema.
 - Publish the exact JSON shape and a curl example first; build a developer page only if the security and lifecycle gates finish early.
 - Implement and adversarially test every control in `domain-control-fetch-security.md` before enabling a broadcast path.
-- Verify either a domain-separated SIP-018 deployer signature or the confirmed on-chain multisig proof, plus the hardened well-known HTTPS response and eTLD+1 policy.
+- Verify a domain-separated SIP-018 standard-deployer signature plus the hardened well-known HTTPS response, domain-derived name, enumerated role, and eTLD+1-only policy. Multisig verification is deferred.
 - Issue a Testnet attestation capped at 4,320 burn blocks through the isolated signer and rotated attester principal.
 - Persist only public request status and evidence commitments; keep the signing key outside application logs and client code.
 

@@ -169,7 +169,7 @@ The attestation subject is a Clarity `principal`, allowing the same model to cov
 
 ### 7.2 Attestation record
 
-The proof of concept should keep one fixed seven-field logical schema:
+The proof of concept keeps seven base provenance fields:
 
 ```text
 attester         principal, derived from tx-sender
@@ -181,6 +181,15 @@ expires-at       Bitcoin burn block height
 revoked          boolean
 ```
 
+Registry v2 adds two lifecycle/operation fields without changing the meaning of those seven base fields:
+
+```text
+revoked-at       optional Bitcoin burn block height
+request-id       32-byte lifecycle-operation correlator
+```
+
+Every v2 lifecycle event also carries `version: u2`, and the contract exposes `get-schema-version`. The request correlator is attester-scoped and replay-protected. It links the on-chain transition to the durable off-chain authorization; it is not identity evidence.
+
 For the hackathon, a bounded ASCII name remains on-chain for implementation simplicity. Leather renders it only when the attester is trusted. Names from unrecognized attesters are never promoted into the default confirmation UI. There is no issuer principal or metadata commitment until a countersignature or metadata-resolution flow actually consumes one.
 
 The map key should be:
@@ -189,7 +198,7 @@ The map key should be:
 { attester: principal, subject: principal }
 ```
 
-The key contains the first two logical fields; the map value contains the remaining five. This prevents one attester from overwriting another attester's record.
+The key contains the first two base fields. The v1 value contains the remaining five base fields; the v2 value also contains `revoked-at` and `request-id`. This prevents one attester from overwriting another attester's record.
 
 ### 7.3 Public functions
 
@@ -317,10 +326,10 @@ Origin must not depend on a commercial KYC/KYB provider agreeing to launch a new
 The first practical attester can be an automated service:
 
 1. An organization publishes a signed file at a well-known HTTPS path such as `/.well-known/stacks-origin.json`.
-2. The file names the relevant Stacks wallet or contract principal and role.
-3. The service verifies the domain response and the principal-control signature.
-4. The service issues an Origin attestation from its own recognized principal.
-5. Leather renders the domain as the verified fact and names the domain attester.
+2. The file binds the exact registrable eTLD+1, relevant Stacks subject, intended attester, nonce, policy, absolute expiry, domain-derived `issuer-name`, and a role from the attester's fixed enum.
+3. The service verifies the hardened domain response and the subject deployer's signature.
+4. The isolated signer enforces byte-for-byte name/role agreement and issues an Origin attestation from its own recognized principal.
+5. Leather renders the proven domain as the narrow identity fact and names the domain attester.
 
 This flow is automated, inexpensive, available to pseudonymous teams, and does not imply legal-entity verification.
 
@@ -467,7 +476,7 @@ No new Connect or JSON-RPC field is required for the hackathon. After the Leathe
 ## 14. Suggested Build Order
 
 1. Confirm the Leather extension insertion point with a hardcoded dummy Origin card during the first half-day.
-2. Freeze the seven-field Clarity schema, four provenance verdicts, and independent lookalike signal.
+2. Freeze the seven base provenance fields, v2 lifecycle/request metadata and ABI, four provenance verdicts, and independent lookalike signal.
 3. Implement and test the registry locally.
 4. Deploy the registry and three example contracts to Testnet.
 5. Build a small TypeScript lookup client.

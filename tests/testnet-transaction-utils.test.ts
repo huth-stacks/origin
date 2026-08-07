@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   acceptedTxId,
+  isExplicitTestnetBroadcast,
   requireExplicitTestnetBroadcast,
 } from "../scripts/testnet-transaction-utils";
 
@@ -27,6 +28,18 @@ describe(acceptedTxId.name, () => {
   });
 });
 
+describe(isExplicitTestnetBroadcast.name, () => {
+  test("keeps ordinary invocations in dry-run mode", () => {
+    expect(isExplicitTestnetBroadcast(["node", "script"])).toBe(false);
+  });
+
+  test("recognizes the explicit broadcast flag", () => {
+    expect(isExplicitTestnetBroadcast(["node", "script", "--broadcast"])).toBe(
+      true,
+    );
+  });
+});
+
 describe(requireExplicitTestnetBroadcast.name, () => {
   test("accepts an explicit broadcast invocation", () => {
     expect(() =>
@@ -35,8 +48,8 @@ describe(requireExplicitTestnetBroadcast.name, () => {
   });
 
   test("rejects an ordinary script invocation before it can broadcast", () => {
-    expect(() =>
-      requireExplicitTestnetBroadcast(["node", "script"]),
-    ).toThrow("Refusing to broadcast without the explicit --broadcast flag");
+    expect(() => requireExplicitTestnetBroadcast(["node", "script"])).toThrow(
+      "Refusing to broadcast without the explicit --broadcast flag",
+    );
   });
 });

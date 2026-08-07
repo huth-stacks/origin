@@ -3,6 +3,33 @@
   "apiUrl": "https://api.testnet.hiro.so",
   "stacksEpoch": "3.4",
   "clarityVersion": 5,
+  "compatibility": {
+    "version": 1,
+    "originCommit": "b6025517ea94ced10c261e038caf1dd05388193d",
+    "leatherCommit": "64a1353c6bc8bbb82a90b78f6c9264af72f1e40f",
+    "apiUrl": "https://api.testnet.hiro.so",
+    "registry": {
+      "principal": "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.origin-registry",
+      "schemaVersion": 1
+    },
+    "trustedAttesters": [
+      {
+        "principal": "ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC",
+        "displayName": "Origin Testnet Attester",
+        "validFromBurnBlock": 2745,
+        "maxClaimLifetimeBurnBlocks": 100000
+      }
+    ],
+    "discoveryAttesters": [
+      "ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC",
+      "ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0"
+    ],
+    "referenceContracts": [
+      {
+        "subject": "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action"
+      }
+    ]
+  },
   "registry": {
     "principal": "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.origin-registry",
     "txId": "0xffbe47e232a87c0719dd5811e8ee4ecba933caf375ad4d17a2e47bcd5b1018eb",

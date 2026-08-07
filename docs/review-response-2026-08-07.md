@@ -2,6 +2,8 @@
 
 Status: all 17 review findings dispositioned on August 7, 2026; coordinated Testnet cutover pending
 
+The later consolidated four-day plan review and its implemented G1 foundation are recorded in `four-day-foundation-implementation-2026-08-07.md`. Where this earlier response says an index, v2 tooling, or isolated accounts are pending, the later status document is authoritative.
+
 Five independent reviews found no Critical implementation issue in either repository and agreed that the current proof of concept is ready to extend with design changes. The complete 17-item aggregate report was supplied on August 7 and is reflected below.
 
 ## Tier 1 disposition

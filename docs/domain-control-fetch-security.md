@@ -9,7 +9,7 @@ This specification is normative for the prototype. A Day 3 implementation is inc
 ## Fixed request shape
 
 - The applicant supplies a normalized DNS domain, not a URL.
-- The domain must be a registrable eTLD+1 according to the current Public Suffix List. A delegated subdomain is accepted only when a challenge at the eTLD+1 explicitly names that exact subdomain.
+- The domain must be a registrable eTLD+1 according to the current Public Suffix List. The four-day prototype does not accept delegated subdomains.
 - The service constructs exactly `https://<domain>/.well-known/stacks-origin.json`.
 - Only HTTPS on port 443 is permitted.
 - Userinfo, fragments, query strings, alternate ports, IP literals, wildcard hostnames, Unicode ambiguity, and embedded credentials are rejected.
@@ -51,17 +51,20 @@ The service signs nothing unless the fetched document:
 4. contains the server-issued nonce, intended attester principal, policy version, and an unexpired timestamp window;
 5. carries a valid signature from the standard principal that deployed the subject contract;
 6. has not been consumed before;
-7. passes the configured role and display-name bounds before those strings enter a transaction.
+7. contains an `issuer-name` exactly equal to the canonical proven eTLD+1 and a `role` from the policy's fixed enum;
+8. passes the configured protected-name denylist, display bounds, and control-character rules before those strings enter a transaction.
 
 Nonce consumption and issuance recording must be atomic from the service's perspective. A retry after an uncertain broadcast must reconcile the transaction by its locally computed transaction ID or request ID rather than issue a second claim blindly.
 
-The off-chain signature is one versioned SIP-018 structured-data message with an Origin-specific domain separator. If the deployer is a multisig or contract principal that cannot produce that signature, it must instead broadcast the nonce through the designated on-chain proof contract. The attester verifies the confirmed transaction sender and the same domain, subject, nonce, attester, and policy bindings before signing.
+The durable request state machine is `challenge-issued -> verified -> authorized -> signed -> broadcast-unknown -> pending -> confirmed/rejected`. Before any network broadcast, one transaction commits the canonical authorization, exclusive signer nonce, serialized signed transaction bytes, and locally computed transaction ID. Retries rebroadcast those identical bytes and never construct a replacement while the first transaction is uncertain. Request IDs and signer nonces are unique, and at most one issuance is in flight per `(attester, subject)`; the SQLite prototype acquires these constraints with `BEGIN IMMEDIATE`.
 
-The Day 3 policy caps claim expiry at submission burn height plus 4,320 blocks and allows renewal only after 80% of that interval has elapsed. Confirmation drift may shorten but never extend the effective lifetime.
+The off-chain signature is one versioned SIP-018 structured-data message with an Origin-specific domain separator. It binds the exact domain-derived `issuer-name` and enumerated `role` in addition to the domain, subject, nonce, intended attester, policy version, request ID, and absolute expiry. The signer enforces byte-for-byte agreement with the verified authorization. The four-day prototype supports standard-principal deployers only. The on-chain proof contract may be predeployed, but multisig/contract-deployer verification is designed-not-implemented.
+
+The Day 3 authorization pins an absolute `expires-at` no later than the verified burn height plus 4,320 blocks. Renewal is allowed only after 80% of the active interval has elapsed. Operator lifecycle actions on the dedicated demo fixture use a separate authorization policy; revocation may reset that fixture's reissue clock. Confirmation drift may shorten but never extend the effective lifetime.
 
 ## Signing-key boundary
 
-The network-facing verifier must not receive a mnemonic. It submits a canonical, policy-complete issuance request to a separate signer interface. The signer accepts only the Origin registry contract, `issue-attestation`, bounded arguments, the configured Testnet chain ID, and a short expiration window.
+The network-facing verifier must not receive a mnemonic. It submits a canonical, policy-complete authorization to a separate signer interface over authenticated local-only IPC. The signer credential lives in its own restrictive raw-key file or OS identity; neither process mounts a shared multi-role settings file. Separate versioned authorization types allow domain-policy issuance and operator lifecycle issue/revoke operations. The signer accepts only the configured Origin registry/function, bounded arguments, Testnet chain ID, fee cap, request ID, fixed role enum, domain-derived name, and absolute expiration policy. It has exclusive nonce authority, a per-day issuance ceiling, a kill switch, and a denylist containing canonical demo subjects.
 
 For the prototype, the trusted attester must use a seed that is not shared with the registry deployer, hostile issuer, or fixture deployers. The current restored fixture key must be rotated before the Day 3 service is allowed to issue.
 
@@ -70,7 +73,7 @@ For the prototype, the trusted attester must use a seed that is not shared with 
 - Log the request ID, canonical domain, subject, policy result, resolved public address class, response size, and final disposition.
 - Never log a mnemonic, private key, raw signature material beyond the public challenge signature, cookies, or complete response bodies.
 - Return coarse public errors. Detailed DNS and network failures remain in restricted operator logs so the endpoint cannot be used as an internal-network oracle.
-- Rate-limit by account, domain, subject, and source address, with a global concurrency ceiling.
+- Rate-limit by domain, subject, and source address, with a global concurrency ceiling. Several concurrent unverified nonces may exist for one `(domain, subject)` so a requester cannot squat on the pair, but at most one verified authorization may be in flight for one `(attester, subject)`.
 
 ## Required adversarial tests
 

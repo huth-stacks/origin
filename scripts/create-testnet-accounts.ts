@@ -1,4 +1,4 @@
-import { chmod, mkdir, writeFile } from "node:fs/promises";
+import { access, chmod, mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
 import {
@@ -7,10 +7,34 @@ import {
   randomSeedPhrase,
 } from "@stacks/wallet-sdk";
 
-import { testnetAccountRoles } from "./testnet-account-utils";
+import {
+  privateAccountPath,
+  testnetAccountRoles,
+} from "./testnet-account-utils.ts";
 
-const settingsPath = resolve("settings/Testnet.toml");
-const publicAccountsPath = resolve("deployments/testnet-accounts.local.json");
+const publicAccountsPath = resolve(
+  "deployments/testnet-v2-accounts.local.json",
+);
+
+async function pathExists(path: string) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const outputPaths = [
+  publicAccountsPath,
+  ...testnetAccountRoles.map(privateAccountPath),
+];
+const existingPath = (
+  await Promise.all(
+    outputPaths.map(async (path) => ({ path, exists: await pathExists(path) })),
+  )
+).find(({ exists }) => exists)?.path;
+if (existingPath) throw new Error(`Refusing to overwrite ${existingPath}`);
 
 const generatedAccounts = await Promise.all(
   testnetAccountRoles.map(async (role) => {
@@ -41,30 +65,23 @@ const publicAccounts = Object.fromEntries(
   ]),
 );
 
-const accountSettings = generatedAccounts
-  .map(
-    ({ role, mnemonic, derivation }) => `[accounts.${role}]
-mnemonic = "${mnemonic}"
-derivation = "${derivation}"`,
-  )
-  .join("\n\n");
-
-const testnetSettings = `[network]
-name = "testnet"
-stacks_node_rpc_address = "https://api.testnet.hiro.so"
-deployment_fee_rate = 10
-
-${accountSettings}
-`;
-
-await mkdir(dirname(settingsPath), { recursive: true });
-await mkdir(dirname(publicAccountsPath), { recursive: true });
-await writeFile(settingsPath, testnetSettings, {
-  encoding: "utf8",
-  flag: "wx",
-  mode: 0o600,
+await mkdir(dirname(privateAccountPath(testnetAccountRoles[0])), {
+  recursive: true,
 });
-await chmod(settingsPath, 0o600);
+await mkdir(dirname(publicAccountsPath), { recursive: true });
+for (const { role, mnemonic, derivation } of generatedAccounts) {
+  const path = privateAccountPath(role);
+  await writeFile(
+    path,
+    `${JSON.stringify({ role, mnemonic, derivation }, null, 2)}\n`,
+    {
+      encoding: "utf8",
+      flag: "wx",
+      mode: 0o600,
+    },
+  );
+  await chmod(path, 0o600);
+}
 await writeFile(
   publicAccountsPath,
   `${JSON.stringify(publicAccounts, null, 2)}\n`,
@@ -74,6 +91,6 @@ await writeFile(
   },
 );
 
-console.log(`Created ignored Testnet settings at ${settingsPath}`);
+console.log("Created one ignored private Testnet file per account role");
 console.log(`Created public account manifest at ${publicAccountsPath}`);
 console.log(JSON.stringify(publicAccounts, null, 2));

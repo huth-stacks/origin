@@ -28,3 +28,8 @@ epoch = "3.4"
 path = "contracts/origin-demo-target.clar"
 clarity_version = 5
 epoch = "3.4"
+
+[contracts.origin-domain-proof]
+path = "contracts/origin-domain-proof.clar"
+clarity_version = 5
+epoch = "3.4"

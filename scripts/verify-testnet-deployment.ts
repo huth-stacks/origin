@@ -16,6 +16,7 @@ interface ClaimFixture {
   issuedAt: number;
   expiresAt: number;
   txId: string;
+  requestId?: string;
 }
 
 interface ContractFixture {
@@ -28,6 +29,20 @@ interface ContractFixture {
 
 interface FixtureManifest {
   apiUrl: string;
+  compatibility: {
+    version: number;
+    apiUrl: string;
+    registry: { principal: string; schemaVersion: number };
+    trustedAttesters: {
+      principal: string;
+      displayName: string;
+      validFromBurnBlock: number;
+      validUntilBurnBlock?: number;
+      maxClaimLifetimeBurnBlocks: number;
+    }[];
+    discoveryAttesters: string[];
+    referenceContracts: { subject: string }[];
+  };
   registry: { principal: string; txId: string };
   attesters: {
     trusted: { principal: string };
@@ -45,6 +60,41 @@ const manifest = JSON.parse(
 ) as FixtureManifest;
 const [registryAddress, registryName] = manifest.registry.principal.split(".");
 assert(registryAddress && registryName, "Invalid registry principal");
+assert.equal(manifest.compatibility.apiUrl, manifest.apiUrl);
+assert.equal(
+  manifest.compatibility.registry.principal,
+  manifest.registry.principal,
+);
+assert.equal(manifest.compatibility.registry.schemaVersion, 1);
+assert.equal(manifest.compatibility.trustedAttesters.length, 1);
+const trustedPolicy = manifest.compatibility.trustedAttesters[0];
+assert(trustedPolicy, "Missing trusted-attester compatibility policy");
+assert.equal(trustedPolicy.principal, manifest.attesters.trusted.principal);
+assert(
+  trustedPolicy.validFromBurnBlock <= manifest.fixtures.known.claim.issuedAt,
+  "Trusted-attester interval starts after the known claim",
+);
+assert(
+  manifest.fixtures.known.claim.expiresAt -
+    manifest.fixtures.known.claim.issuedAt <=
+    trustedPolicy.maxClaimLifetimeBurnBlocks,
+  "Known claim exceeds the wallet lifetime policy",
+);
+assert(
+  manifest.compatibility.discoveryAttesters.includes(
+    manifest.attesters.trusted.principal,
+  ),
+  "Trusted attester is absent from discovery",
+);
+assert(
+  manifest.compatibility.discoveryAttesters.includes(
+    manifest.attesters.unrecognized.principal,
+  ),
+  "Unrecognized fixture issuer is absent from discovery",
+);
+assert.deepEqual(manifest.compatibility.referenceContracts, [
+  { subject: manifest.fixtures.known.subject },
+]);
 assert.equal(
   manifest.attesters.trusted.principal,
   manifest.fixtures.known.claim.attester,
@@ -115,14 +165,44 @@ async function verifyClaim(fixture: ContractFixture & { claim: ClaimFixture }) {
   assert.deepEqual(claim["issued-at"], Cl.uint(fixture.claim.issuedAt));
   assert.deepEqual(claim["expires-at"], Cl.uint(fixture.claim.expiresAt));
   assert.deepEqual(claim.revoked, Cl.bool(false));
+  if (manifest.compatibility.registry.schemaVersion === 2) {
+    assert.deepEqual(claim["revoked-at"], Cl.none());
+    assert(
+      fixture.claim.requestId,
+      `Missing v2 request ID for ${fixture.subject}`,
+    );
+    assert.deepEqual(
+      claim["request-id"],
+      Cl.bufferFromHex(fixture.claim.requestId),
+    );
+  }
+}
+
+async function verifySchemaVersion() {
+  if (manifest.compatibility.registry.schemaVersion === 1) return;
+  const value = await fetchCallReadOnlyFunction({
+    contractAddress: registryAddress,
+    contractName: registryName,
+    functionName: "get-schema-version",
+    functionArgs: [],
+    senderAddress: registryAddress,
+    network: "testnet",
+  });
+  assert.deepEqual(
+    value,
+    Cl.uint(manifest.compatibility.registry.schemaVersion),
+  );
 }
 
 await Promise.all([
   verifyPublishedSource(
     manifest.registry.principal,
-    "contracts/origin-registry.clar",
+    manifest.compatibility.registry.schemaVersion === 1
+      ? "contracts/origin-registry.clar"
+      : "contracts/origin-registry-v2.clar",
     manifest.registry.txId,
   ),
+  verifySchemaVersion(),
   ...Object.values(manifest.fixtures).map((fixture) =>
     verifyPublishedSource(
       fixture.subject,

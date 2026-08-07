@@ -1,7 +1,10 @@
 (define-constant ERR_INVALID_EXPIRATION (err u400))
+(define-constant ERR_REQUEST_REPLAY (err u409))
 (define-constant ERR_DIRECT_CALL_REQUIRED (err u403))
 (define-constant ERR_NOT_FOUND (err u404))
 (define-constant ERR_EMPTY_DISPLAY_FIELD (err u422))
+(define-constant ERR_INVALID_REQUEST_ID (err u423))
+(define-constant SCHEMA_VERSION u2)
 
 (define-map attestations
   {
@@ -15,7 +18,16 @@
     expires-at: uint,
     revoked: bool,
     revoked-at: (optional uint),
+    request-id: (buff 32),
   }
+)
+
+(define-map consumed-requests
+  {
+    attester: principal,
+    request-id: (buff 32),
+  }
+  bool
 )
 
 (define-public (issue-attestation
@@ -23,12 +35,23 @@
     (issuer-name (string-ascii 64))
     (role (string-ascii 32))
     (expires-at uint)
+    (request-id (buff 32))
   )
   (begin
     (asserts! (is-eq tx-sender contract-caller) ERR_DIRECT_CALL_REQUIRED)
     (asserts! (> expires-at burn-block-height) ERR_INVALID_EXPIRATION)
     (asserts! (> (len issuer-name) u0) ERR_EMPTY_DISPLAY_FIELD)
     (asserts! (> (len role) u0) ERR_EMPTY_DISPLAY_FIELD)
+    (asserts! (is-eq (len request-id) u32) ERR_INVALID_REQUEST_ID)
+    (asserts!
+      (map-insert consumed-requests {
+        attester: tx-sender,
+        request-id: request-id,
+      }
+        true
+      )
+      ERR_REQUEST_REPLAY
+    )
     (map-set attestations {
       attester: tx-sender,
       subject: subject,
@@ -39,8 +62,10 @@
       expires-at: expires-at,
       revoked: false,
       revoked-at: none,
+      request-id: request-id,
     })
     (print {
+      version: SCHEMA_VERSION,
       event: "origin-attestation-issued",
       attester: tx-sender,
       subject: subject,
@@ -50,14 +75,19 @@
       expires-at: expires-at,
       revoked: false,
       revoked-at: none,
+      request-id: request-id,
     })
     (ok true)
   )
 )
 
-(define-public (revoke-attestation (subject principal))
+(define-public (revoke-attestation
+    (subject principal)
+    (request-id (buff 32))
+  )
   (begin
     (asserts! (is-eq tx-sender contract-caller) ERR_DIRECT_CALL_REQUIRED)
+    (asserts! (is-eq (len request-id) u32) ERR_INVALID_REQUEST_ID)
     (let ((key {
         attester: tx-sender,
         subject: subject,
@@ -66,13 +96,24 @@
         attestation (if (get revoked attestation)
           (ok false)
           (begin
+            (asserts!
+              (map-insert consumed-requests {
+                attester: tx-sender,
+                request-id: request-id,
+              }
+                true
+              )
+              ERR_REQUEST_REPLAY
+            )
             (map-set attestations key
               (merge attestation {
                 revoked: true,
                 revoked-at: (some burn-block-height),
+                request-id: request-id,
               })
             )
             (print {
+              version: SCHEMA_VERSION,
               event: "origin-attestation-revoked",
               attester: tx-sender,
               subject: subject,
@@ -82,6 +123,7 @@
               expires-at: (get expires-at attestation),
               revoked: true,
               revoked-at: (some burn-block-height),
+              request-id: request-id,
             })
             (ok true)
           )
@@ -90,6 +132,10 @@
       )
     )
   )
+)
+
+(define-read-only (get-schema-version)
+  SCHEMA_VERSION
 )
 
 (define-read-only (get-attestation
