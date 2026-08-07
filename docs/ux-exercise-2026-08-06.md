@@ -88,31 +88,30 @@ claim is still current.
 
 ## 2. Capture the complete live journey
 
-Create fresh screenshots through the real extension flow:
+Create fresh screenshots through the real extension flow without approving a transaction:
 
 ```sh
 cd /Users/alexander/Code/leather-origin-demo
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin \
-ORIGIN_DEMO_URL=http://acme.example:4173 \
-PLAYWRIGHT_CHROMIUM_EXTRA_ARGS='--host-resolver-rules=MAP acme.example 127.0.0.1' \
-ORIGIN_SHOT_DIR=output/ux-review/2026-08-06/live \
+pnpm build:origin-demo
+ORIGIN_DEMO_URL=http://127.0.0.1:4173 \
+ORIGIN_STORYBOOK_DIR=/Users/alexander/Code/contract-provenance-certificate/docs/storybook/assets \
 pnpm --filter @leather.io/extension test:integration \
-tests/specs/rpc-sip30-requests/origin-screenshots.spec.ts --project=chromium
+tests/specs/rpc-sip30-requests/origin-storybook.spec.ts --project=chromium
 ```
 
-This captures the Acme desktop and mobile pages, connection approval, all three provenance states,
-advanced details, the wallet handoff, declined results, and one approved harmless Testnet call.
+This captures the extension install label, Acme page, connection approval, all three provenance
+states, and every advanced disclosure. Every transaction popup is closed, so no call is broadcast.
 
 Review the captures in this order:
 
-1. `site-desktop.png`: hierarchy, genuine/lookalike card parity, exact target visibility.
-2. `leather-connect.png`: requesting host and account permission clarity.
-3. `site-handoff.png`: active card remains identifiable while waiting for Leather.
-4. `leather-known.png` and `leather-known-advanced.png`: neutral identity treatment, trusted
+1. `01-extension-installed.png`: unmistakable demo extension label.
+2. `02-site-ready.png` and `03-connect-request.png`: page hierarchy and account permission clarity.
+3. `04-site-connected.png`: connected site before a transaction request.
+4. `06-known.png` and `09-known-advanced.png`: neutral identity treatment, trusted
    attribution, limitation sentence, exact subject, distinct issued/expiry heights.
-5. `leather-unrecognized.png` and advanced: no `Definitely Acme` or `Official contract`; untrusted
+5. `05-unrecognized.png` and `08-unrecognized-advanced.png`: no attacker-selected organization or role; untrusted
    attester principal remains inspectable.
-6. `leather-lookalike.png` and advanced: unknown verdict remains separate from the warning; both
+6. `07-lookalike.png` and `10-lookalike-advanced.png`: unknown verdict remains separate from the warning; both
    deployers are visually comparable.
 7. `site-confirmed.png`: the approved check-in updates the streak and activity feed without implying
    that Origin certified transaction safety.
@@ -137,7 +136,7 @@ Use Chrome with the unpacked extension from
   `Origin Testnet Attester` are visible.
 - Confirm the safety-limitation sentence and the independent deny-mode post-condition message.
 - Open Advanced details and inspect subject, attester, issued block, expiry block, and registry.
-- Reject once and verify `Declined in Leather. Nothing was signed.` appears under the correct card.
+- Reject once and verify `Leather closed without returning a transaction.` appears under the correct card without claiming whether Leather signed.
 - Repeat and approve once. Verify the streak reaches ten and a new activity row appears.
 
 ### Unrecognized claim

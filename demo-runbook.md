@@ -100,7 +100,7 @@ Narration: the site supplied the transaction, but Leather derived the exact prin
 
 ### 2. Unrecognized identity claim
 
-Reject or close the first request; the card reports "Declined in Leather. Nothing was signed." On the **Bonus check-in** card from `northwind.example`, select **Check in**.
+Reject or close the first request; the card reports "Leather closed without returning a transaction." On the **Bonus check-in** card from `northwind.example`, select **Check in**.
 
 Leather must show:
 
@@ -146,26 +146,28 @@ Repeat the same command with `ORIGIN_DEMO_URL=https://origin-umber-six.vercel.ap
 
 ## Screenshot capture
 
-`tests/specs/rpc-sip30-requests/origin-screenshots.spec.ts` in the Leather repository walks the full journey (site, connect, all three approval states with the advanced disclosure, one approved broadcast, mobile) and writes PNGs to `ORIGIN_SHOT_DIR`. Vercel preview deployments sit behind SSO, so captures run against the local dev server with a company-shaped hostname mapped inside the capture browser:
+`tests/specs/rpc-sip30-requests/origin-storybook.spec.ts` in the Leather repository captures the install label, site, connection request, all three approval states, and every advanced disclosure. It closes every transaction request without approval, so the evidence run never broadcasts.
 
 ```sh
 cd /Users/alexander/Code/leather-origin-demo
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin \
-ORIGIN_DEMO_URL=http://acme.example:4173 \
-PLAYWRIGHT_CHROMIUM_EXTRA_ARGS='--host-resolver-rules=MAP acme.example 127.0.0.1' \
-ORIGIN_SHOT_DIR=output/playwright/shots \
-pnpm --filter @leather.io/extension test:integration tests/specs/rpc-sip30-requests/origin-screenshots.spec.ts --project=chromium
+pnpm build:origin-demo
+ORIGIN_DEMO_URL=http://127.0.0.1:4173 \
+ORIGIN_STORYBOOK_DIR=/Users/alexander/Code/contract-provenance-certificate/docs/storybook/assets \
+pnpm --filter @leather.io/extension test:integration tests/specs/rpc-sip30-requests/origin-storybook.spec.ts --project=chromium
 ```
 
-The Vite demo config allows the `acme.example` host, so the Leather approver header reads `Requested by acme.example` in captures. The known-origin scenario approves and broadcasts one real Testnet transaction; the other two scenarios reject.
+Start the Origin demo server on port 4173 before the capture command. The command builds the unmistakable production manifest on the telemetry-safe testing runtime, then replaces the checked-in storybook images only after the final bundle exists.
 
 ## Failure behavior
 
 - No injected provider: after a connection attempt, the dapp shows the retryable `Leather required` control and does not enable scenario requests.
 - Rejected connection: the dapp shows `Connection rejected — retry`.
-- Rejected transaction: the card shows `Declined in Leather. Nothing was signed.` and sends nothing.
+- Closed request: the card shows `Leather closed without returning a transaction.` It does not claim whether Leather signed when the site received no transaction response.
+- Timed-out request: the card tells the user to check Leather before trying again because the original request may still settle.
+- Successful response: fresh activity says `Broadcast`, not `Confirmed`; confirmation remains an Explorer fact.
 - Registry timeout or malformed response: Leather shows `Origin unavailable`, never `Known origin`.
 - Slow Testnet response: allow up to 20 seconds before treating the live lookup as failed.
+- Deployment retry: a mempool-pending contract still returns 404 from the confirmed-contract endpoint, so wait for the prior transaction to settle before rerunning a deployment command.
 - Wrong scenario wiring: `tests/demo-scenarios.test.ts` fails when a dapp subject diverges from the public fixture manifest.
 
 ## Reset

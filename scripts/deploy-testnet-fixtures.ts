@@ -7,56 +7,42 @@ import {
   fetchNonce,
   makeContractDeploy,
 } from "@stacks/transactions";
+
 import {
-  generateNewAccount,
-  generateWallet,
-  getStxAddress,
-} from "@stacks/wallet-sdk";
+  loadPublicTestnetAccounts,
+  loadTestnetAccount,
+} from "./testnet-account-utils";
+import {
+  acceptedTxId,
+  requireExplicitTestnetBroadcast,
+} from "./testnet-transaction-utils";
 
-interface PublicAccount {
-  address: string;
-  derivation: string;
-}
+requireExplicitTestnetBroadcast(process.argv);
 
-type PublicAccounts = Record<string, PublicAccount>;
-
-const settingsPath = resolve("settings/Testnet.toml");
-const publicAccountsPath = resolve("deployments/testnet-accounts.local.json");
-const settings = await readFile(settingsPath, "utf8");
-const mnemonic = settings.match(/^mnemonic = "([^"]+)"$/m)?.[1];
-if (!mnemonic) throw new Error(`No mnemonic found in ${settingsPath}`);
-
-const publicAccounts = JSON.parse(
-  await readFile(publicAccountsPath, "utf8"),
-) as PublicAccounts;
-let wallet = await generateWallet({ secretKey: mnemonic, password: "" });
-while (wallet.accounts.length < 4) wallet = generateNewAccount(wallet);
+const apiUrl = "https://api.testnet.hiro.so";
+const publicAccounts = await loadPublicTestnetAccounts();
 
 const deployments = [
   {
     role: "deployer",
-    accountIndex: 0,
     contractName: "origin-registry",
     sourcePath: "contracts/origin-registry.clar",
     fee: 30_000n,
   },
   {
     role: "deployer",
-    accountIndex: 0,
     contractName: "acme-action",
     sourcePath: "contracts/origin-demo-target.clar",
     fee: 10_000n,
   },
   {
     role: "unrecognized_issuer",
-    accountIndex: 2,
     contractName: "claimed-action",
     sourcePath: "contracts/origin-demo-target.clar",
     fee: 10_000n,
   },
   {
     role: "lookalike_deployer",
-    accountIndex: 3,
     contractName: "acme-action",
     sourcePath: "contracts/origin-demo-target.clar",
     fee: 10_000n,
@@ -68,11 +54,17 @@ const nextNonceByAddress = new Map<string, bigint>();
 for (const deployment of deployments) {
   const publicAccount = publicAccounts[deployment.role];
   if (!publicAccount) throw new Error(`Missing ${deployment.role} account`);
-  const account = wallet.accounts[deployment.accountIndex];
-  const address = getStxAddress({ account, network: "testnet" });
-  if (address !== publicAccount.address)
+  const signer = await loadTestnetAccount(deployment.role);
+  const address = signer.address;
+  const principal = `${address}.${deployment.contractName}`;
+  const existingContract = await fetch(
+    `${apiUrl}/extended/v1/contract/${principal}`,
+  );
+  if (existingContract.ok)
+    throw new Error(`Refusing to redeploy existing contract ${principal}`);
+  if (existingContract.status !== 404)
     throw new Error(
-      `${deployment.role} does not match the generated public manifest`,
+      `Contract preflight failed for ${principal}: ${existingContract.status}`,
     );
 
   const nonce =
@@ -85,22 +77,19 @@ for (const deployment of deployments) {
     fee: deployment.fee,
     network: "testnet",
     nonce,
-    senderKey: account.stxPrivateKey,
+    senderKey: signer.account.stxPrivateKey,
   });
   const result = await broadcastTransaction({
     transaction,
     network: "testnet",
   });
-  if (!("txid" in result))
-    throw new Error(
-      `Deployment of ${deployment.contractName} failed: ${JSON.stringify(result)}`,
-    );
+  const txId = acceptedTxId(result, `Deployment of ${deployment.contractName}`);
 
   nextNonceByAddress.set(address, nonce + 1n);
   console.log(
     JSON.stringify({
-      principal: `${address}.${deployment.contractName}`,
-      txId: result.txid,
+      principal,
+      txId,
     }),
   );
 }

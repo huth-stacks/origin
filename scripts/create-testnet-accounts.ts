@@ -1,45 +1,53 @@
-import { chmod, mkdir, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { chmod, mkdir, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 
 import {
-  generateNewAccount,
   generateWallet,
   getStxAddress,
   randomSeedPhrase,
-} from '@stacks/wallet-sdk';
+} from "@stacks/wallet-sdk";
 
-const settingsPath = resolve('settings/Testnet.toml');
-const publicAccountsPath = resolve('deployments/testnet-accounts.local.json');
+import { testnetAccountRoles } from "./testnet-account-utils";
 
-const accountRoles = [
-  'deployer',
-  'trusted_attester',
-  'unrecognized_issuer',
-  'lookalike_deployer',
-] as const;
+const settingsPath = resolve("settings/Testnet.toml");
+const publicAccountsPath = resolve("deployments/testnet-accounts.local.json");
 
-const mnemonic = randomSeedPhrase();
-let wallet = await generateWallet({ secretKey: mnemonic, password: '' });
-
-while (wallet.accounts.length < accountRoles.length) wallet = generateNewAccount(wallet);
+const generatedAccounts = await Promise.all(
+  testnetAccountRoles.map(async (role) => {
+    const mnemonic = randomSeedPhrase();
+    const wallet = await generateWallet({ secretKey: mnemonic, password: "" });
+    const derivation = "m/44'/5757'/0'/0/0";
+    return {
+      role,
+      mnemonic,
+      derivation,
+      address: getStxAddress({
+        account: wallet.accounts[0],
+        network: "testnet",
+      }),
+    };
+  }),
+);
+if (
+  new Set(generatedAccounts.map((account) => account.mnemonic)).size !==
+  generatedAccounts.length
+)
+  throw new Error("Testnet account generation produced a duplicate seed");
 
 const publicAccounts = Object.fromEntries(
-  accountRoles.map((role, index) => [
+  generatedAccounts.map(({ role, address, derivation }) => [
     role,
-    {
-      address: getStxAddress({ account: wallet.accounts[index], network: 'testnet' }),
-      derivation: `m/44'/5757'/0'/0/${index}`,
-    },
-  ])
+    { address, derivation },
+  ]),
 );
 
-const accountSettings = accountRoles
+const accountSettings = generatedAccounts
   .map(
-    (role, index) => `[accounts.${role}]
+    ({ role, mnemonic, derivation }) => `[accounts.${role}]
 mnemonic = "${mnemonic}"
-derivation = "m/44'/5757'/0'/0/${index}"`
+derivation = "${derivation}"`,
   )
-  .join('\n\n');
+  .join("\n\n");
 
 const testnetSettings = `[network]
 name = "testnet"
@@ -51,12 +59,20 @@ ${accountSettings}
 
 await mkdir(dirname(settingsPath), { recursive: true });
 await mkdir(dirname(publicAccountsPath), { recursive: true });
-await writeFile(settingsPath, testnetSettings, { encoding: 'utf8', flag: 'wx', mode: 0o600 });
-await chmod(settingsPath, 0o600);
-await writeFile(publicAccountsPath, `${JSON.stringify(publicAccounts, null, 2)}\n`, {
-  encoding: 'utf8',
-  flag: 'wx',
+await writeFile(settingsPath, testnetSettings, {
+  encoding: "utf8",
+  flag: "wx",
+  mode: 0o600,
 });
+await chmod(settingsPath, 0o600);
+await writeFile(
+  publicAccountsPath,
+  `${JSON.stringify(publicAccounts, null, 2)}\n`,
+  {
+    encoding: "utf8",
+    flag: "wx",
+  },
+);
 
 console.log(`Created ignored Testnet settings at ${settingsPath}`);
 console.log(`Created public account manifest at ${publicAccountsPath}`);

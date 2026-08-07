@@ -1,12 +1,28 @@
+import fixtures from "../../deployments/testnet-fixtures.json";
+
+function principalParts(subject: string) {
+  const separator = subject.indexOf(".");
+  if (separator < 1 || separator === subject.length - 1)
+    throw new Error(`Invalid fixture subject: ${subject}`);
+  return {
+    deployer: subject.slice(0, separator),
+    contractName: subject.slice(separator + 1),
+  };
+}
+
+const known = principalParts(fixtures.fixtures.known.subject);
+const unrecognized = principalParts(fixtures.fixtures.unrecognized.subject);
+const lookalike = principalParts(fixtures.fixtures.lookalike.subject);
+
 export const demoScenarios = [
   {
     id: "known",
     actionTitle: "Weekly check-in",
     body: "Your regular check-in. Keeps the streak going and adds one stamp.",
     from: "acme.example",
-    deployer: "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY",
-    contractName: "acme-action",
-    subject: "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action",
+    deployer: known.deployer,
+    contractName: known.contractName,
+    subject: fixtures.fixtures.known.subject,
     stampWeek: 10,
   },
   {
@@ -14,9 +30,9 @@ export const demoScenarios = [
     actionTitle: "Bonus check-in",
     body: "Acme is running bonus week with Northwind. Adds one stamp, same as usual.",
     from: "northwind.example",
-    deployer: "ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0",
-    contractName: "claimed-action",
-    subject: "ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0.claimed-action",
+    deployer: unrecognized.deployer,
+    contractName: unrecognized.contractName,
+    subject: fixtures.fixtures.unrecognized.subject,
     stampWeek: 10,
   },
   {
@@ -24,9 +40,9 @@ export const demoScenarios = [
     actionTitle: "Weekly check-in",
     body: "Your regular check-in. Keeps the streak going and adds one stamp.",
     from: "mail.acme-rewards.example",
-    deployer: "ST3B1B5SN96FXEP2EC2SE6K2XWEEBYR7TK70WF6XA",
-    contractName: "acme-action",
-    subject: "ST3B1B5SN96FXEP2EC2SE6K2XWEEBYR7TK70WF6XA.acme-action",
+    deployer: lookalike.deployer,
+    contractName: lookalike.contractName,
+    subject: fixtures.fixtures.lookalike.subject,
     stampWeek: 10,
   },
 ] as const;

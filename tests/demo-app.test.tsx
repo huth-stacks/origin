@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
 import { App } from "../demo/src/App";
+import fixtures from "../deployments/testnet-fixtures.json";
 
 describe("Acme demo app", () => {
   test("offers the app-bar wallet button before Leather is detected", () => {
@@ -35,6 +36,8 @@ describe("Acme demo app", () => {
     }
 
     expect(html.match(/>Check in</g)).toHaveLength(3);
+    expect(html).toContain(fixtures.fixtures.known.subject);
+    expect(html).toContain(fixtures.registry.principal);
   });
 
   test("keeps the forensic vocabulary and Leather's own wording off the page", () => {

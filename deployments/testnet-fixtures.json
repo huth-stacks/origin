@@ -27,6 +27,7 @@
         "attester": "ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC",
         "issuerName": "Acme",
         "role": "Demo contract",
+        "issuedAt": 2745,
         "expiresAt": 102745,
         "txId": "0x57950d981c3a596aded2d28c0dec9bd2b225bb68895740eeae305dc2fe0b4025"
       }
@@ -39,6 +40,7 @@
         "attester": "ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0",
         "issuerName": "Definitely Acme",
         "role": "Official contract",
+        "issuedAt": 2745,
         "expiresAt": 102745,
         "txId": "0x22ebab6a79511b6778c6e529ef3e1f22fb3c4212a2fd9208d275eee0026e5d08"
       }

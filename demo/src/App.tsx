@@ -14,11 +14,12 @@ import {
   requestDemoContractCall,
   withTimeout,
 } from "./leather-provider";
+import fixtures from "../../deployments/testnet-fixtures.json";
 
-const EXPLORER = "https://explorer.hiro.so/txid";
-const ACME_ACTION = "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action";
-const ORIGIN_REGISTRY =
-  "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.origin-registry";
+const EXPLORER_ADDRESS = "https://explorer.hiro.so/address";
+const EXPLORER_TRANSACTION = "https://explorer.hiro.so/txid";
+const ACME_ACTION = fixtures.fixtures.known.subject;
+const ORIGIN_REGISTRY = fixtures.registry.principal;
 const SEASON_WEEKS = 12;
 const THIS_WEEK = 10;
 const REQUEST_TIMEOUT_MS = 45_000;
@@ -32,7 +33,13 @@ interface Connection {
 }
 
 type OutcomeKind =
-  "idle" | "pending" | "confirmed" | "declined" | "unavailable";
+  | "idle"
+  | "pending"
+  | "broadcast"
+  | "submitted"
+  | "closed"
+  | "timeout"
+  | "unavailable";
 
 interface Outcome {
   kind: OutcomeKind;
@@ -215,11 +222,11 @@ function WaitingBlock() {
 }
 
 function OutcomeLine({ outcome }: { outcome: Outcome }) {
-  if (outcome.kind === "confirmed") {
+  if (outcome.kind === "broadcast") {
     return (
       <>
         <span aria-hidden="true" className="dot dot-confirmed" />
-        <span>Checked in</span>
+        <span>Transaction broadcast</span>
         {outcome.txid ? (
           <>
             <span className="outcome-sep">·</span>
@@ -228,7 +235,7 @@ function OutcomeLine({ outcome }: { outcome: Outcome }) {
             </span>
             <a
               className="outcome-link"
-              href={`${EXPLORER}/${outcome.txid}?chain=testnet`}
+              href={`${EXPLORER_TRANSACTION}/${outcome.txid}?chain=testnet`}
               rel="noreferrer"
               target="_blank"
             >
@@ -240,11 +247,34 @@ function OutcomeLine({ outcome }: { outcome: Outcome }) {
     );
   }
 
-  if (outcome.kind === "declined") {
+  if (outcome.kind === "closed") {
     return (
       <>
         <span aria-hidden="true" className="dot dot-open" />
-        <span>Declined in Leather. Nothing was signed.</span>
+        <span>Leather closed without returning a transaction.</span>
+      </>
+    );
+  }
+
+  if (outcome.kind === "submitted") {
+    return (
+      <>
+        <span aria-hidden="true" className="dot dot-open" />
+        <span>
+          Leather completed the request without returning a transaction.
+        </span>
+      </>
+    );
+  }
+
+  if (outcome.kind === "timeout") {
+    return (
+      <>
+        <span aria-hidden="true" className="dot dot-open" />
+        <span>
+          Leather has not returned a transaction. Check your wallet before
+          trying again.
+        </span>
       </>
     );
   }
@@ -319,7 +349,7 @@ export function App() {
       } catch {
         // Never chase a refused connection with a second popup.
         setConnection({ status: "declined" });
-        setOutcome(scenario.id, { kind: "declined" });
+        setOutcome(scenario.id, { kind: "closed" });
         setPendingId(null);
         return;
       }
@@ -332,25 +362,29 @@ export function App() {
       );
       const txid = readTxId(response);
       const at = new Date();
-      setOutcome(scenario.id, { kind: "confirmed", txid, at });
-      setStamped((weeks) => Math.max(weeks, scenario.stampWeek));
-      setActivity((rows) => [
-        {
-          key: `${scenario.id}-${at.getTime()}`,
-          when: clockTime(at),
-          action: scenario.actionTitle,
-          host: scenario.from,
-          hash: txid ? truncateMiddle(txid, 6, 4) : undefined,
-          txid,
-        },
-        ...rows,
-      ]);
+      if (!txid) {
+        setOutcome(scenario.id, { kind: "submitted", at });
+      } else {
+        setOutcome(scenario.id, { kind: "broadcast", txid, at });
+        setStamped((weeks) => Math.max(weeks, scenario.stampWeek));
+        setActivity((rows) => [
+          {
+            key: `${scenario.id}-${at.getTime()}`,
+            when: clockTime(at),
+            action: scenario.actionTitle,
+            host: scenario.from,
+            hash: truncateMiddle(txid, 6, 4),
+            txid,
+          },
+          ...rows,
+        ]);
+      }
     } catch (error) {
       setOutcome(
         scenario.id,
         error instanceof LeatherTimeoutError
-          ? { kind: "idle" }
-          : { kind: "declined" },
+          ? { kind: "timeout" }
+          : { kind: "closed" },
       );
     } finally {
       setPendingId(null);
@@ -359,11 +393,12 @@ export function App() {
 
   const connected = connection.status === "connected";
   const openLinks = demoScenarios.filter(
-    (scenario) => outcomes[scenario.id].kind !== "confirmed",
+    (scenario) =>
+      !["broadcast", "submitted"].includes(outcomes[scenario.id].kind),
   ).length;
   const notice =
     connection.status === "declined"
-      ? "Connection declined in Leather. Connect whenever you're ready."
+      ? "Leather closed without returning an account connection. Connect whenever you're ready."
       : connection.status === "unavailable"
         ? "Leather was not detected in this browser."
         : null;
@@ -595,12 +630,12 @@ export function App() {
                   <span className="activity-host">{row.host}</span>
                   <span className="activity-status">
                     <span aria-hidden="true" className="dot dot-confirmed" />
-                    Confirmed
+                    Broadcast
                   </span>
                   <span className="activity-hash">
                     {row.txid ? (
                       <a
-                        href={`${EXPLORER}/${row.txid}?chain=testnet`}
+                        href={`${EXPLORER_TRANSACTION}/${row.txid}?chain=testnet`}
                         rel="noreferrer"
                         target="_blank"
                       >
@@ -641,14 +676,14 @@ export function App() {
             </p>
             <p className="footer-legal">© 2026 Acme · Stacks Testnet demo</p>
             <a
-              href={`${EXPLORER}/${ACME_ACTION}?chain=testnet`}
+              href={`${EXPLORER_ADDRESS}/${ACME_ACTION}?chain=testnet`}
               rel="noreferrer"
               target="_blank"
             >
               View acme-action ↗
             </a>
             <a
-              href={`${EXPLORER}/${ORIGIN_REGISTRY}?chain=testnet`}
+              href={`${EXPLORER_ADDRESS}/${ORIGIN_REGISTRY}?chain=testnet`}
               rel="noreferrer"
               target="_blank"
             >

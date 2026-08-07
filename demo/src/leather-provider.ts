@@ -75,8 +75,8 @@ export function readStxAddress(response: unknown): string | undefined {
 }
 
 /**
- * A response can settle with `status: "proposed"` and no txid. That is a
- * completed check-in without an explorer link, never a failure.
+ * A response can settle with `status: "proposed"` and no txid. Callers must
+ * distinguish that response from a transaction broadcast.
  */
 export function readTxId(response: unknown): string | undefined {
   const value = unwrap(response).txid;

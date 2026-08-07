@@ -1,8 +1,8 @@
 # Origin Project Status
 
-- **As of:** August 6, 2026
+- **As of:** August 7, 2026
 - **Canonical repository:** `https://github.com/huth-stacks/origin`
-- **Product state:** complete hackathon proof of concept; not integrated into upstream Leather
+- **Product state:** complete hackathon proof of concept with all 17 aggregate review findings dispositioned; coordinated Testnet cutover pending; not integrated into upstream Leather
 
 This file is the current handoff record. Product decisions remain canonical in
 `origin-hackathon-plan.md`; operational instructions remain canonical in `demo-runbook.md`.
@@ -11,10 +11,10 @@ This file is the current handoff record. Product decisions remain canonical in
 
 Origin is one project with two intentionally separate Git repositories:
 
-| Responsibility                                                                                                   | Repository and local checkout                                                                                                 | Current review target                                                                                             |
-| ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`                                               | `main`; the last merged product release is [PR #12](https://github.com/huth-stacks/origin/pull/12)                |
-| Leather lookup, evaluator, approval UX, and extension tests                                                      | `huth-stacks/leather-origin-demo` at `/Users/alexander/Code/leather-origin-demo`, with `leather-io/mono` retained as upstream | `agent/origin-demo-build`, based on the merged [PR #1](https://github.com/huth-stacks/leather-origin-demo/pull/1) |
+| Responsibility                                                                                                   | Repository and local checkout                                                                                                 | Current review target                                                              |
+| ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`                                               | `agent/tier-1-hardening`, based on `main` at `acc1d39`                             |
+| Leather lookup, evaluator, approval UX, and extension tests                                                      | `huth-stacks/leather-origin-demo` at `/Users/alexander/Code/leather-origin-demo`, with `leather-io/mono` retained as upstream | `agent/origin-tier-1-hardening`, based on `agent/origin-demo-build` at `f1e2aad7b` |
 
 Leather remains separate because it is an upstream product monorepo. Vendoring its source here
 would obscure the review boundary and make future rebases harder. This repository consolidates the
@@ -31,41 +31,54 @@ not part of the active project.
 - A fictional Acme check-in dapp that connects through Leather's normal provider and sends ordinary
   `stx_callContract` requests without identity or trust hints.
 - A wallet-owned registry client and pure evaluator in Leather.
+- Wallet-pinned Testnet transport for Origin registry and burn-height reads; a request-selected
+  node cannot answer the provenance lookup.
 - Wallet UX for known, unrecognized, unknown, no-longer-valid, loading, and unavailable states.
 - An independent same-contract-name/different-deployer lookalike warning.
 - Advanced details showing the exact checked principal, attester, block heights, and registry.
 - Testnet Explorer links for the trusted attester and registry, making the evidence independently
   inspectable from the approval screen.
 - Deterministic unit, component, and browser coverage plus an opt-in live Testnet journey.
+- A Simnet-only v2 registry migration bundle with direct-call guards, persisted revocation time,
+  index-complete lifecycle events, and explicit reissue semantics.
+- Independently seeded future Testnet roles and broadcast scripts that reject node errors even when
+  the rejection response contains a transaction ID.
 
 The requesting application never supplies the displayed organization, attester policy, canonical
 contract, or verdict. Origin establishes provenance claims, not contract or transaction safety.
 
 ## Deployment and integration state
 
-- `huth-stacks/origin` `main` contains the complete registry, Testnet fixtures, Acme demo,
-  consolidated handoff, and dated UX plan at `29bec1f`.
+- `huth-stacks/origin` `main` contains the complete registry, restored Testnet fixtures, UX
+  storybook, attester roadmap, and consolidated handoff at `acc1d39`.
 - Origin PR #11 merged on August 6, 2026 after its Vercel checks and fresh live-Testnet browser
   journey passed.
 - `https://origin-umber-six.vercel.app` serves the merged `Acme · Check in` build.
 - Leather PR #1 merged the final native approver-section redesign into
   `agent/origin-three-scenario-flow` in the fork at `c91732064`. It did not modify upstream Leather.
 - No PR has been opened against `leather-io/mono`.
-- The Leather work started at upstream `dev` commit `d98bd9a61`; upstream `dev` is currently four
-  commits ahead at `4976c2a75`. Rebase and full verification are required before an upstream PR.
+- The Leather work started at upstream `dev` commit `d98bd9a61`. Rebase and full verification are
+  required before an upstream PR.
+- The live registry remains v1. The v2 contract, isolated-attester rotation, fixture predeployment,
+  manifest replacement, and Leather principal updates are one future coordinated Testnet cutover;
+  no Tier 1 implementation command has broadcast a transaction.
 
 ## Verification snapshot
 
-Fresh checks on August 6, 2026:
+Fresh checks on August 7, 2026:
 
-- Origin `pnpm verify`: passed, including format checks, two Clarity contracts, typecheck, 17 tests,
+- Origin `pnpm verify`: passed, including format checks, four Clarity contracts, typecheck, 33 tests,
   and the production demo build.
 - Stacks Testnet reset on August 6, invalidating the original disposable fixtures. The canonical
   fixtures were redeployed and re-attested without changing the demo identities.
-- Origin `pnpm testnet:verify`: passed at burn height `2745`, confirming four contracts, two claims,
-  and the unattested same-name/different-deployer fixture after the reset.
-- Leather targeted Origin suite: 27 of 27 tests passed across evaluator, registry client, and layout.
+- Origin `pnpm testnet:verify`: passed at burn height `3018`, confirming four live v1 contracts, two
+  claims including their manifest-recorded issue heights, and the unattested
+  same-name/different-deployer fixture.
+- Leather targeted Origin and packaging suite: 40 of 40 tests passed across evaluator, registry client, network gating, layout, and manifest generation; the complete extension unit suite passes 613 of 613 tests.
 - The live Acme/Leather/Testnet three-scenario journey passed against the restored fixtures.
+- A fresh production-manifest/testing-runtime extension build and non-broadcasting local storybook capture passed after the follow-up fixes on
+  the review-response branch. The rendered views visibly include the complete warning, the
+  `Leather Origin Demo` extension label, and both attester and registry Explorer evidence links.
 
 Recorded final-branch evidence:
 
@@ -74,18 +87,21 @@ Recorded final-branch evidence:
 - Live Acme/Leather/Testnet assertion journey: passed.
 - Full screenshot journey, including one approved harmless Testnet broadcast: passed.
 
-Clarinet reports three expected permissionless-input analyzer warnings for `subject`, `issuer-name`,
-and `role`. `contracts/README.md` documents why treating those fields as intrinsically trusted would
-violate the design.
+Clarinet reports the same three expected permissionless-input analyzer warnings for `subject`,
+`issuer-name`, and `role` in both v1 and v2. `contracts/README.md` documents why treating those
+fields as intrinsically trusted would violate the design.
 
 ## Immediate next actions
 
-1. Review the scrollable UX storybook at `docs/storybook/index.html` and run the dated UX review in
-   `docs/ux-exercise-2026-08-06.md` when hands-on testing is convenient.
-2. Use `docs/testnet-attester-and-four-day-roadmap.md` to choose the next Testnet product slice.
-3. Rebase the consolidated Leather staging branch onto current upstream `dev` and run Leather's
+1. Review the complete ranked response tracked in `docs/review-response-2026-08-07.md`.
+2. Execute the coordinated v2 Testnet cutover only after explicitly approving its new principals
+   and external writes.
+3. Build the Day 2 event index, attester profile, and claim explorer before enabling Day 3 issuance.
+4. Implement every control and adversarial test in `docs/domain-control-fetch-security.md` before
+   connecting the domain fetcher to an isolated signing key.
+5. Rebase the consolidated Leather staging branch onto current upstream `dev` and run Leather's
    complete required verification.
-4. Open an upstream Leather PR with `leather-review-manifest.md` as the review guide.
+6. Open an upstream Leather PR with `leather-review-manifest.md` as the review guide.
 
-Stacks Connect standardization, arbitrary claim discovery/indexing, and production attester
-governance remain post-hackathon work rather than unfinished proof-of-concept requirements.
+Stacks Connect standardization and production attester governance remain post-hackathon work rather
+than unfinished proof-of-concept requirements.
