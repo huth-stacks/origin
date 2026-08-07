@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -8,21 +7,25 @@ import {
   fetchNonce,
   makeContractCall,
 } from "@stacks/transactions";
+import { fetchWithTimeout } from "../demo/src/fetch-with-timeout.ts";
 
 import {
   loadPublicTestnetAccounts,
   loadTestnetAccount,
   type TestnetAccountRole,
 } from "./testnet-account-utils.ts";
+import { prepareIssuanceIntent } from "./testnet-issuance-intent.ts";
 import {
   classifyTransactionPreflight,
   readTransactionPreflightEvidence,
 } from "./testnet-transaction-preflight.ts";
 import {
   acceptedTxId,
+  findPreparedTransactionByJournalKey,
   hasPreparedTransaction,
   isExplicitTestnetBroadcast,
   persistPreparedTransaction,
+  readJournaledNonce,
 } from "./testnet-transaction-utils.ts";
 
 interface CurrentManifest {
@@ -42,11 +45,15 @@ function readUintArgument(name: string) {
   return parsed;
 }
 
-function requestId(label: string) {
-  return Cl.buffer(createHash("sha256").update(`origin-v2:${label}`).digest());
+function readStringArgument(name: string) {
+  const index = process.argv.indexOf(name);
+  const value = index >= 0 ? process.argv[index + 1] : undefined;
+  if (!value) throw new Error(`Missing required ${name} value`);
+  return value;
 }
 
 const broadcast = isExplicitTestnetBroadcast(process.argv);
+const issuanceIntentId = readStringArgument("--intent-id");
 const apiUrl = "https://api.testnet.hiro.so";
 const canonicalExpiresAt = readUintArgument("--canonical-expires-at");
 const shortExpiresAt = readUintArgument("--short-expires-at");
@@ -57,7 +64,12 @@ const currentManifest = JSON.parse(
 const registryAddress = publicAccounts.registry_deployer.address;
 const registryName = "origin-registry-v2";
 
-const networkInfoResponse = await fetch("https://api.testnet.hiro.so/v2/info");
+const networkInfoResponse = await fetchWithTimeout(
+  fetch,
+  "https://api.testnet.hiro.so/v2/info",
+  undefined,
+  8_000,
+);
 if (!networkInfoResponse.ok)
   throw new Error(`Testnet info request failed: ${networkInfoResponse.status}`);
 const networkInfo = (await networkInfoResponse.json()) as {
@@ -73,13 +85,12 @@ if (shortExpiresAt <= burnBlockHeight)
 if (shortExpiresAt >= canonicalExpiresAt)
   throw new Error("Short expiry must be below the canonical expiry");
 
-const issuances: {
+const issuanceTargets: {
   role: TestnetAccountRole;
   subject: string;
   issuerName: string;
   contractRole: string;
   expiresAt: number;
-  request: ReturnType<typeof requestId>;
 }[] = [
   {
     role: "canonical_attester",
@@ -87,7 +98,6 @@ const issuances: {
     issuerName: "Acme",
     contractRole: "Demo contract",
     expiresAt: canonicalExpiresAt,
-    request: requestId(`canonical:${currentManifest.fixtures.known.subject}`),
   },
   {
     role: "unrecognized_issuer",
@@ -95,9 +105,6 @@ const issuances: {
     issuerName: "Definitely Acme",
     contractRole: "Official contract",
     expiresAt: canonicalExpiresAt,
-    request: requestId(
-      `unrecognized:${currentManifest.fixtures.unrecognized.subject}`,
-    ),
   },
   {
     role: "canonical_attester",
@@ -105,7 +112,6 @@ const issuances: {
     issuerName: "Origin lifecycle fixture",
     contractRole: "Demo contract",
     expiresAt: canonicalExpiresAt,
-    request: requestId("lifecycle"),
   },
   {
     role: "canonical_attester",
@@ -113,19 +119,70 @@ const issuances: {
     issuerName: "Origin expiry fixture",
     contractRole: "Demo contract",
     expiresAt: shortExpiresAt,
-    request: requestId("expiry"),
   },
 ];
 
+const preparedIntent = await prepareIssuanceIntent({
+  intentId: issuanceIntentId,
+  targets: issuanceTargets.map((issuance) => ({
+    attesterRole: issuance.role,
+    subject: issuance.subject,
+    issuerName: issuance.issuerName,
+    contractRole: issuance.contractRole,
+    expiresAt: issuance.expiresAt,
+  })),
+});
+const issuances = preparedIntent.issuances.map((issuance) => ({
+  role: issuance.attesterRole as TestnetAccountRole,
+  subject: issuance.subject,
+  issuerName: issuance.issuerName,
+  contractRole: issuance.contractRole,
+  expiresAt: issuance.expiresAt,
+  request: Cl.bufferFromHex(issuance.requestId),
+  journalKey: `issue:${issuanceIntentId}:${issuance.attesterRole}:${issuance.subject}`,
+}));
+
+const journaledByKey = new Map(
+  await Promise.all(
+    issuances.map(
+      async (issuance) =>
+        [
+          issuance.journalKey,
+          await findPreparedTransactionByJournalKey(issuance.journalKey),
+        ] as const,
+    ),
+  ),
+);
+const reservedNoncesByAddress = new Map<string, Set<bigint>>();
+for (const issuance of issuances) {
+  const journaled = journaledByKey.get(issuance.journalKey);
+  if (!journaled) continue;
+  const address = publicAccounts[issuance.role].address;
+  const reserved = reservedNoncesByAddress.get(address) ?? new Set<bigint>();
+  reserved.add(readJournaledNonce(journaled));
+  reservedNoncesByAddress.set(address, reserved);
+}
 const nextNonceByAddress = new Map<string, bigint>();
+
+async function allocateNonce(address: string) {
+  let nonce =
+    nextNonceByAddress.get(address) ??
+    (await fetchNonce({ address, network: "testnet" }));
+  const reserved = reservedNoncesByAddress.get(address);
+  while (reserved?.has(nonce)) nonce += 1n;
+  nextNonceByAddress.set(address, nonce + 1n);
+  return nonce;
+}
 
 for (const issuance of issuances) {
   const publicAccount = publicAccounts[issuance.role];
-  const nonce =
-    nextNonceByAddress.get(publicAccount.address) ??
-    (await fetchNonce({ address: publicAccount.address, network: "testnet" }));
+  const journaled = journaledByKey.get(issuance.journalKey);
+  const nonce = journaled
+    ? readJournaledNonce(journaled)
+    : await allocateNonce(publicAccount.address);
   const intent = {
-    state: broadcast ? "ready-to-sign" : "dry-run",
+    journalKey: issuance.journalKey,
+    issuanceIntentId,
     role: issuance.role,
     registry: `${registryAddress}.${registryName}`,
     functionName: "issue-attestation",
@@ -137,8 +194,7 @@ for (const issuance of issuances) {
     nonce: nonce.toString(),
   };
   if (!broadcast) {
-    console.log(JSON.stringify(intent));
-    nextNonceByAddress.set(publicAccount.address, nonce + 1n);
+    console.log(JSON.stringify({ state: "dry-run", ...intent }));
     continue;
   }
 
@@ -159,12 +215,15 @@ for (const issuance of issuances) {
     network: "testnet",
   });
   const plannedTxId = transaction.txid();
+  if (journaled && journaled.txId !== plannedTxId)
+    throw new Error(`Journaled issuance mismatch for ${issuance.subject}`);
   const preflight = classifyTransactionPreflight({
     planned: {
       txId: plannedTxId,
       sender: publicAccount.address,
       nonce: Number(nonce),
-      previouslyJournaled: await hasPreparedTransaction(plannedTxId),
+      previouslyJournaled:
+        journaled !== undefined || (await hasPreparedTransaction(plannedTxId)),
     },
     ...(await readTransactionPreflightEvidence({
       apiUrl,
@@ -173,7 +232,6 @@ for (const issuance of issuances) {
     })),
   });
   if (preflight.action === "continue") {
-    nextNonceByAddress.set(publicAccount.address, nonce + 1n);
     console.log(
       JSON.stringify({
         state: "confirmed",
@@ -198,7 +256,6 @@ for (const issuance of issuances) {
     throw new Error(
       `Broadcast transaction ID mismatch for ${issuance.subject}`,
     );
-  nextNonceByAddress.set(publicAccount.address, nonce + 1n);
   console.log(
     JSON.stringify({
       attester: signer.address,

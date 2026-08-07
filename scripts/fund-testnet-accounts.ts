@@ -9,14 +9,23 @@ import {
   testnetAccountRoles,
 } from "./testnet-account-utils.ts";
 import {
+  fundingAmountForBalance,
+  fundingJournalKey,
+  readJournaledFundingAmount,
+  readStxBalance,
+  testnetRoleTargetBalance,
+} from "./testnet-funding.ts";
+import {
   classifyTransactionPreflight,
   readTransactionPreflightEvidence,
 } from "./testnet-transaction-preflight.ts";
 import {
   acceptedTxId,
+  findPreparedTransactionByJournalKey,
   hasPreparedTransaction,
   isExplicitTestnetBroadcast,
   persistPreparedTransaction,
+  readJournaledNonce,
 } from "./testnet-transaction-utils.ts";
 
 const broadcast = isExplicitTestnetBroadcast(process.argv);
@@ -26,42 +35,93 @@ const deployerAddress = publicAccounts.registry_deployer.address;
 
 const recipients = testnetAccountRoles
   .filter((role) => role !== "registry_deployer")
-  .map((role) => ({ role, address: publicAccounts[role].address }));
-const firstNonce = await fetchNonce({
+  .map((role) => {
+    const address = publicAccounts[role].address;
+    return {
+      role,
+      address,
+      journalKey: fundingJournalKey(deployerAddress, address),
+    };
+  });
+const journaledByKey = new Map(
+  await Promise.all(
+    recipients.map(
+      async (recipient) =>
+        [
+          recipient.journalKey,
+          await findPreparedTransactionByJournalKey(recipient.journalKey),
+        ] as const,
+    ),
+  ),
+);
+const reservedNonces = new Set(
+  [...journaledByKey.values()]
+    .filter((record) => record !== undefined)
+    .map(readJournaledNonce),
+);
+let nextNonce = await fetchNonce({
   address: deployerAddress,
   network: "testnet",
 });
 
-for (const [index, recipient] of recipients.entries()) {
-  const nonce = firstNonce + BigInt(index);
+function allocateNonce() {
+  while (reservedNonces.has(nextNonce)) nextNonce += 1n;
+  const nonce = nextNonce;
+  nextNonce += 1n;
+  return nonce;
+}
+
+for (const recipient of recipients) {
+  const journaled = journaledByKey.get(recipient.journalKey);
+  const amount = journaled
+    ? readJournaledFundingAmount(journaled.intent, recipient.journalKey)
+    : fundingAmountForBalance(
+        await readStxBalance({ apiUrl, address: recipient.address }),
+      );
+  if (amount === 0n) {
+    console.log(
+      JSON.stringify({
+        state: "sufficient-balance",
+        recipientRole: recipient.role,
+        recipient: recipient.address,
+        targetBalance: testnetRoleTargetBalance.toString(),
+      }),
+    );
+    continue;
+  }
+  const nonce = journaled ? readJournaledNonce(journaled) : allocateNonce();
   const intent = {
-    state: broadcast ? "ready-to-sign" : "dry-run",
+    journalKey: recipient.journalKey,
     sender: deployerAddress,
     recipientRole: recipient.role,
     recipient: recipient.address,
-    amount: "10000000",
+    targetBalance: testnetRoleTargetBalance.toString(),
+    amount: amount.toString(),
     nonce: nonce.toString(),
   };
   if (!broadcast) {
-    console.log(JSON.stringify(intent));
+    console.log(JSON.stringify({ state: "dry-run", ...intent }));
     continue;
   }
   const deployer = await loadTestnetAccount("registry_deployer");
   const transaction = await makeSTXTokenTransfer({
     recipient: recipient.address,
-    amount: 10_000_000n,
+    amount,
     nonce,
     senderKey: deployer.account.stxPrivateKey,
     network: "testnet",
     memo: `Origin ${recipient.role}`,
   });
   const plannedTxId = transaction.txid();
+  if (journaled && journaled.txId !== plannedTxId)
+    throw new Error(`Journaled funding mismatch for ${recipient.role}`);
   const preflight = classifyTransactionPreflight({
     planned: {
       txId: plannedTxId,
       sender: deployerAddress,
       nonce: Number(nonce),
-      previouslyJournaled: await hasPreparedTransaction(plannedTxId),
+      previouslyJournaled:
+        journaled !== undefined || (await hasPreparedTransaction(plannedTxId)),
     },
     ...(await readTransactionPreflightEvidence({
       apiUrl,

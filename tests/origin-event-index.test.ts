@@ -150,6 +150,43 @@ describe(fetchOriginLogPages.name, () => {
     });
   });
 
+  test("fails unavailable when a request exceeds its deadline", async () => {
+    const result = await fetchOriginLogPages({
+      apiUrl: "https://wallet-owned.example",
+      registryPrincipal: registry,
+      requestTimeoutMs: 5,
+      fetchFn: () => new Promise(() => undefined),
+    });
+
+    expect(result).toEqual({
+      condition: "unavailable",
+      logs: [],
+      reason: "network-failure",
+    });
+  });
+
+  test("enforces one total budget across cursor pages", async () => {
+    let now = 0;
+    const result = await fetchOriginLogPages({
+      apiUrl: "https://wallet-owned.example",
+      registryPrincipal: registry,
+      totalTimeoutMs: 10,
+      nowFn: () => now,
+      fetchFn: () => {
+        now += 11;
+        return Promise.resolve(
+          Response.json({ results: [], next_cursor: crypto.randomUUID() }),
+        );
+      },
+    });
+
+    expect(result).toEqual({
+      condition: "unavailable",
+      logs: [],
+      reason: "network-failure",
+    });
+  });
+
   test("stops at the configured flood limit", async () => {
     const result = await fetchOriginLogPages({
       apiUrl: "https://wallet-owned.example",

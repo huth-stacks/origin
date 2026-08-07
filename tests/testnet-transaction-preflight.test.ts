@@ -152,4 +152,20 @@ describe(readTransactionPreflightEvidence.name, () => {
     });
     expect(requests).toHaveLength(3);
   });
+
+  test("fails all three evidence sources closed at their deadlines", async () => {
+    const result = await readTransactionPreflightEvidence({
+      apiUrl: "https://api.test",
+      txId: planned.txId,
+      sender: planned.sender,
+      requestTimeoutMs: 5,
+      fetchFn: () => new Promise(() => undefined),
+    });
+
+    expect(result).toEqual({
+      transaction: { state: "unavailable" },
+      mempool: { state: "unavailable" },
+      nonce: { state: "unavailable" },
+    });
+  });
 });

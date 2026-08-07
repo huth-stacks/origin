@@ -5,6 +5,8 @@ import {
   isClarityType,
 } from "@stacks/transactions";
 
+import { fetchWithTimeout } from "./fetch-with-timeout";
+
 export interface OriginContractLog {
   eventIndex: number;
   txId: string;
@@ -36,6 +38,9 @@ interface FetchOriginLogPagesArgs {
   fetchFn?: typeof fetch;
   pageSize?: number;
   maxPages?: number;
+  requestTimeoutMs?: number;
+  totalTimeoutMs?: number;
+  nowFn?: () => number;
 }
 
 type OriginLogPageResult =
@@ -114,9 +119,13 @@ export async function fetchOriginLogPages({
   fetchFn = fetch,
   pageSize = 50,
   maxPages = 20,
+  requestTimeoutMs = 8_000,
+  totalTimeoutMs = 30_000,
+  nowFn = () => performance.now(),
 }: FetchOriginLogPagesArgs): Promise<OriginLogPageResult> {
   const logs: OriginContractLog[] = [];
   const seenCursors = new Set<string>();
+  const startedAt = nowFn();
   let cursor: string | null = null;
 
   for (let page = 0; page < maxPages; page += 1) {
@@ -129,7 +138,13 @@ export async function fetchOriginLogPages({
 
     let response: Response;
     try {
-      response = await fetchFn(url);
+      const remainingMs = totalTimeoutMs - (nowFn() - startedAt);
+      response = await fetchWithTimeout(
+        fetchFn,
+        url,
+        undefined,
+        Math.min(requestTimeoutMs, remainingMs),
+      );
     } catch {
       return {
         condition: logs.length === 0 ? "unavailable" : "partial",

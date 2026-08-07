@@ -33,6 +33,8 @@ The contract deliberately has no global maximum lifetime because different attes
 
 `origin-registry-caller.clar` exists only to prove the write guard in Simnet tests and must not be deployed as a fixture.
 
+`origin-domain-proof.clar` is immutable evidence, not an attester. Publishing requires a direct call and inserts each `{deployer, request-id}` only once, preventing forwarded principal misattribution and proof overwrite. Its accepted subject and domain are intentionally untrusted evidence fields; the off-chain verifier must match both against the signed challenge before authorizing issuance.
+
 `get-attestation` intentionally returns stored records even after their expiration height. Every consumer must compare `expires-at` with the current Bitcoin burn block height; the wallet evaluator owns that check. Simnet tests mine through expiration to pin this contract.
 
 Both registry contracts and their two test fixtures pin Clarity 5 to Stacks epoch 3.4 in `Clarinet.toml`; deployment plans must retain that explicit epoch.
@@ -43,7 +45,7 @@ Run `pnpm testnet:accounts` once to create one ignored `settings/testnet-v2-<rol
 
 After funding the deployer from the official Testnet faucet, `pnpm testnet:fund-accounts` transfers 10 Testnet STX to each remaining fixture account. These tokens have no real value, but the command writes to Testnet and should only be run for the demo wallet.
 
-`pnpm testnet:fund-accounts`, `pnpm testnet:deploy-fixtures`, and `pnpm testnet:issue-attestations -- --canonical-expires-at <height> --short-expires-at <height>` are dry-run commands. Their `:broadcast` variants additionally require the explicit broadcast path. Prepared signed transactions are journaled to ignored local files before network I/O, and deployment preflight checks confirmed source, principal mempool transactions, and the account's possible next nonce. A node rejection remains a failure even if it includes a transaction ID.
+`pnpm testnet:fund-accounts`, `pnpm testnet:deploy-fixtures`, and `pnpm testnet:issue-attestations -- --intent-id <reviewed-id> --canonical-expires-at <height> --short-expires-at <height>` are dry-run commands. Their `:broadcast` variants additionally require the explicit broadcast path. An issuance intent ID persists one exact argument set and stable request IDs for safe retries; a renewal or lifecycle reissue requires a new reviewed intent ID. Prepared signed transactions are journaled to ignored local files before network I/O, and deployment preflight checks confirmed source, principal mempool transactions, and the account's possible next nonce. A node rejection remains a failure even if it includes a transaction ID.
 
 The v2 deployment publishes only the new registry, the designed-not-implemented domain-proof fixture, and dedicated lifecycle/expiry fixtures. Existing canonical known, unrecognized, and lookalike subjects are not redeployed. Issuance uses exact operator-supplied expiry integers and includes the canonical, hostile, lifecycle, and short-expiry claims in the reviewed write list.
 
@@ -57,4 +59,4 @@ Stacks Testnet reset on August 6, 2026. The fixture manifest records the replace
 
 ## Analyzer Warning
 
-Clarinet's check-checker reports `subject`, `issuer-name`, and `role` as potentially unchecked persisted inputs. This is expected: the registry is deliberately permissionless and attestation text is untrusted until the wallet recognizes the issuing attester. Adding an administrator or pretending the inputs are intrinsically trusted would violate the product's trust model. Clarity still enforces the principal and bounded ASCII types, and Leather never renders display text from unrecognized attesters in trusted chrome.
+Clarinet's check-checker reports registry `subject`, `issuer-name`, and `role`, plus domain-proof `subject` and `domain`, as potentially unchecked persisted inputs. This is expected: the registry is deliberately permissionless and proof/attestation fields remain untrusted until an attester or wallet applies its independent policy. Adding an administrator or pretending the inputs are intrinsically trusted would violate the product's trust model. Clarity still enforces principal and bounded ASCII types, and Leather never renders display text from unrecognized attesters in trusted chrome.

@@ -8,115 +8,31 @@ import {
   fetchCallReadOnlyFunction,
   isClarityType,
 } from "@stacks/transactions";
-
-interface ClaimFixture {
-  attester: string;
-  issuerName: string;
-  role: string;
-  issuedAt: number;
-  expiresAt: number;
-  txId: string;
-  requestId?: string;
-}
-
-interface ContractFixture {
-  subject: string;
-  contractTxId: string;
-  stacksBlockHeight: number;
-  claim?: ClaimFixture;
-  referenceSubject?: string;
-}
-
-interface FixtureManifest {
-  apiUrl: string;
-  compatibility: {
-    version: number;
-    apiUrl: string;
-    registry: { principal: string; schemaVersion: number };
-    trustedAttesters: {
-      principal: string;
-      displayName: string;
-      validFromBurnBlock: number;
-      validUntilBurnBlock?: number;
-      maxClaimLifetimeBurnBlocks: number;
-    }[];
-    discoveryAttesters: string[];
-    referenceContracts: { subject: string }[];
-  };
-  registry: { principal: string; txId: string };
-  attesters: {
-    trusted: { principal: string };
-    unrecognized: { principal: string };
-  };
-  fixtures: {
-    known: ContractFixture & { claim: ClaimFixture };
-    unrecognized: ContractFixture & { claim: ClaimFixture };
-    lookalike: ContractFixture & { referenceSubject: string };
-  };
-}
+import { fetchWithTimeout } from "../demo/src/fetch-with-timeout.ts";
+import {
+  type ClaimFixture,
+  type ContractFixture,
+  type FixtureManifest,
+  validateFixtureManifest,
+} from "./testnet-manifest.ts";
 
 const manifest = JSON.parse(
   await readFile(resolve("deployments/testnet-fixtures.json"), "utf8"),
 ) as FixtureManifest;
+const { schemaVersion } = validateFixtureManifest(manifest);
 const [registryAddress, registryName] = manifest.registry.principal.split(".");
 assert(registryAddress && registryName, "Invalid registry principal");
-assert.equal(manifest.compatibility.apiUrl, manifest.apiUrl);
-assert.equal(
-  manifest.compatibility.registry.principal,
-  manifest.registry.principal,
-);
-assert.equal(manifest.compatibility.registry.schemaVersion, 1);
-assert.equal(manifest.compatibility.trustedAttesters.length, 1);
-const trustedPolicy = manifest.compatibility.trustedAttesters[0];
-assert(trustedPolicy, "Missing trusted-attester compatibility policy");
-assert.equal(trustedPolicy.principal, manifest.attesters.trusted.principal);
-assert(
-  trustedPolicy.validFromBurnBlock <= manifest.fixtures.known.claim.issuedAt,
-  "Trusted-attester interval starts after the known claim",
-);
-assert(
-  manifest.fixtures.known.claim.expiresAt -
-    manifest.fixtures.known.claim.issuedAt <=
-    trustedPolicy.maxClaimLifetimeBurnBlocks,
-  "Known claim exceeds the wallet lifetime policy",
-);
-assert(
-  manifest.compatibility.discoveryAttesters.includes(
-    manifest.attesters.trusted.principal,
-  ),
-  "Trusted attester is absent from discovery",
-);
-assert(
-  manifest.compatibility.discoveryAttesters.includes(
-    manifest.attesters.unrecognized.principal,
-  ),
-  "Unrecognized fixture issuer is absent from discovery",
-);
-assert.deepEqual(manifest.compatibility.referenceContracts, [
-  { subject: manifest.fixtures.known.subject },
-]);
-assert.equal(
-  manifest.attesters.trusted.principal,
-  manifest.fixtures.known.claim.attester,
-  "Known claim must be issued by the configured trusted attester",
-);
-assert.equal(
-  manifest.attesters.unrecognized.principal,
-  manifest.fixtures.unrecognized.claim.attester,
-  "Unrecognized claim must be issued by its configured fixture attester",
-);
-assert.notEqual(
-  manifest.fixtures.unrecognized.claim.attester,
-  manifest.attesters.trusted.principal,
-  "Unrecognized fixture attester must differ from the trusted attester",
-);
+
+function testnetFetch(input: Parameters<typeof fetch>[0]) {
+  return fetchWithTimeout(fetch, input, undefined, 8_000);
+}
 
 async function verifyPublishedSource(
   subject: string,
   sourcePath: string,
   expectedTxId: string,
 ) {
-  const response = await fetch(
+  const response = await testnetFetch(
     `${manifest.apiUrl}/extended/v1/contract/${subject}`,
   );
   assert.equal(
@@ -165,7 +81,7 @@ async function verifyClaim(fixture: ContractFixture & { claim: ClaimFixture }) {
   assert.deepEqual(claim["issued-at"], Cl.uint(fixture.claim.issuedAt));
   assert.deepEqual(claim["expires-at"], Cl.uint(fixture.claim.expiresAt));
   assert.deepEqual(claim.revoked, Cl.bool(false));
-  if (manifest.compatibility.registry.schemaVersion === 2) {
+  if (schemaVersion === 2) {
     assert.deepEqual(claim["revoked-at"], Cl.none());
     assert(
       fixture.claim.requestId,
@@ -179,7 +95,7 @@ async function verifyClaim(fixture: ContractFixture & { claim: ClaimFixture }) {
 }
 
 async function verifySchemaVersion() {
-  if (manifest.compatibility.registry.schemaVersion === 1) return;
+  if (schemaVersion === 1) return;
   const value = await fetchCallReadOnlyFunction({
     contractAddress: registryAddress,
     contractName: registryName,
@@ -188,22 +104,23 @@ async function verifySchemaVersion() {
     senderAddress: registryAddress,
     network: "testnet",
   });
-  assert.deepEqual(
-    value,
-    Cl.uint(manifest.compatibility.registry.schemaVersion),
-  );
+  assert.deepEqual(value, Cl.uint(schemaVersion));
 }
 
-await Promise.all([
+const sourceChecks = [
   verifyPublishedSource(
     manifest.registry.principal,
-    manifest.compatibility.registry.schemaVersion === 1
+    schemaVersion === 1
       ? "contracts/origin-registry.clar"
       : "contracts/origin-registry-v2.clar",
     manifest.registry.txId,
   ),
   verifySchemaVersion(),
-  ...Object.values(manifest.fixtures).map((fixture) =>
+  ...[
+    manifest.fixtures.known,
+    manifest.fixtures.unrecognized,
+    manifest.fixtures.lookalike,
+  ].map((fixture) =>
     verifyPublishedSource(
       fixture.subject,
       "contracts/origin-demo-target.clar",
@@ -212,7 +129,33 @@ await Promise.all([
   ),
   verifyClaim(manifest.fixtures.known),
   verifyClaim(manifest.fixtures.unrecognized),
-]);
+];
+if (schemaVersion === 2) {
+  const domainProof = manifest.fixtures.domainProof;
+  const lifecycle = manifest.fixtures.lifecycle;
+  const expiry = manifest.fixtures.expiry;
+  assert(domainProof && lifecycle && expiry, "Missing v2 fixtures");
+  sourceChecks.push(
+    verifyPublishedSource(
+      domainProof.subject,
+      "contracts/origin-domain-proof.clar",
+      domainProof.contractTxId,
+    ),
+    verifyPublishedSource(
+      lifecycle.subject,
+      "contracts/origin-demo-target.clar",
+      lifecycle.contractTxId,
+    ),
+    verifyPublishedSource(
+      expiry.subject,
+      "contracts/origin-demo-target.clar",
+      expiry.contractTxId,
+    ),
+    verifyClaim(lifecycle),
+    verifyClaim(expiry),
+  );
+}
+await Promise.all(sourceChecks);
 
 const lookalikeClaim = await readAttestation(
   manifest.attesters.trusted.principal,
@@ -249,7 +192,7 @@ assert.notEqual(
   "Lookalike deployers must differ",
 );
 
-const infoResponse = await fetch(`${manifest.apiUrl}/v2/info`);
+const infoResponse = await testnetFetch(`${manifest.apiUrl}/v2/info`);
 assert.equal(
   infoResponse.ok,
   true,
@@ -272,5 +215,7 @@ assert(
 
 console.log(
   `Verified Origin Testnet deployment at burn height ${info.burn_block_height}: ` +
-    "four contracts, two claims, and one unknown same-name/different-deployer lookalike.",
+    (schemaVersion === 1
+      ? "four contracts, two claims, and one unknown same-name/different-deployer lookalike."
+      : "seven contracts, four claims, and one unknown same-name/different-deployer lookalike."),
 );

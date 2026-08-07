@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from "../demo/src/fetch-with-timeout.ts";
+
 interface PlannedTransaction {
   txId: string;
   sender: string;
@@ -54,6 +56,7 @@ interface ReadTransactionPreflightEvidenceArgs {
   txId: string;
   sender: string;
   fetchFn?: typeof fetch;
+  requestTimeoutMs?: number;
 }
 
 function normalizeTxId(value: string) {
@@ -137,20 +140,23 @@ export async function readTransactionPreflightEvidence({
   txId,
   sender,
   fetchFn = fetch,
+  requestTimeoutMs = 8_000,
 }: ReadTransactionPreflightEvidenceArgs): Promise<{
   transaction: TransactionEvidence;
   mempool: MempoolEvidence;
   nonce: NonceEvidence;
 }> {
+  const deadlineFetch = (input: Parameters<typeof fetch>[0]) =>
+    fetchWithTimeout(fetchFn, input, undefined, requestTimeoutMs);
   const [transactionResponse, mempoolResponse, nonceResponse] =
     await Promise.all([
-      fetchFn(`${apiUrl}/extended/v1/tx/${txId}?unanchored=true`).catch(
+      deadlineFetch(`${apiUrl}/extended/v1/tx/${txId}?unanchored=true`).catch(
         () => null,
       ),
-      fetchFn(
+      deadlineFetch(
         `${apiUrl}/extended/v3/principals/${sender}/mempool/transactions?limit=50`,
       ).catch(() => null),
-      fetchFn(`${apiUrl}/extended/v1/address/${sender}/nonces`).catch(
+      deadlineFetch(`${apiUrl}/extended/v1/address/${sender}/nonces`).catch(
         () => null,
       ),
     ]);

@@ -1,6 +1,9 @@
 import { describe, expect, test } from "vitest";
 
-import { classifyDeploymentPreflight } from "../scripts/testnet-deployment-preflight";
+import {
+  classifyDeploymentPreflight,
+  readDeploymentPreflightEvidence,
+} from "../scripts/testnet-deployment-preflight";
 
 const planned = {
   txId: "0xplanned",
@@ -155,5 +158,23 @@ describe(classifyDeploymentPreflight.name, () => {
         nonce: matchingNonce,
       }),
     ).toEqual({ action: "broadcast", reason: "ready" });
+  });
+});
+
+describe(readDeploymentPreflightEvidence.name, () => {
+  test("fails all three evidence sources closed at their deadlines", async () => {
+    const result = await readDeploymentPreflightEvidence({
+      apiUrl: "https://api.test",
+      principal: planned.principal,
+      sender: planned.sender,
+      requestTimeoutMs: 5,
+      fetchFn: () => new Promise(() => undefined),
+    });
+
+    expect(result).toEqual({
+      confirmed: { state: "unavailable" },
+      mempool: { state: "unavailable" },
+      nonce: { state: "unavailable" },
+    });
   });
 });

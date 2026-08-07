@@ -16,3 +16,11 @@
   )
   (contract-call? .origin-registry-v2 revoke-attestation subject request-id)
 )
+
+(define-public (publish-domain-proof
+    (request-id (buff 32))
+    (subject principal)
+    (domain (string-ascii 253))
+  )
+  (contract-call? .origin-domain-proof publish-proof request-id subject domain)
+)

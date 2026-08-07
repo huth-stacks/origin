@@ -1,9 +1,15 @@
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import type { TxBroadcastResult } from "@stacks/transactions";
 import { describe, expect, test } from "vitest";
 
 import {
   acceptedTxId,
+  findPreparedTransactionByJournalKey,
   isExplicitTestnetBroadcast,
+  readJournaledNonce,
   requireExplicitTestnetBroadcast,
 } from "../scripts/testnet-transaction-utils";
 
@@ -51,5 +57,44 @@ describe(requireExplicitTestnetBroadcast.name, () => {
     expect(() => requireExplicitTestnetBroadcast(["node", "script"])).toThrow(
       "Refusing to broadcast without the explicit --broadcast flag",
     );
+  });
+});
+
+describe(findPreparedTransactionByJournalKey.name, () => {
+  test("finds one semantic intent independently of its transaction ID", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "origin-journal-"));
+    await writeFile(
+      join(directory, "different-txid.local.json"),
+      JSON.stringify({
+        state: "signed",
+        txId: "planned",
+        serializedTransaction: "00",
+        intent: { journalKey: "fund:sender:recipient", nonce: "7" },
+      }),
+    );
+
+    const record = await findPreparedTransactionByJournalKey(
+      "fund:sender:recipient",
+      directory,
+    );
+
+    expect(record?.txId).toBe("planned");
+    expect(record && readJournaledNonce(record)).toBe(7n);
+  });
+
+  test("rejects duplicate semantic journal entries", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "origin-journal-"));
+    const record = JSON.stringify({
+      state: "signed",
+      txId: "planned",
+      serializedTransaction: "00",
+      intent: { journalKey: "issue:intent:subject", nonce: "7" },
+    });
+    await writeFile(join(directory, "one.local.json"), record);
+    await writeFile(join(directory, "two.local.json"), record);
+
+    await expect(
+      findPreparedTransactionByJournalKey("issue:intent:subject", directory),
+    ).rejects.toThrow("Multiple prepared transactions");
   });
 });

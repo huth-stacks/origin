@@ -1,4 +1,4 @@
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import {
@@ -6,6 +6,14 @@ import {
   type StacksTransactionWire,
 } from "@stacks/transactions";
 import type { TxBroadcastResult } from "@stacks/transactions";
+
+export interface PreparedTransactionRecord {
+  state: "signed";
+  txId: string;
+  serializedTransaction: string;
+  intent: unknown;
+  path: string;
+}
 
 export function acceptedTxId(result: TxBroadcastResult, action: string) {
   if ("error" in result)
@@ -69,4 +77,60 @@ export async function hasPreparedTransaction(
   } catch {
     return false;
   }
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+export async function findPreparedTransactionByJournalKey(
+  journalKey: string,
+  directory = resolve("deployments/testnet-transactions"),
+): Promise<PreparedTransactionRecord | undefined> {
+  let names: string[];
+  try {
+    names = await readdir(directory);
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "ENOENT"
+    )
+      return undefined;
+    throw error;
+  }
+  const matches: PreparedTransactionRecord[] = [];
+  for (const name of names.filter((value) => value.endsWith(".local.json"))) {
+    const path = resolve(directory, name);
+    const value = JSON.parse(await readFile(path, "utf8")) as unknown;
+    if (!isObject(value) || !isObject(value.intent)) continue;
+    if (value.intent.journalKey !== journalKey) continue;
+    if (
+      value.state !== "signed" ||
+      typeof value.txId !== "string" ||
+      typeof value.serializedTransaction !== "string"
+    )
+      throw new Error(`Invalid prepared transaction journal at ${path}`);
+    matches.push({
+      state: "signed",
+      txId: value.txId,
+      serializedTransaction: value.serializedTransaction,
+      intent: value.intent,
+      path,
+    });
+  }
+  if (matches.length > 1)
+    throw new Error(`Multiple prepared transactions for ${journalKey}`);
+  return matches[0];
+}
+
+export function readJournaledNonce(record: PreparedTransactionRecord) {
+  if (
+    !isObject(record.intent) ||
+    typeof record.intent.nonce !== "string" ||
+    !/^\d+$/.test(record.intent.nonce)
+  )
+    throw new Error(`Invalid journaled nonce at ${record.path}`);
+  return BigInt(record.intent.nonce);
 }

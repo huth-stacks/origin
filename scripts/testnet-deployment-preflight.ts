@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
 
+import { fetchWithTimeout } from "../demo/src/fetch-with-timeout.ts";
+
 interface PlannedDeployment {
   txId: string;
   sender: string;
@@ -62,6 +64,7 @@ interface ReadDeploymentPreflightEvidenceArgs {
   principal: string;
   sender: string;
   fetchFn?: typeof fetch;
+  requestTimeoutMs?: number;
 }
 
 function normalizeTxId(value: string) {
@@ -142,18 +145,23 @@ export async function readDeploymentPreflightEvidence({
   principal,
   sender,
   fetchFn = fetch,
+  requestTimeoutMs = 8_000,
 }: ReadDeploymentPreflightEvidenceArgs): Promise<{
   confirmed: ConfirmedDeployment;
   mempool: MempoolEvidence;
   nonce: NonceEvidence;
 }> {
+  const deadlineFetch = (input: Parameters<typeof fetch>[0]) =>
+    fetchWithTimeout(fetchFn, input, undefined, requestTimeoutMs);
   const [confirmedResponse, mempoolResponse, nonceResponse] = await Promise.all(
     [
-      fetchFn(`${apiUrl}/extended/v1/contract/${principal}`).catch(() => null),
-      fetchFn(
+      deadlineFetch(`${apiUrl}/extended/v1/contract/${principal}`).catch(
+        () => null,
+      ),
+      deadlineFetch(
         `${apiUrl}/extended/v3/principals/${sender}/mempool/transactions?limit=50`,
       ).catch(() => null),
-      fetchFn(`${apiUrl}/extended/v1/address/${sender}/nonces`).catch(
+      deadlineFetch(`${apiUrl}/extended/v1/address/${sender}/nonces`).catch(
         () => null,
       ),
     ],
