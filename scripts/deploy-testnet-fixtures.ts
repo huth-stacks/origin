@@ -8,7 +8,7 @@ import {
   fetchNonce,
   makeContractDeploy,
 } from "@stacks/transactions";
-import { fetchWithTimeout } from "../demo/src/fetch-with-timeout.ts";
+import { fetchJsonWithTimeout } from "../demo/src/fetch-with-timeout.ts";
 
 import {
   loadPublicTestnetAccounts,
@@ -66,14 +66,14 @@ for (const deployment of deployments) {
   const principal = `${address}.${deployment.contractName}`;
   const codeBody = await readFile(resolve(deployment.sourcePath), "utf8");
   const sourceSha256 = createHash("sha256").update(codeBody).digest("hex");
-  const existingContract = await fetchWithTimeout(
+  const existingContract = await fetchJsonWithTimeout(
     fetch,
     `${apiUrl}/extended/v1/contract/${principal}`,
     undefined,
     8_000,
   );
   if (existingContract.ok) {
-    const existing = (await existingContract.json()) as {
+    const existing = existingContract.value as {
       source_code?: unknown;
       tx_id?: unknown;
     };

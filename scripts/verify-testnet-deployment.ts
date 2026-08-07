@@ -8,7 +8,7 @@ import {
   fetchCallReadOnlyFunction,
   isClarityType,
 } from "@stacks/transactions";
-import { fetchWithTimeout } from "../demo/src/fetch-with-timeout.ts";
+import { fetchJsonWithTimeout } from "../demo/src/fetch-with-timeout.ts";
 import {
   type ClaimFixture,
   type ContractFixture,
@@ -24,7 +24,7 @@ const [registryAddress, registryName] = manifest.registry.principal.split(".");
 assert(registryAddress && registryName, "Invalid registry principal");
 
 function testnetFetch(input: Parameters<typeof fetch>[0]) {
-  return fetchWithTimeout(fetch, input, undefined, 8_000);
+  return fetchJsonWithTimeout(fetch, input, undefined, 8_000);
 }
 
 async function verifyPublishedSource(
@@ -40,7 +40,7 @@ async function verifyPublishedSource(
     true,
     `Contract lookup failed for ${subject}: ${response.status}`,
   );
-  const contract = (await response.json()) as {
+  const contract = response.value as {
     source_code?: string;
     tx_id?: string;
   };
@@ -198,7 +198,7 @@ assert.equal(
   true,
   `Testnet info request failed: ${infoResponse.status}`,
 );
-const info = (await infoResponse.json()) as { burn_block_height?: number };
+const info = infoResponse.value as { burn_block_height?: number };
 assert(
   Number.isSafeInteger(info.burn_block_height),
   "Testnet returned an invalid burn height",

@@ -151,11 +151,13 @@ describe(fetchOriginLogPages.name, () => {
   });
 
   test("fails unavailable when a request exceeds its deadline", async () => {
+    const response = Response.json({ results: [] });
+    response.json = () => new Promise(() => undefined);
     const result = await fetchOriginLogPages({
       apiUrl: "https://wallet-owned.example",
       registryPrincipal: registry,
       requestTimeoutMs: 5,
-      fetchFn: () => new Promise(() => undefined),
+      fetchFn: () => Promise.resolve(response),
     });
 
     expect(result).toEqual({

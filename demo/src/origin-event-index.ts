@@ -5,7 +5,7 @@ import {
   isClarityType,
 } from "@stacks/transactions";
 
-import { fetchWithTimeout } from "./fetch-with-timeout";
+import { fetchJsonWithTimeout } from "./fetch-with-timeout";
 
 export interface OriginContractLog {
   eventIndex: number;
@@ -136,10 +136,10 @@ export async function fetchOriginLogPages({
     url.searchParams.set("limit", String(pageSize));
     if (cursor) url.searchParams.set("cursor", cursor);
 
-    let response: Response;
+    let response: Awaited<ReturnType<typeof fetchJsonWithTimeout>>;
     try {
       const remainingMs = totalTimeoutMs - (nowFn() - startedAt);
-      response = await fetchWithTimeout(
+      response = await fetchJsonWithTimeout(
         fetchFn,
         url,
         undefined,
@@ -159,17 +159,13 @@ export async function fetchOriginLogPages({
         reason: "network-failure",
       };
 
-    let value: unknown;
-    try {
-      value = await response.json();
-    } catch {
+    if (response.bodyError)
       return {
         condition: logs.length === 0 ? "unavailable" : "partial",
         logs,
         reason: "invalid-response",
       };
-    }
-    const parsed = parseLogPage(value);
+    const parsed = parseLogPage(response.value);
     if (!parsed)
       return {
         condition: logs.length === 0 ? "unavailable" : "partial",

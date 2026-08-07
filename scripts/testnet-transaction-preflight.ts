@@ -1,4 +1,4 @@
-import { fetchWithTimeout } from "../demo/src/fetch-with-timeout.ts";
+import { fetchJsonWithTimeout } from "../demo/src/fetch-with-timeout.ts";
 
 interface PlannedTransaction {
   txId: string;
@@ -147,7 +147,7 @@ export async function readTransactionPreflightEvidence({
   nonce: NonceEvidence;
 }> {
   const deadlineFetch = (input: Parameters<typeof fetch>[0]) =>
-    fetchWithTimeout(fetchFn, input, undefined, requestTimeoutMs);
+    fetchJsonWithTimeout(fetchFn, input, undefined, requestTimeoutMs);
   const [transactionResponse, mempoolResponse, nonceResponse] =
     await Promise.all([
       deadlineFetch(`${apiUrl}/extended/v1/tx/${txId}?unanchored=true`).catch(
@@ -164,13 +164,11 @@ export async function readTransactionPreflightEvidence({
   let transaction: TransactionEvidence = { state: "unavailable" };
   if (transactionResponse?.status === 404) transaction = { state: "absent" };
   if (transactionResponse?.ok)
-    transaction = parseTransactionEvidence(
-      await transactionResponse.json().catch(() => null),
-    );
+    transaction = parseTransactionEvidence(transactionResponse.value);
 
   let mempool: MempoolEvidence = { state: "unavailable" };
   if (mempoolResponse?.ok) {
-    const value: unknown = await mempoolResponse.json().catch(() => null);
+    const value = mempoolResponse.value;
     if (isObject(value) && Array.isArray(value.results)) {
       const transactions = value.results.map(parseMempoolTransaction);
       if (transactions.every((candidate) => candidate !== null))
@@ -186,7 +184,7 @@ export async function readTransactionPreflightEvidence({
 
   let nonce: NonceEvidence = { state: "unavailable" };
   if (nonceResponse?.ok) {
-    const value: unknown = await nonceResponse.json().catch(() => null);
+    const value = nonceResponse.value;
     if (
       isObject(value) &&
       Number.isSafeInteger(value.possible_next_nonce) &&

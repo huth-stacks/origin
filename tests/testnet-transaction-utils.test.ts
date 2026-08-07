@@ -8,6 +8,7 @@ import { describe, expect, test } from "vitest";
 import {
   acceptedTxId,
   findPreparedTransactionByJournalKey,
+  findPreparedTransactionsByJournalKeyPrefix,
   isExplicitTestnetBroadcast,
   readJournaledNonce,
   requireExplicitTestnetBroadcast,
@@ -96,5 +97,32 @@ describe(findPreparedTransactionByJournalKey.name, () => {
     await expect(
       findPreparedTransactionByJournalKey("issue:intent:subject", directory),
     ).rejects.toThrow("Multiple prepared transactions");
+  });
+
+  test("finds every journal in one semantic sequence", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "origin-journal-"));
+    for (const sequence of [0, 1])
+      await writeFile(
+        join(directory, `${sequence}.local.json`),
+        JSON.stringify({
+          state: "signed",
+          txId: `planned-${sequence}`,
+          serializedTransaction: "00",
+          intent: {
+            journalKey: `fund:sender:recipient:${sequence}`,
+            nonce: String(sequence),
+          },
+        }),
+      );
+
+    const records = await findPreparedTransactionsByJournalKeyPrefix(
+      "fund:sender:recipient:",
+      directory,
+    );
+
+    expect(records.map((record) => record.txId).sort()).toEqual([
+      "planned-0",
+      "planned-1",
+    ]);
   });
 });

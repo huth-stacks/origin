@@ -7,7 +7,7 @@ import {
   fetchNonce,
   makeContractCall,
 } from "@stacks/transactions";
-import { fetchWithTimeout } from "../demo/src/fetch-with-timeout.ts";
+import { fetchJsonWithTimeout } from "../demo/src/fetch-with-timeout.ts";
 
 import {
   loadPublicTestnetAccounts,
@@ -64,7 +64,7 @@ const currentManifest = JSON.parse(
 const registryAddress = publicAccounts.registry_deployer.address;
 const registryName = "origin-registry-v2";
 
-const networkInfoResponse = await fetchWithTimeout(
+const networkInfoResponse = await fetchJsonWithTimeout(
   fetch,
   "https://api.testnet.hiro.so/v2/info",
   undefined,
@@ -72,7 +72,7 @@ const networkInfoResponse = await fetchWithTimeout(
 );
 if (!networkInfoResponse.ok)
   throw new Error(`Testnet info request failed: ${networkInfoResponse.status}`);
-const networkInfo = (await networkInfoResponse.json()) as {
+const networkInfo = networkInfoResponse.value as {
   burn_block_height?: unknown;
 };
 if (!Number.isSafeInteger(networkInfo.burn_block_height))

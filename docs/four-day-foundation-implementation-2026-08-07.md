@@ -18,8 +18,8 @@ The consolidated G1 review identified six issues, all fixed before preparation o
 
 1. The verifier accepts only schema 1 or 2, reaches the v2 getter/tuple branches, checks the exclusive `validUntilBurnBlock` boundary, and requires/verifies the domain-proof, lifecycle, and short-expiry fixtures in every v2 manifest.
 2. Issuance request IDs derive from a persisted reviewed intent ID plus exact issuance arguments. Retrying the same intent recovers the same IDs and semantic transaction journals; reissue or renewal requires a fresh intent ID.
-3. Funding journals are keyed by `{sender, recipient}`, recover the original nonce and amount, and reconcile that exact transaction. Without a journal, the script reads the recipient balance and transfers only the amount needed to reach the packet minimum.
-4. Deployment and transaction preflights have hard per-request deadlines. The cursor index has both per-request and total pagination budgets. Direct contract, balance, network-info, and verifier HTTP reads are bounded as well.
+3. Funding journals form a contiguous sequence per `{sender, recipient}`. Every existing attempt must confirm before the script re-reads the live balance; any post-fee shortfall opens the next journal sequence and tops up only to the packet minimum. Pending or uncertain attempts remain idempotent and block a new transfer.
+4. Deployment and transaction preflights have hard per-request deadlines covering both headers and response-body consumption. The cursor index has both per-request and total pagination budgets. Direct contract, balance, network-info, and verifier HTTP reads are bounded as well.
 5. The domain-proof contract rejects forwarded calls and uses insert-once proof records. Tests prove a failed overwrite retains the original evidence.
 6. The v2 manifest validator requires request IDs and trusted-policy compliance for canonical, lifecycle, and expiry claims, and requires the expiry fixture to be shorter-lived than the canonical claim.
 
@@ -71,7 +71,7 @@ It adds only:
 Origin:
 
 - `pnpm verify`: pass
-- 15 test files, 111 tests: pass
+- 15 test files, 117 tests: pass
 - Clarity: 5 contracts checked with the six documented untrusted-input warnings
 - secret scan, TypeScript, formatting, and demo production build: pass
 - funding, deployment, and issuance commands: executable dry runs, no broadcasts

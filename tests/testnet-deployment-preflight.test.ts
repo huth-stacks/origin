@@ -163,12 +163,14 @@ describe(classifyDeploymentPreflight.name, () => {
 
 describe(readDeploymentPreflightEvidence.name, () => {
   test("fails all three evidence sources closed at their deadlines", async () => {
+    const response = Response.json({});
+    response.json = () => new Promise(() => undefined);
     const result = await readDeploymentPreflightEvidence({
       apiUrl: "https://api.test",
       principal: planned.principal,
       sender: planned.sender,
       requestTimeoutMs: 5,
-      fetchFn: () => new Promise(() => undefined),
+      fetchFn: () => Promise.resolve(response),
     });
 
     expect(result).toEqual({

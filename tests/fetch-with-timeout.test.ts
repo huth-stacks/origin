@@ -1,6 +1,9 @@
 import { describe, expect, test, vi } from "vitest";
 
-import { fetchWithTimeout } from "../demo/src/fetch-with-timeout";
+import {
+  fetchJsonWithTimeout,
+  fetchWithTimeout,
+} from "../demo/src/fetch-with-timeout";
 
 describe(fetchWithTimeout.name, () => {
   test("passes an abort signal through to the request", async () => {
@@ -9,7 +12,13 @@ describe(fetchWithTimeout.name, () => {
     );
 
     await expect(
-      fetchWithTimeout(fetchFn, "https://example.test", undefined, 100),
+      fetchWithTimeout(
+        fetchFn,
+        "https://example.test",
+        undefined,
+        100,
+        (response) => Promise.resolve(response),
+      ),
     ).resolves.toBeInstanceOf(Response);
     expect(fetchFn.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
   });
@@ -18,7 +27,13 @@ describe(fetchWithTimeout.name, () => {
     const fetchFn = vi.fn<typeof fetch>(() => new Promise(() => undefined));
 
     await expect(
-      fetchWithTimeout(fetchFn, "https://example.test", undefined, 5),
+      fetchWithTimeout(
+        fetchFn,
+        "https://example.test",
+        undefined,
+        5,
+        (response) => Promise.resolve(response),
+      ),
     ).rejects.toThrow("Fetch deadline exceeded");
   });
 
@@ -35,9 +50,26 @@ describe(fetchWithTimeout.name, () => {
       "https://example.test",
       { signal: caller.signal },
       100,
+      (response) => Promise.resolve(response),
     );
     caller.abort();
 
     expect(observed.signal?.aborted).toBe(true);
+  });
+
+  test("keeps the deadline armed while consuming the response body", async () => {
+    const response = Response.json({ ok: true });
+    vi.spyOn(response, "json").mockImplementation(
+      () => new Promise(() => undefined),
+    );
+
+    await expect(
+      fetchJsonWithTimeout(
+        () => Promise.resolve(response),
+        "https://example.test",
+        undefined,
+        5,
+      ),
+    ).rejects.toThrow("Fetch deadline exceeded");
   });
 });

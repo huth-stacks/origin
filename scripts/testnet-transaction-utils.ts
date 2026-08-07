@@ -87,6 +87,21 @@ export async function findPreparedTransactionByJournalKey(
   journalKey: string,
   directory = resolve("deployments/testnet-transactions"),
 ): Promise<PreparedTransactionRecord | undefined> {
+  const matches = (
+    await findPreparedTransactionsByJournalKeyPrefix(journalKey, directory)
+  ).filter(
+    (record) =>
+      isObject(record.intent) && record.intent.journalKey === journalKey,
+  );
+  if (matches.length > 1)
+    throw new Error(`Multiple prepared transactions for ${journalKey}`);
+  return matches[0];
+}
+
+export async function findPreparedTransactionsByJournalKeyPrefix(
+  journalKeyPrefix: string,
+  directory = resolve("deployments/testnet-transactions"),
+): Promise<PreparedTransactionRecord[]> {
   let names: string[];
   try {
     names = await readdir(directory);
@@ -97,7 +112,7 @@ export async function findPreparedTransactionByJournalKey(
       "code" in error &&
       error.code === "ENOENT"
     )
-      return undefined;
+      return [];
     throw error;
   }
   const matches: PreparedTransactionRecord[] = [];
@@ -105,7 +120,11 @@ export async function findPreparedTransactionByJournalKey(
     const path = resolve(directory, name);
     const value = JSON.parse(await readFile(path, "utf8")) as unknown;
     if (!isObject(value) || !isObject(value.intent)) continue;
-    if (value.intent.journalKey !== journalKey) continue;
+    if (
+      typeof value.intent.journalKey !== "string" ||
+      !value.intent.journalKey.startsWith(journalKeyPrefix)
+    )
+      continue;
     if (
       value.state !== "signed" ||
       typeof value.txId !== "string" ||
@@ -120,9 +139,7 @@ export async function findPreparedTransactionByJournalKey(
       path,
     });
   }
-  if (matches.length > 1)
-    throw new Error(`Multiple prepared transactions for ${journalKey}`);
-  return matches[0];
+  return matches;
 }
 
 export function readJournaledNonce(record: PreparedTransactionRecord) {

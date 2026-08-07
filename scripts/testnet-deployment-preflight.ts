@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { fetchWithTimeout } from "../demo/src/fetch-with-timeout.ts";
+import { fetchJsonWithTimeout } from "../demo/src/fetch-with-timeout.ts";
 
 interface PlannedDeployment {
   txId: string;
@@ -152,7 +152,7 @@ export async function readDeploymentPreflightEvidence({
   nonce: NonceEvidence;
 }> {
   const deadlineFetch = (input: Parameters<typeof fetch>[0]) =>
-    fetchWithTimeout(fetchFn, input, undefined, requestTimeoutMs);
+    fetchJsonWithTimeout(fetchFn, input, undefined, requestTimeoutMs);
   const [confirmedResponse, mempoolResponse, nonceResponse] = await Promise.all(
     [
       deadlineFetch(`${apiUrl}/extended/v1/contract/${principal}`).catch(
@@ -170,7 +170,7 @@ export async function readDeploymentPreflightEvidence({
   let confirmed: ConfirmedDeployment = { state: "unavailable" };
   if (confirmedResponse?.status === 404) confirmed = { state: "absent" };
   if (confirmedResponse?.ok) {
-    const value: unknown = await confirmedResponse.json().catch(() => null);
+    const value = confirmedResponse.value;
     if (
       isObject(value) &&
       typeof value.tx_id === "string" &&
@@ -187,7 +187,7 @@ export async function readDeploymentPreflightEvidence({
 
   let mempool: MempoolEvidence = { state: "unavailable" };
   if (mempoolResponse?.ok) {
-    const value: unknown = await mempoolResponse.json().catch(() => null);
+    const value = mempoolResponse.value;
     if (isObject(value) && Array.isArray(value.results)) {
       const transactions = value.results.map(parseMempoolTransaction);
       if (transactions.every((transaction) => transaction !== null))
@@ -203,7 +203,7 @@ export async function readDeploymentPreflightEvidence({
 
   let nonce: NonceEvidence = { state: "unavailable" };
   if (nonceResponse?.ok) {
-    const value: unknown = await nonceResponse.json().catch(() => null);
+    const value = nonceResponse.value;
     if (
       isObject(value) &&
       Number.isSafeInteger(value.possible_next_nonce) &&

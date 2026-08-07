@@ -3,6 +3,9 @@ import { describe, expect, test } from "vitest";
 import {
   fundingAmountForBalance,
   fundingJournalKey,
+  fundingJournalPrefix,
+  orderFundingJournals,
+  planFundingTopUp,
   readJournaledFundingAmount,
   readStxBalance,
 } from "../scripts/testnet-funding";
@@ -15,6 +18,21 @@ describe(fundingAmountForBalance.name, () => {
     [20_000_000n, 0n],
   ])("tops %s up by %s", (balance, expected) => {
     expect(fundingAmountForBalance(balance)).toBe(expected);
+  });
+});
+
+describe(planFundingTopUp.name, () => {
+  test("opens a new journal sequence for a post-fee shortfall", () => {
+    expect(planFundingTopUp("STSENDER", "STRECIPIENT", 9_000_000n, 1)).toEqual({
+      journalKey: "fund:STSENDER:STRECIPIENT:1",
+      amount: 1_000_000n,
+    });
+  });
+
+  test("does not open another sequence at the target balance", () => {
+    expect(
+      planFundingTopUp("STSENDER", "STRECIPIENT", 10_000_000n, 1),
+    ).toBeUndefined();
   });
 });
 
@@ -35,12 +53,14 @@ describe(readStxBalance.name, () => {
   });
 
   test("times out a hanging balance lookup", async () => {
+    const response = Response.json({ balance: "0" });
+    response.json = () => new Promise(() => undefined);
     await expect(
       readStxBalance({
         apiUrl: "https://api.test",
         address: "STRECIPIENT",
         requestTimeoutMs: 5,
-        fetchFn: () => new Promise(() => undefined),
+        fetchFn: () => Promise.resolve(response),
       }),
     ).rejects.toThrow("Fetch deadline exceeded");
   });
@@ -48,7 +68,7 @@ describe(readStxBalance.name, () => {
 
 describe(readJournaledFundingAmount.name, () => {
   test("recovers the exact amount from the semantic funding key", () => {
-    const key = fundingJournalKey("STSENDER", "STRECIPIENT");
+    const key = fundingJournalKey("STSENDER", "STRECIPIENT", 0);
     expect(
       readJournaledFundingAmount({ journalKey: key, amount: "7000000" }, key),
     ).toBe(7_000_000n);
@@ -58,8 +78,35 @@ describe(readJournaledFundingAmount.name, () => {
     expect(() =>
       readJournaledFundingAmount(
         { journalKey: "other", amount: "7000000" },
-        fundingJournalKey("STSENDER", "STRECIPIENT"),
+        fundingJournalKey("STSENDER", "STRECIPIENT", 0),
       ),
     ).toThrow("Invalid funding journal");
+  });
+});
+
+describe(orderFundingJournals.name, () => {
+  const prefix = fundingJournalPrefix("STSENDER", "STRECIPIENT");
+  const record = (sequence: number) => ({
+    state: "signed" as const,
+    txId: `tx-${sequence}`,
+    serializedTransaction: "00",
+    intent: {
+      journalKey: `${prefix}:${sequence}`,
+      nonce: String(sequence),
+    },
+    path: `${sequence}.json`,
+  });
+
+  test("orders a contiguous top-up sequence", () => {
+    expect(orderFundingJournals([record(1), record(0)], prefix)).toEqual([
+      record(0),
+      record(1),
+    ]);
+  });
+
+  test("rejects a missing prior top-up journal", () => {
+    expect(() => orderFundingJournals([record(1)], prefix)).toThrow(
+      "Funding journal sequence gap",
+    );
   });
 });
