@@ -11,6 +11,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   acceptedTxId,
+  canPrepareSequencedNonce,
   findPreparedTransactionByJournalKey,
   findPreparedTransactionsByJournalKeyPrefix,
   isExplicitTestnetPrepare,
@@ -20,6 +21,19 @@ import {
   readJournaledNonce,
   requireExplicitTestnetBroadcast,
 } from "../scripts/testnet-transaction-utils";
+
+describe(canPrepareSequencedNonce.name, () => {
+  test("allows a future nonce only behind a contiguous local journal", () => {
+    const journaled = new Set([0n, 1n, 2n]);
+    expect(canPrepareSequencedNonce(0, 3n, journaled)).toBe(true);
+    expect(canPrepareSequencedNonce(0, 4n, journaled)).toBe(false);
+  });
+
+  test("rejects stale and implausibly distant planned nonces", () => {
+    expect(canPrepareSequencedNonce(2, 1n, new Set())).toBe(false);
+    expect(canPrepareSequencedNonce(0, 10_001n, new Set())).toBe(false);
+  });
+});
 
 describe(acceptedTxId.name, () => {
   test("returns the transaction ID only for an accepted broadcast", () => {

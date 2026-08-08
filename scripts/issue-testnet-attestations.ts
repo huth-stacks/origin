@@ -21,6 +21,7 @@ import {
 } from "./testnet-transaction-preflight.ts";
 import {
   acceptedTxId,
+  canPrepareSequencedNonce,
   findPreparedTransactionByJournalKey,
   isExplicitTestnetBroadcast,
   isExplicitTestnetPrepare,
@@ -169,6 +170,32 @@ for (const issuance of issuances) {
 }
 const nextNonceByAddress = new Map<string, bigint>();
 
+function allowContiguousPreparationNonce<
+  T extends Awaited<ReturnType<typeof readTransactionPreflightEvidence>>,
+>(address: string, evidence: T, plannedNonce: bigint): T {
+  const reserved = reservedNoncesByAddress.get(address) ?? new Set<bigint>();
+  if (
+    !prepare ||
+    evidence.nonce.state !== "available" ||
+    !canPrepareSequencedNonce(
+      evidence.nonce.possibleNextNonce,
+      plannedNonce,
+      reserved,
+    )
+  )
+    return evidence;
+  return {
+    ...evidence,
+    nonce: { state: "available", possibleNextNonce: Number(plannedNonce) },
+  };
+}
+
+function reservePreparedNonce(address: string, nonce: bigint) {
+  const reserved = reservedNoncesByAddress.get(address) ?? new Set<bigint>();
+  reserved.add(nonce);
+  reservedNoncesByAddress.set(address, reserved);
+}
+
 async function allocateNonce(address: string) {
   let nonce =
     nextNonceByAddress.get(address) ??
@@ -224,6 +251,15 @@ for (const issuance of issuances) {
   const plannedTxId = transaction.txid();
   if (journaled && journaled.txId !== plannedTxId)
     throw new Error(`Journaled issuance mismatch for ${issuance.subject}`);
+  const evidence = allowContiguousPreparationNonce(
+    publicAccount.address,
+    await readTransactionPreflightEvidence({
+      apiUrl,
+      txId: plannedTxId,
+      sender: publicAccount.address,
+    }),
+    nonce,
+  );
   const preflight = classifyTransactionPreflight({
     planned: {
       txId: plannedTxId,
@@ -233,11 +269,7 @@ for (const issuance of issuances) {
         journaled?.state === "broadcast-attempted" ||
         (await wasPreparedTransactionBroadcastAttempted(plannedTxId)),
     },
-    ...(await readTransactionPreflightEvidence({
-      apiUrl,
-      txId: plannedTxId,
-      sender: publicAccount.address,
-    })),
+    ...evidence,
   });
   if (preflight.action === "continue") {
     console.log(
@@ -255,6 +287,7 @@ for (const issuance of issuances) {
       `Issuance preflight ${preflight.action}: ${preflight.reason} for ${issuance.subject}`,
     );
   const prepared = await persistPreparedTransaction(transaction, intent);
+  reservePreparedNonce(publicAccount.address, nonce);
   if (prepare) {
     console.log(
       JSON.stringify({

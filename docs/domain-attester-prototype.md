@@ -10,8 +10,9 @@ and separate G3 approval are still required before signing or broadcasting.
 
 ## Protocol shape
 
-The operator creates a five-minute challenge for one canonical ICANN registrable eTLD+1, one exact
-contract principal, and one role from the published enum:
+The operator creates a five-minute challenge for one exact registrable domain boundary—an ICANN
+eTLD+1 or a delegated private-suffix tenant—one exact contract principal, and one role from the
+published enum:
 
 - `Application contract`
 - `Protocol contract`
@@ -86,7 +87,7 @@ The normative controls in `domain-control-fetch-security.md` map to local eviden
 
 | Control boundary                                                       | Implementation                            | Test evidence                                                              |
 | ---------------------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------- |
-| Canonical eTLD+1, exact fixed URL, role/name bounds                    | `domain-policy.ts`, `secure-fetch.ts`     | `domain-attester-policy`, `domain-attester-fetch`                          |
+| Exact registrable ICANN/private tenant, fixed URL, role/name bounds    | `domain-policy.ts`, `secure-fetch.ts`     | `domain-attester-policy`, `domain-attester-fetch`                          |
 | Public-only A/AAAA answers, mixed-answer rejection, DNS pinning        | `network-policy.ts`, `requestPinnedHttps` | blocked-range, internal/service-address, and rebinding cases               |
 | TLS, redirect, proxy/credential, header/body/decompression/time limits | `secure-fetch.ts`                         | redirect matrix, exact request shape, type/size/slow-response cases        |
 | Strict JSON, exact challenge, SIP-018 deployer signature               | `strict-json.ts`, `proof-signature.ts`    | duplicate/malformed, altered, stale, and wrong-signer cases                |
@@ -191,7 +192,8 @@ uncertain attempt must be reconciled and never replaced blindly.
 Before the first live domain claim, the reviewer must verify all of the following in the actual
 execution environment:
 
-1. The public hostname is a controlled fictional eTLD+1 with valid TLS and no redirects.
+1. The public hostname is a controlled fictional ICANN eTLD+1 or delegated private-suffix tenant
+   with valid TLS and no redirects.
 2. Egress policy independently blocks loopback, private, link-local, metadata, and internal ranges.
 3. A packet capture or equivalent proves the TLS socket uses the validated pinned address while
    certificate verification uses the canonical hostname.

@@ -25,6 +25,7 @@ import {
 } from "./testnet-transaction-preflight.ts";
 import {
   acceptedTxId,
+  canPrepareSequencedNonce,
   findPreparedTransactionsByJournalKeyPrefix,
   isExplicitTestnetBroadcast,
   isExplicitTestnetPrepare,
@@ -80,6 +81,25 @@ const journaledByRecipient = new Map(
 const reservedNonces = new Set(
   [...journaledByRecipient.values()].flat().map(readJournaledNonce),
 );
+
+function allowContiguousPreparationNonce<
+  T extends Awaited<ReturnType<typeof readTransactionPreflightEvidence>>,
+>(evidence: T, plannedNonce: bigint): T {
+  if (
+    !prepare ||
+    evidence.nonce.state !== "available" ||
+    !canPrepareSequencedNonce(
+      evidence.nonce.possibleNextNonce,
+      plannedNonce,
+      reservedNonces,
+    )
+  )
+    return evidence;
+  return {
+    ...evidence,
+    nonce: { state: "available", possibleNextNonce: Number(plannedNonce) },
+  };
+}
 let nextNonce = await fetchNonce({
   address: deployerAddress,
   network: "testnet",
@@ -120,6 +140,14 @@ for (const recipient of recipients) {
       if (journaled.txId !== transaction.txid())
         throw new Error(`Journaled funding mismatch for ${recipient.role}`);
     }
+    const evidence = allowContiguousPreparationNonce(
+      await readTransactionPreflightEvidence({
+        apiUrl,
+        txId: journaled.txId,
+        sender: deployerAddress,
+      }),
+      nonce,
+    );
     const preflight = classifyTransactionPreflight({
       planned: {
         txId: journaled.txId,
@@ -127,11 +155,7 @@ for (const recipient of recipients) {
         nonce: Number(nonce),
         previouslyJournaled: journaled.state === "broadcast-attempted",
       },
-      ...(await readTransactionPreflightEvidence({
-        apiUrl,
-        txId: journaled.txId,
-        sender: deployerAddress,
-      })),
+      ...evidence,
     });
     if (preflight.action === "continue") {
       console.log(
@@ -162,6 +186,7 @@ for (const recipient of recipients) {
       transaction,
       journaled.intent,
     );
+    reservedNonces.add(nonce);
     if (prepare) {
       console.log(
         JSON.stringify({
@@ -233,6 +258,14 @@ for (const recipient of recipients) {
     memo: `Origin ${recipient.role}`,
   });
   const plannedTxId = transaction.txid();
+  const evidence = allowContiguousPreparationNonce(
+    await readTransactionPreflightEvidence({
+      apiUrl,
+      txId: plannedTxId,
+      sender: deployerAddress,
+    }),
+    nonce,
+  );
   const preflight = classifyTransactionPreflight({
     planned: {
       txId: plannedTxId,
@@ -241,11 +274,7 @@ for (const recipient of recipients) {
       previouslyJournaled:
         await wasPreparedTransactionBroadcastAttempted(plannedTxId),
     },
-    ...(await readTransactionPreflightEvidence({
-      apiUrl,
-      txId: plannedTxId,
-      sender: deployerAddress,
-    })),
+    ...evidence,
   });
   if (preflight.action === "continue") {
     console.log(
@@ -262,6 +291,7 @@ for (const recipient of recipients) {
       `Funding preflight ${preflight.action}: ${preflight.reason} for ${recipient.role}`,
     );
   const prepared = await persistPreparedTransaction(transaction, intent);
+  reservedNonces.add(nonce);
   if (prepare) {
     console.log(
       JSON.stringify({

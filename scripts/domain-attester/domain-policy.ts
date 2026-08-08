@@ -99,14 +99,15 @@ export function normalizeRegistrableDomain(
   const result = parse(ascii, { allowPrivateDomains: true });
   if (
     result.isIp ||
-    result.isPrivate ||
     result.isSpecialUse ||
-    !result.isIcann ||
+    (!result.isIcann && !result.isPrivate) ||
     result.domain !== ascii ||
     result.subdomain !== "" ||
     result.publicSuffix === null
   )
-    throw new Error("Domain must be an ICANN registrable eTLD+1");
+    throw new Error(
+      "Domain must be an exact registrable ICANN or private-suffix tenant",
+    );
   if (protectedDomains.has(ascii))
     throw new Error("Domain is protected by attester policy");
   return ascii;

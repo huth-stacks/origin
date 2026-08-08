@@ -57,7 +57,6 @@ const denySubjects = new Set([
   manifest.fixtures.unrecognized.subject,
   lifecycleSubject,
   `${publicAccounts.expiry_deployer.address}.origin-expiry-action`,
-  `${publicAccounts.proof_deployer.address}.origin-domain-proof`,
 ]);
 const databasePath = resolve(
   process.env.ORIGIN_ATTESTER_DATABASE ??

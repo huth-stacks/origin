@@ -5,10 +5,11 @@ import {
   encodeStructuredDataBytes,
   publicKeyFromSignatureRsv,
   publicKeyToAddress,
+  signStructuredData,
 } from "@stacks/transactions";
 
 import { deployerFromSubject } from "./domain-policy.ts";
-import type { DomainChallenge } from "./types.ts";
+import type { DomainChallenge, DomainProofDocument } from "./types.ts";
 
 const TESTNET_CHAIN_ID = 0x80000000;
 
@@ -54,4 +55,16 @@ export function verifyDomainProofSignature(
   if (signer !== expected)
     throw new Error("Domain proof signer is not the subject deployer");
   return signer;
+}
+
+export function signDomainProof(
+  challenge: DomainChallenge,
+  privateKey: string,
+): DomainProofDocument {
+  const deployerSignature = signStructuredData({
+    ...domainProofSip018Values(challenge),
+    privateKey,
+  });
+  verifyDomainProofSignature(challenge, deployerSignature);
+  return { ...challenge, deployerSignature };
 }

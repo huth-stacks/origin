@@ -32,6 +32,19 @@ function isPreparedTransactionState(
   return state === "signed" || state === "broadcast-attempted";
 }
 
+export function canPrepareSequencedNonce(
+  networkNonce: number,
+  plannedNonce: bigint,
+  journaledNonces: ReadonlySet<bigint>,
+) {
+  if (!Number.isSafeInteger(networkNonce) || networkNonce < 0) return false;
+  const first = BigInt(networkNonce);
+  if (plannedNonce < first || plannedNonce - first > 10_000n) return false;
+  for (let nonce = first; nonce < plannedNonce; nonce += 1n)
+    if (!journaledNonces.has(nonce)) return false;
+  return true;
+}
+
 export function acceptedTxId(result: TxBroadcastResult, action: string) {
   if ("error" in result)
     throw new Error(`${action} failed: ${result.reason}: ${result.error}`);

@@ -10,8 +10,11 @@ import {
   normalizeRegistrableDomain,
   parseDomainProofDocument,
 } from "../scripts/domain-attester/domain-policy.ts";
-import { domainProofSip018Values } from "../scripts/domain-attester/proof-signature.ts";
-import { verifyDomainProofSignature } from "../scripts/domain-attester/proof-signature.ts";
+import {
+  domainProofSip018Values,
+  signDomainProof,
+  verifyDomainProofSignature,
+} from "../scripts/domain-attester/proof-signature.ts";
 import { parseStrictJsonObject } from "../scripts/domain-attester/strict-json.ts";
 import {
   DOMAIN_CHALLENGE_VERSION,
@@ -46,9 +49,13 @@ describe(normalizeRegistrableDomain.name, () => {
     (domain) => expect(normalizeRegistrableDomain(domain)).toBe(domain),
   );
 
+  test.each(["origin-demo.vercel.app", "origin-demo.github.io"])(
+    "accepts exact delegated private-suffix tenant %s",
+    (domain) => expect(normalizeRegistrableDomain(domain)).toBe(domain),
+  );
+
   test.each([
     "www.example.com",
-    "foo.github.io",
     "example.test",
     "127.0.0.1",
     "EXAMPLE.COM",
@@ -56,6 +63,9 @@ describe(normalizeRegistrableDomain.name, () => {
     "example.com.",
     "https://example.com",
     "xn--bcher-kva.example",
+    "vercel.app",
+    "github.io",
+    "nested.origin-demo.vercel.app",
     "leather.io",
   ])("rejects noncanonical or ineligible domain %s", (domain) => {
     expect(() => normalizeRegistrableDomain(domain)).toThrow();
@@ -79,6 +89,13 @@ describe(parseStrictJsonObject.name, () => {
 });
 
 describe("domain proof protocol", () => {
+  test("builds an exact proof for the subject deployer", () => {
+    const privateKey = makeRandomPrivKey();
+    const deployer = privateKeyToAddress(privateKey, "testnet");
+    const expected = challenge(`${deployer}.copperline-app`);
+    expect(signDomainProof(expected, privateKey)).toMatchObject(expected);
+  });
+
   test("verifies the SIP-018 signature from the exact contract deployer", () => {
     const privateKey = makeRandomPrivKey();
     const deployer = privateKeyToAddress(privateKey, "testnet");
