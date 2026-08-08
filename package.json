@@ -11,8 +11,14 @@
     "format": "clarinet format --in-place",
     "format:demo": "prettier --write \"demo/**/*.{ts,tsx,css,html}\" \"tests/demo-*.test.{ts,tsx}\" vite.demo.config.ts package.json tsconfig.json README.md demo-runbook.md leather-review-manifest.md",
     "format:demo:check": "prettier --check \"demo/**/*.{ts,tsx,css,html}\" \"tests/demo-*.test.{ts,tsx}\" vite.demo.config.ts package.json tsconfig.json README.md demo-runbook.md leather-review-manifest.md",
+    "format:attester": "prettier --write \"scripts/domain-attester/**/*.ts\" scripts/provision-origin-signer.ts scripts/run-domain-attester.ts scripts/run-origin-signer.ts \"tests/domain-attester-*.test.ts\" docs/domain-attester-prototype.md docs/testnet-v2-cutover-approval-packet-2026-08-07.md PROJECT-STATUS.md",
+    "format:attester:check": "prettier --check \"scripts/domain-attester/**/*.ts\" scripts/provision-origin-signer.ts scripts/run-domain-attester.ts scripts/run-origin-signer.ts \"tests/domain-attester-*.test.ts\" docs/domain-attester-prototype.md docs/testnet-v2-cutover-approval-packet-2026-08-07.md PROJECT-STATUS.md",
     "format:check": "clarinet format --check",
     "secrets:scan": "node scripts/scan-secret-files.ts",
+    "attester:provision-signer": "node scripts/provision-origin-signer.ts",
+    "attester:operator": "node scripts/run-domain-attester.ts",
+    "attester:signer": "node scripts/run-origin-signer.ts",
+    "attester:test": "vitest run tests/domain-attester-*.test.ts",
     "test": "vitest run",
     "test:report": "vitest run -- --coverage --costs",
     "testnet:accounts": "node scripts/create-testnet-accounts.ts",
@@ -27,7 +33,7 @@
     "testnet:issue-attestations:broadcast": "node scripts/issue-testnet-attestations.ts --broadcast",
     "testnet:verify": "node scripts/verify-testnet-deployment.ts",
     "typecheck": "tsc --noEmit",
-    "verify": "pnpm format:check && pnpm format:demo:check && pnpm secrets:scan && pnpm check && pnpm typecheck && pnpm test && pnpm demo:build"
+    "verify": "pnpm format:check && pnpm format:demo:check && pnpm format:attester:check && pnpm secrets:scan && pnpm check && pnpm typecheck && pnpm test && pnpm demo:build"
   },
   "devDependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.3.0",
