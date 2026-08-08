@@ -1,8 +1,14 @@
 # Testnet v2 Cutover Approval Packet
 
-Status: pre-signing draft; no external write approved
+Status: expired pre-signing draft retained for history; no external write approved
 
 Snapshot: August 7, 2026 at Bitcoin burn height `3,093` and Stacks tip height `12,334`
+
+Operational expiry note: a read-only check on August 8, 2026 observed burn height `3,456`, above
+the packet's short expiry `3,381`. The intent `g2-cutover-2026-08-07-01` must not be signed or
+reused. Generate a replacement packet and a new intent ID only after backup approval and immediately
+before the signing review. The source hashes and historical arithmetic below remain audit evidence,
+not current authorization values.
 
 This packet is the G2 review boundary. It does not authorize a faucet request, signing, funding, deployment, issuance, manifest promotion, Leather configuration promotion, push, or release. Refresh every live value immediately before signing. If any reviewed value changes, issue a replacement packet.
 
@@ -13,7 +19,7 @@ This packet is the G2 review boundary. It does not authorize a faucet request, s
 | Seven isolated roles          | Seven separate ignored `settings/testnet-v2-<role>.local.json` files, each mode `0600`; secret scan passes | Ready                                      |
 | Recoverable seed backup       | No Time Machine destination is configured and no independent recovery test is recorded                     | **Blocked**                                |
 | First-run transaction journal | `deployments/testnet-transactions/` is absent                                                              | Ready                                      |
-| Issuance intent               | `g2-cutover-2026-08-07-01`, ignored mode-`0600` file; arguments and request IDs below                      | Ready while expiry window remains valid    |
+| Issuance intent               | `g2-cutover-2026-08-07-01`, ignored mode-`0600` file; arguments and request IDs below                      | **Expired; replacement required**          |
 | Public applicant domain       | No controlled fictional eTLD+1 is selected                                                                 | **Blocks Day 3, not the G2 chain cutover** |
 | Evidence/profile origin       | No custom evidence-site origin distinct from the Acme dapp is selected                                     | **Blocks profile/explorer release**        |
 | Exact signed transaction IDs  | Signing is deliberately deferred until backup approval                                                     | **Blocked**                                |

@@ -11,6 +11,7 @@ This repository contains the hackathon product plan, demo application, Origin re
 - [Testnet attester and four-day roadmap](docs/testnet-attester-and-four-day-roadmap.md)
 - [Testnet v2 cutover approval packet](docs/testnet-v2-cutover-approval-packet-2026-08-07.md)
 - [Domain-control fetch security](docs/domain-control-fetch-security.md)
+- [Domain-control attester prototype](docs/domain-attester-prototype.md)
 - [Aggregated review response](docs/review-response-2026-08-07.md)
 - [UX exercise plan for August 6, 2026](docs/ux-exercise-2026-08-06.md)
 - [Agent project guide](AGENTS.md)

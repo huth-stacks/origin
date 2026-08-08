@@ -1,8 +1,8 @@
 # Origin Project Status
 
-- **As of:** August 7, 2026
+- **As of:** August 8, 2026
 - **Canonical repository:** `https://github.com/huth-stacks/origin`
-- **Product state:** complete hackathon proof of concept, reviewed v2 cutover foundation, and locally verified Testnet profile/explorer; pre-signing approval packet prepared; coordinated Testnet cutover and public evidence host pending; not integrated into upstream Leather
+- **Product state:** complete hackathon proof of concept, reviewed v2 cutover foundation, locally verified Testnet profile/explorer, and safe-floor Day 3 domain-attester implementation; the historical pre-signing packet has expired and requires replacement; coordinated Testnet cutover, controlled public domain, egress proof, and live issuance pending; not integrated into upstream Leather
 
 This file is the current handoff record. Product decisions remain canonical in
 `origin-hackathon-plan.md`; operational instructions remain canonical in `demo-runbook.md`.
@@ -48,6 +48,9 @@ not part of the active project.
 - Evidence containment that strips controls, caps display strings, quarantines unrecognized issuer
   text, never autolinks claim values, marks replaced issuance history, and fails neutrally when
   registry evidence is unavailable.
+- A local-only domain-control attester policy engine with canonical eTLD+1 challenges, SIP-018
+  deployer proofs, DNS-pinned HTTPS fetching, bounded strict JSON, durable SQLite replay and
+  recovery state, renewal policy, authenticated signer IPC, and an isolated allowlisted signer.
 
 The requesting application never supplies the displayed organization, attester policy, canonical
 contract, or verdict. Origin establishes provenance claims, not contract or transaction safety.
@@ -83,6 +86,32 @@ Current v2 foundation checks on August 7, 2026:
 - The pre-signing [v2 cutover packet](docs/testnet-v2-cutover-approval-packet-2026-08-07.md) records principals, source hashes, funding, nonces, fixed fees, expiry arithmetic, request IDs, trust cutover, stop conditions, and staged approvals.
 - No recoverable seed backup or controlled custom domain is configured. No faucet request, transaction signing, funding, deployment, issuance, or promotion has occurred.
 
+Local Day 3 safe-floor checks on August 8, 2026:
+
+- The domain-attester suite passes 124 tests across fetch policy, challenge/proof policy, durable
+  storage, service orchestration, signer allowlists, deterministic transaction journaling, and
+  authenticated Unix-socket IPC, plus an executable staged local operator workflow with no
+  broadcast command.
+- Abandoned challenges and unsigned stale authorizations close durably instead of permanently
+  consuming the global or per-subject in-flight budget.
+- Rejected HTTP responses are actively aborted, and malformed signer output is rejected before it
+  can enter the verifier transaction journal.
+- `pnpm verify` passes 25 test files and 261 tests, including the attester-specific formatting gate,
+  TypeScript, secret scan, all five Clarity contracts, and the production demo build.
+- This is the execution plan's safe-floor Rung C. No controlled public test host, outbound-firewall
+  evidence, v2 wallet trust cutover, signer provisioning, live signature, or Testnet broadcast was
+  performed.
+- A real local operator smoke test created and recovered a durable challenge while reading current
+  Testnet burn height; the command exposes challenge, verify, sign, and status stages but no
+  broadcast action.
+- `pnpm testnet:verify` passed against the still-canonical v1 deployment at burn height `3,456`.
+  Funding and deployment dry runs remain clean at nonce `0`; all six future recipients still need
+  their planned `10 STX`. The August 7 issuance intent is unusable because its short expiry `3,381`
+  is now in the past.
+- All seven isolated role files remain present at mode `0600`; the signer key/token and transaction
+  journal remain absent. `tmutil` reports no configured backup destination, so recovery approval is
+  still unproven.
+
 Fresh checks on August 7, 2026:
 
 - Origin `pnpm verify`: passed, including format checks, four Clarity contracts, typecheck, 33 tests,
@@ -116,8 +145,9 @@ fields as intrinsically trusted would violate the design.
 3. Review the pre-signing v2 packet, then separately approve the faucet request, local transaction signing, funding, cutover, and final promotion stages.
 4. Provision the distinct public evidence host, then replace the checked-in v1 profile values only
    as part of the reviewed atomic v2 compatibility promotion.
-5. Implement every control and adversarial test in `docs/domain-control-fetch-security.md` before
-   connecting the domain fetcher to an isolated signing key.
+5. Review the local safe-floor implementation and its requirement-to-test map, then demonstrate
+   the outbound firewall, pinned TLS connection, filesystem/process isolation, and controlled
+   public test host before connecting the verifier to the isolated signing key.
 6. Rebase the consolidated Leather staging branch onto current upstream `dev` and run Leather's
    complete required verification.
 7. Open an upstream Leather PR with `leather-review-manifest.md` as the review guide.
