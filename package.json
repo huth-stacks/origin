@@ -9,18 +9,34 @@
     "demo:dev": "vite --config vite.demo.config.ts",
     "demo:preview": "vite preview --config vite.demo.config.ts",
     "format": "clarinet format --in-place",
-    "format:demo": "prettier --write \"demo/**/*.{ts,tsx,css,html}\" \"tests/demo-*.test.{ts,tsx}\" vite.demo.config.ts package.json tsconfig.json README.md demo-runbook.md leather-review-manifest.md",
-    "format:demo:check": "prettier --check \"demo/**/*.{ts,tsx,css,html}\" \"tests/demo-*.test.{ts,tsx}\" vite.demo.config.ts package.json tsconfig.json README.md demo-runbook.md leather-review-manifest.md",
+    "format:demo": "prettier --write \"demo/**/*.{ts,tsx,css,html}\" \"tests/demo-*.test.{ts,tsx}\" vite.demo.config.ts vercel.json package.json tsconfig.json README.md demo-runbook.md leather-review-manifest.md",
+    "format:demo:check": "prettier --check \"demo/**/*.{ts,tsx,css,html}\" \"tests/demo-*.test.{ts,tsx}\" vite.demo.config.ts vercel.json package.json tsconfig.json README.md demo-runbook.md leather-review-manifest.md",
+    "format:attester": "prettier --write \"scripts/domain-attester/**/*.ts\" scripts/backup-testnet-accounts.ts scripts/broadcast-domain-attestation.ts scripts/provision-origin-signer.ts scripts/publish-domain-proof.ts scripts/run-domain-attester.ts scripts/run-origin-signer.ts scripts/testnet-backup-arguments.ts scripts/testnet-mempool.ts \"tests/domain-attester-*.test.ts\" tests/testnet-backup-arguments.test.ts tests/testnet-mempool.test.ts docs/domain-attester-prototype.md docs/review-2026-08-08-four-day-foundation.md docs/review-resolution-2026-08-09.md docs/testnet-v2-cutover-approval-packet-2026-08-07.md docs/testnet-v2-cutover-approval-packet-2026-08-08.md docs/testnet-v2-recovery-2026-08-08.md PROJECT-STATUS.md",
+    "format:attester:check": "prettier --check \"scripts/domain-attester/**/*.ts\" scripts/backup-testnet-accounts.ts scripts/broadcast-domain-attestation.ts scripts/provision-origin-signer.ts scripts/publish-domain-proof.ts scripts/run-domain-attester.ts scripts/run-origin-signer.ts scripts/testnet-backup-arguments.ts scripts/testnet-mempool.ts \"tests/domain-attester-*.test.ts\" tests/testnet-backup-arguments.test.ts tests/testnet-mempool.test.ts docs/domain-attester-prototype.md docs/review-2026-08-08-four-day-foundation.md docs/review-resolution-2026-08-09.md docs/testnet-v2-cutover-approval-packet-2026-08-07.md docs/testnet-v2-cutover-approval-packet-2026-08-08.md docs/testnet-v2-recovery-2026-08-08.md PROJECT-STATUS.md",
     "format:check": "clarinet format --check",
+    "secrets:scan": "node scripts/scan-secret-files.ts",
+    "attester:provision-signer": "node scripts/provision-origin-signer.ts",
+    "attester:operator": "node scripts/run-domain-attester.ts",
+    "attester:publish-proof": "node scripts/publish-domain-proof.ts",
+    "attester:broadcast": "node scripts/broadcast-domain-attestation.ts",
+    "attester:signer": "node scripts/run-origin-signer.ts",
+    "attester:test": "vitest run tests/domain-attester-*.test.ts",
     "test": "vitest run",
     "test:report": "vitest run -- --coverage --costs",
     "testnet:accounts": "node scripts/create-testnet-accounts.ts",
-    "testnet:deploy-fixtures": "node scripts/deploy-testnet-fixtures.ts --broadcast",
-    "testnet:fund-accounts": "node scripts/fund-testnet-accounts.ts --broadcast",
-    "testnet:issue-attestations": "node scripts/issue-testnet-attestations.ts --broadcast",
+    "testnet:backup-accounts": "node scripts/backup-testnet-accounts.ts",
+    "testnet:deploy-fixtures": "node scripts/deploy-testnet-fixtures.ts",
+    "testnet:deploy-fixtures:prepare": "node scripts/deploy-testnet-fixtures.ts --prepare",
+    "testnet:deploy-fixtures:broadcast": "node scripts/deploy-testnet-fixtures.ts --broadcast",
+    "testnet:fund-accounts": "node scripts/fund-testnet-accounts.ts",
+    "testnet:fund-accounts:prepare": "node scripts/fund-testnet-accounts.ts --prepare",
+    "testnet:fund-accounts:broadcast": "node scripts/fund-testnet-accounts.ts --broadcast",
+    "testnet:issue-attestations": "node scripts/issue-testnet-attestations.ts",
+    "testnet:issue-attestations:prepare": "node scripts/issue-testnet-attestations.ts --prepare",
+    "testnet:issue-attestations:broadcast": "node scripts/issue-testnet-attestations.ts --broadcast",
     "testnet:verify": "node scripts/verify-testnet-deployment.ts",
     "typecheck": "tsc --noEmit",
-    "verify": "pnpm format:check && pnpm format:demo:check && pnpm check && pnpm typecheck && pnpm test && pnpm demo:build"
+    "verify": "pnpm format:check && pnpm format:demo:check && pnpm format:attester:check && pnpm secrets:scan && pnpm check && pnpm typecheck && pnpm test && pnpm demo:build"
   },
   "devDependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.3.0",
@@ -40,5 +56,8 @@
     "vitest": "4.0.7",
     "vitest-environment-clarinet": "3.0.2"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@10.33.0",
+  "dependencies": {
+    "tldts": "^7.4.10"
+  }
 }

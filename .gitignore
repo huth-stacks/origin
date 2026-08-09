@@ -6,6 +6,8 @@
 coverage/
 deployments/default.simnet-plan.yaml
 deployments/testnet-accounts.local.json
+**/*.local.*
+demo/public/.well-known/stacks-origin.json
 dist/
 lcov.info
 node_modules/
@@ -15,3 +17,4 @@ settings/Testnet.toml
 costs-reports.json
 *.log
 .vercel
+.env*.local

@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "network": "stacks-testnet",
+  "displayName": "Origin Testnet Attesters",
+  "operator": "Origin project maintainers",
+  "status": "active-demo",
+  "verificationMethod": "Operator-reviewed fixtures and HTTPS/SIP-018 domain control",
+  "policyVersion": "origin-domain-testnet-v1",
+  "policyEffectiveDate": "2026-08-08",
+  "supportedClaimTypes": ["Exact-principal provenance"],
+  "evidenceFormat": "Origin registry v2 lifecycle events and current map state",
+  "revocationPolicy": "The attester may revoke an on-chain claim. Wallets must evaluate current registry state and expiration independently.",
+  "responseTarget": "Best effort during the Testnet demonstration",
+  "securityContact": "https://github.com/huth-stacks/origin/issues",
+  "principals": [
+    {
+      "principal": "ST389QT3QNDV6A7K9SDTAKDJ7RY15FPCZ8RPZZ06R",
+      "validFromBurnBlock": 3483,
+      "maxClaimLifetimeBurnBlocks": 100000,
+      "state": "current-v2-canonical"
+    },
+    {
+      "principal": "ST123Q4PK82XAH10Y4W9YERH6FZHE5G0XK4XR0VB0",
+      "validFromBurnBlock": 3483,
+      "maxClaimLifetimeBurnBlocks": 4320,
+      "state": "current-v2-domain-control"
+    }
+  ],
+  "rotationHistory": [
+    {
+      "principal": "ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC",
+      "validUntilBurnBlock": 3483,
+      "note": "Retired shared-mnemonic Testnet fixture; absent from the v2 wallet trust configuration."
+    }
+  ]
+}

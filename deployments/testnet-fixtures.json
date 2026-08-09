@@ -3,19 +3,59 @@
   "apiUrl": "https://api.testnet.hiro.so",
   "stacksEpoch": "3.4",
   "clarityVersion": 5,
+  "compatibility": {
+    "version": 2,
+    "originCommit": "6a974f608f9eea4a015d7192c95e46196eae03ad",
+    "leatherCommit": "9c48792b58ed48595b6f47e2c7e0db489faa82e4",
+    "apiUrl": "https://api.testnet.hiro.so",
+    "registry": {
+      "principal": "ST23YP5Q1WZKDV87KDDB1FQ3W916CQ3MSD09A2VAN.origin-registry-v2",
+      "schemaVersion": 2
+    },
+    "trustedAttesters": [
+      {
+        "principal": "ST389QT3QNDV6A7K9SDTAKDJ7RY15FPCZ8RPZZ06R",
+        "displayName": "Origin Testnet Attester",
+        "profileUrl": "https://origin-evidence.vercel.app/evidence",
+        "validFromBurnBlock": 3483,
+        "maxClaimLifetimeBurnBlocks": 100000
+      },
+      {
+        "principal": "ST123Q4PK82XAH10Y4W9YERH6FZHE5G0XK4XR0VB0",
+        "displayName": "Origin Domain Control Attester",
+        "profileUrl": "https://origin-evidence.vercel.app/evidence",
+        "validFromBurnBlock": 3483,
+        "maxClaimLifetimeBurnBlocks": 4320
+      }
+    ],
+    "discoveryAttesters": [
+      "ST389QT3QNDV6A7K9SDTAKDJ7RY15FPCZ8RPZZ06R",
+      "ST123Q4PK82XAH10Y4W9YERH6FZHE5G0XK4XR0VB0",
+      "ST3C1VMZB3SP3NCR93SMZGFDA7SKAN5TXVA2HW2MZ"
+    ],
+    "referenceContracts": [
+      {
+        "subject": "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action"
+      }
+    ]
+  },
   "registry": {
-    "principal": "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.origin-registry",
-    "txId": "0xffbe47e232a87c0719dd5811e8ee4ecba933caf375ad4d17a2e47bcd5b1018eb",
-    "stacksBlockHeight": 3687,
-    "burnBlockHeight": 2745
+    "principal": "ST23YP5Q1WZKDV87KDDB1FQ3W916CQ3MSD09A2VAN.origin-registry-v2",
+    "txId": "0x8a2c71ba986643dab5a4e992e0edecf5b5c6c4752fdd1cbd9f42f572a8646de3",
+    "stacksBlockHeight": 21922,
+    "burnBlockHeight": 3483
   },
   "attesters": {
     "trusted": {
-      "principal": "ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC",
+      "principal": "ST389QT3QNDV6A7K9SDTAKDJ7RY15FPCZ8RPZZ06R",
       "displayName": "Origin Testnet Attester"
     },
+    "domain": {
+      "principal": "ST123Q4PK82XAH10Y4W9YERH6FZHE5G0XK4XR0VB0",
+      "displayName": "Origin Domain Control Attester"
+    },
     "unrecognized": {
-      "principal": "ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0"
+      "principal": "ST3C1VMZB3SP3NCR93SMZGFDA7SKAN5TXVA2HW2MZ"
     }
   },
   "fixtures": {
@@ -24,12 +64,13 @@
       "contractTxId": "0xc404195821dc93d38ded2a0cc546ed4f43dfa70e4690c7aea8ede6aaf2ea1c29",
       "stacksBlockHeight": 3687,
       "claim": {
-        "attester": "ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC",
+        "attester": "ST389QT3QNDV6A7K9SDTAKDJ7RY15FPCZ8RPZZ06R",
         "issuerName": "Acme",
         "role": "Demo contract",
-        "issuedAt": 2745,
-        "expiresAt": 102745,
-        "txId": "0x57950d981c3a596aded2d28c0dec9bd2b225bb68895740eeae305dc2fe0b4025"
+        "issuedAt": 3483,
+        "expiresAt": 103481,
+        "requestId": "2533b37d8cd99e2aaf871873d1f5d4a7d0088cc8ad6ead553a09ae6d5cc04ada",
+        "txId": "0xeeaa16f586079c7096433fa77d1496b6816cf294d789c2b84420a81d38279cb6"
       }
     },
     "unrecognized": {
@@ -37,12 +78,13 @@
       "contractTxId": "0x2c3c58b7652a28522cf95a3c18724123960ce7e4fd7da509cfc474026e1d8809",
       "stacksBlockHeight": 3687,
       "claim": {
-        "attester": "ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0",
+        "attester": "ST3C1VMZB3SP3NCR93SMZGFDA7SKAN5TXVA2HW2MZ",
         "issuerName": "Definitely Acme",
         "role": "Official contract",
-        "issuedAt": 2745,
-        "expiresAt": 102745,
-        "txId": "0x22ebab6a79511b6778c6e529ef3e1f22fb3c4212a2fd9208d275eee0026e5d08"
+        "issuedAt": 3483,
+        "expiresAt": 103481,
+        "requestId": "f28aab5a04648b1169e428c3702420fcedffe915ea13bcfdd86b786093358547",
+        "txId": "0x03c14e194dad96598ba55faaff7db1b9f3fb0c4645cd63878fce4c390eb53f15"
       }
     },
     "lookalike": {
@@ -50,6 +92,48 @@
       "referenceSubject": "ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action",
       "contractTxId": "0x6e67afcba3d27d7b75bf62690d91eae4621f329818e56cea5e4d82300ae2b5c3",
       "stacksBlockHeight": 3688
+    },
+    "domainProof": {
+      "subject": "ST3WYMMN6AQ4AAQWBVKT2B72AVCCR574N9CGVQ4VN.origin-domain-proof",
+      "contractTxId": "0x99ea368657b88dbc1bdd0b32e2651ce3ebfec64b781bcb084250c64362245826",
+      "stacksBlockHeight": 21923,
+      "claim": {
+        "attester": "ST123Q4PK82XAH10Y4W9YERH6FZHE5G0XK4XR0VB0",
+        "issuerName": "origin-iota-ashy.vercel.app",
+        "role": "Protocol contract",
+        "issuedAt": 3486,
+        "expiresAt": 7806,
+        "requestId": "fe080f3642ba3e18cede0e07a579b368654e423644c75c3458d8d87de4dc2306",
+        "txId": "0xcba260a1d50d67ee75b99db89c8ce26a56e075323f21bbff9eeebdd68a009f18"
+      }
+    },
+    "lifecycle": {
+      "subject": "ST1C46DJ923TYM70YZ8DJEET8F15F97B3X8FZPBQM.origin-lifecycle-action",
+      "contractTxId": "0xcc942c21e4a83737e7f7c1f1e98a2a0b9f254114ea48874a7bcf4d86d6a242af",
+      "stacksBlockHeight": 21924,
+      "claim": {
+        "attester": "ST389QT3QNDV6A7K9SDTAKDJ7RY15FPCZ8RPZZ06R",
+        "issuerName": "Origin lifecycle fixture",
+        "role": "Demo contract",
+        "issuedAt": 3483,
+        "expiresAt": 103481,
+        "requestId": "c4aa2ba628826756b918c41ae31fd793b3cbb62ac92f8b4aa8dc3bf53a3e03c3",
+        "txId": "0xbd7ed241f7c333d2cc3375a1c0759c47a4d350ccef959b5873a23bc8eea7e29e"
+      }
+    },
+    "expiry": {
+      "subject": "STH4M7M1NRTSSR737J03KQXHMJYB4JG4F4KVV9DV.origin-expiry-action",
+      "contractTxId": "0xa7e2227856df851e784b336c6a519118dc99a2da3bcbb6abf84d53ec0d0246bc",
+      "stacksBlockHeight": 21924,
+      "claim": {
+        "attester": "ST389QT3QNDV6A7K9SDTAKDJ7RY15FPCZ8RPZZ06R",
+        "issuerName": "Origin expiry fixture",
+        "role": "Demo contract",
+        "issuedAt": 3484,
+        "expiresAt": 3769,
+        "requestId": "f5c4784e52df456114147072543d00b1796861b2f983bbda88374c240832ffbd",
+        "txId": "0x43d2017d5e5132e8de35aa59557856e3f60ef6dd9aa593f4b4870b1dedfcb572"
+      }
     }
   }
 }

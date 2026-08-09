@@ -1,44 +1,50 @@
 import { describe, expect, test } from "vitest";
 
-import { parseTestnetAccountSettings } from "../scripts/testnet-account-utils";
+import {
+  parseTestnetRoleSettings,
+  privateAccountPath,
+} from "../scripts/testnet-account-utils";
 
-const settings = `[network]
-name = "testnet"
+const trustedSettings = JSON.stringify({
+  role: "canonical_attester",
+  mnemonic: "trusted seed",
+  derivation: "m/44'/5757'/0'/0/0",
+});
 
-[accounts.deployer]
-mnemonic = "deployer seed"
-derivation = "m/44'/5757'/0'/0/0"
-
-[accounts.trusted_attester]
-mnemonic = "trusted seed"
-derivation = "m/44'/5757'/0'/0/0"
-
-[accounts.unrecognized_issuer]
-mnemonic = "unrecognized seed"
-derivation = "m/44'/5757'/0'/0/0"
-
-[accounts.lookalike_deployer]
-mnemonic = "lookalike seed"
-derivation = "m/44'/5757'/0'/0/0"`;
-
-describe(parseTestnetAccountSettings.name, () => {
-  test("loads a distinct role-scoped mnemonic and derivation", () => {
-    const accounts = parseTestnetAccountSettings(settings);
-
-    expect(accounts.trusted_attester).toEqual({
+describe(parseTestnetRoleSettings.name, () => {
+  test("loads only the expected role-scoped credential", () => {
+    expect(
+      parseTestnetRoleSettings(trustedSettings, "canonical_attester"),
+    ).toEqual({
+      role: "canonical_attester",
       mnemonic: "trusted seed",
       derivation: "m/44'/5757'/0'/0/0",
     });
-    expect(
-      new Set(Object.values(accounts).map((account) => account.mnemonic)).size,
-    ).toBe(4);
   });
 
-  test("rejects an incomplete role configuration", () => {
+  test("rejects a credential file for another role", () => {
     expect(() =>
-      parseTestnetAccountSettings(
-        settings.replace('mnemonic = "trusted seed"', ""),
+      parseTestnetRoleSettings(trustedSettings, "registry_deployer"),
+    ).toThrow("Invalid registry_deployer private account settings");
+  });
+
+  test("rejects incomplete private account settings", () => {
+    expect(() =>
+      parseTestnetRoleSettings(
+        JSON.stringify({ role: "canonical_attester" }),
+        "canonical_attester",
       ),
-    ).toThrow("Missing trusted_attester settings");
+    ).toThrow("Invalid canonical_attester private account settings");
+  });
+});
+
+describe(privateAccountPath.name, () => {
+  test("uses one ignored local file per role", () => {
+    expect(privateAccountPath("canonical_attester")).toMatch(
+      /settings\/testnet-v2-canonical_attester\.local\.json$/,
+    );
+    expect(privateAccountPath("registry_deployer")).not.toBe(
+      privateAccountPath("canonical_attester"),
+    );
   });
 });
