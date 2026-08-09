@@ -37,13 +37,14 @@ export interface FixtureManifest {
   registry: { principal: string; txId: string };
   attesters: {
     trusted: { principal: string };
+    domain?: { principal: string };
     unrecognized: { principal: string };
   };
   fixtures: {
     known: ContractFixture & { claim: ClaimFixture };
     unrecognized: ContractFixture & { claim: ClaimFixture };
     lookalike: ContractFixture & { referenceSubject: string };
-    domainProof?: ContractFixture;
+    domainProof?: ContractFixture & { claim: ClaimFixture };
     lifecycle?: ContractFixture & { claim: ClaimFixture };
     expiry?: ContractFixture & { claim: ClaimFixture };
   };
@@ -60,10 +61,19 @@ export function validateFixtureManifest(manifest: FixtureManifest) {
     schemaVersion === 1 || schemaVersion === 2,
     `Unsupported registry schema version ${schemaVersion}`,
   );
-  assert.equal(manifest.compatibility.trustedAttesters.length, 1);
-  const trustedPolicy = manifest.compatibility.trustedAttesters[0];
+  assert(manifest.compatibility.trustedAttesters.length > 0);
+  const trustedPrincipals = manifest.compatibility.trustedAttesters.map(
+    (attester) => attester.principal,
+  );
+  assert.equal(
+    new Set(trustedPrincipals).size,
+    trustedPrincipals.length,
+    "Duplicate trusted-attester policy",
+  );
+  const trustedPolicy = manifest.compatibility.trustedAttesters.find(
+    (attester) => attester.principal === manifest.attesters.trusted.principal,
+  );
   assert(trustedPolicy, "Missing trusted-attester compatibility policy");
-  assert.equal(trustedPolicy.principal, manifest.attesters.trusted.principal);
   const assertTrustedClaimPolicy = (
     fixtureName: string,
     fixture: ContractFixture & { claim: ClaimFixture },
@@ -89,12 +99,11 @@ export function validateFixtureManifest(manifest: FixtureManifest) {
     );
   };
   assertTrustedClaimPolicy("known", manifest.fixtures.known);
-  assert(
-    manifest.compatibility.discoveryAttesters.includes(
-      manifest.attesters.trusted.principal,
-    ),
-    "Trusted attester is absent from discovery",
-  );
+  for (const policy of manifest.compatibility.trustedAttesters)
+    assert(
+      manifest.compatibility.discoveryAttesters.includes(policy.principal),
+      "Trusted attester is absent from discovery",
+    );
   assert(
     manifest.compatibility.discoveryAttesters.includes(
       manifest.attesters.unrecognized.principal,
@@ -120,7 +129,38 @@ export function validateFixtureManifest(manifest: FixtureManifest) {
     "Unrecognized fixture attester must differ from the trusted attester",
   );
   if (schemaVersion === 2) {
+    assert(manifest.attesters.domain, "Missing v2 domain attester");
+    const domainPolicy = manifest.compatibility.trustedAttesters.find(
+      (attester) => attester.principal === manifest.attesters.domain?.principal,
+    );
+    assert(domainPolicy, "Missing v2 domain-attester trust policy");
+    assert(
+      domainPolicy.maxClaimLifetimeBurnBlocks <= 4_320,
+      "Domain-attester lifetime policy exceeds 4,320 burn blocks",
+    );
     assert(manifest.fixtures.domainProof, "Missing v2 domain-proof fixture");
+    assert.equal(
+      manifest.fixtures.domainProof.claim.attester,
+      domainPolicy.principal,
+      "Domain-proof claim must use the domain attester",
+    );
+    assert(
+      domainPolicy.validFromBurnBlock <=
+        manifest.fixtures.domainProof.claim.issuedAt,
+      "Domain-attester interval starts after the domain-proof claim",
+    );
+    if (domainPolicy.validUntilBurnBlock !== undefined)
+      assert(
+        manifest.fixtures.domainProof.claim.issuedAt <
+          domainPolicy.validUntilBurnBlock,
+        "Domain-attester interval ends at or before the domain-proof claim",
+      );
+    assert(
+      manifest.fixtures.domainProof.claim.expiresAt -
+        manifest.fixtures.domainProof.claim.issuedAt <=
+        domainPolicy.maxClaimLifetimeBurnBlocks,
+      "Domain-proof claim exceeds the wallet lifetime policy",
+    );
     assert(manifest.fixtures.lifecycle, "Missing v2 lifecycle fixture");
     assert(manifest.fixtures.expiry, "Missing v2 expiry fixture");
     assertTrustedClaimPolicy("lifecycle", manifest.fixtures.lifecycle);
@@ -133,6 +173,7 @@ export function validateFixtureManifest(manifest: FixtureManifest) {
     for (const fixture of [
       manifest.fixtures.known,
       manifest.fixtures.unrecognized,
+      manifest.fixtures.domainProof,
       manifest.fixtures.lifecycle,
       manifest.fixtures.expiry,
     ])

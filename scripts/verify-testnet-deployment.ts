@@ -151,6 +151,7 @@ if (schemaVersion === 2) {
       "contracts/origin-demo-target.clar",
       expiry.contractTxId,
     ),
+    verifyClaim(domainProof),
     verifyClaim(lifecycle),
     verifyClaim(expiry),
   );
@@ -217,5 +218,5 @@ console.log(
   `Verified Origin Testnet deployment at burn height ${info.burn_block_height}: ` +
     (schemaVersion === 1
       ? "four contracts, two claims, and one unknown same-name/different-deployer lookalike."
-      : "seven contracts, four claims, and one unknown same-name/different-deployer lookalike."),
+      : "seven contracts, five claims, and one unknown same-name/different-deployer lookalike."),
 );

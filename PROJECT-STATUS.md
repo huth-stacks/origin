@@ -2,7 +2,7 @@
 
 - **As of:** August 8, 2026
 - **Canonical repository:** `https://github.com/huth-stacks/origin`
-- **Product state:** complete hackathon proof of concept, reviewed v2 cutover foundation, locally verified Testnet profile/explorer, and safe-floor Day 3 domain-attester implementation; the historical pre-signing packet has expired and requires replacement; coordinated Testnet cutover, controlled public domain, egress proof, and live issuance pending; not integrated into upstream Leather
+- **Product state:** complete hackathon proof of concept with a live, verified Testnet v2 registry; isolated canonical and domain attesters; five live claims including one HTTPS/SIP-018 domain-control issuance; public applicant and evidence sites; and a locally built Leather v2 integration branch. It is not integrated into upstream Leather.
 
 This file is the current handoff record. Product decisions remain canonical in
 `origin-hackathon-plan.md`; operational instructions remain canonical in `demo-runbook.md`.
@@ -11,10 +11,10 @@ This file is the current handoff record. Product decisions remain canonical in
 
 Origin is one project with two intentionally separate Git repositories:
 
-| Responsibility                                                                                                   | Repository and local checkout                                                                                                 | Current review target                                                            |
-| ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`                                               | `agent/four-day-foundation`, based on `main` at `b602551`                        |
-| Leather lookup, evaluator, approval UX, and extension tests                                                      | `huth-stacks/leather-origin-demo` at `/Users/alexander/Code/leather-origin-demo`, with `leather-io/mono` retained as upstream | `agent/four-day-foundation` at `9c48792b5`, based on fork staging at `64a1353c6` |
+| Responsibility                                                                                                   | Repository and local checkout                                                                                                 | Current review target                      |
+| ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Product plan, Clarity registry, Testnet fixtures, Acme demo, deployment notes, and cross-repository coordination | `huth-stacks/origin` at `/Users/alexander/Code/contract-provenance-certificate`                                               | `agent/four-day-foundation`                |
+| Leather lookup, evaluator, approval UX, and extension tests                                                      | `huth-stacks/leather-origin-demo` at `/Users/alexander/Code/leather-origin-demo`, with `leather-io/mono` retained as upstream | `agent/four-day-foundation` at `3ae72d8c4` |
 
 Leather remains separate because it is an upstream product monorepo. Vendoring its source here
 would obscure the review boundary and make future rebases harder. This repository consolidates the
@@ -27,7 +27,8 @@ not part of the active project.
 
 - A permissionless Clarity 5 registry keyed by `{ attester, subject }`, with issuance,
   replacement, revocation, and burn-block expiration.
-- Four live Testnet contracts: one registry and three harmless state-only target fixtures.
+- Seven live Testnet contracts: the v2 registry, four harmless state-only target fixtures, and the
+  dedicated domain-proof and lifecycle fixtures.
 - A fictional Acme check-in dapp that connects through Leather's normal provider and sends ordinary
   `stx_callContract` requests without identity or trust hints.
 - A wallet-owned registry client and pure evaluator in Leather.
@@ -48,9 +49,10 @@ not part of the active project.
 - Evidence containment that strips controls, caps display strings, quarantines unrecognized issuer
   text, never autolinks claim values, marks replaced issuance history, and fails neutrally when
   registry evidence is unavailable.
-- A local-only domain-control attester policy engine with canonical eTLD+1 challenges, SIP-018
+- A live-tested domain-control attester policy engine with canonical eTLD+1/private-tenant challenges, SIP-018
   deployer proofs, DNS-pinned HTTPS fetching, bounded strict JSON, durable SQLite replay and
-  recovery state, renewal policy, authenticated signer IPC, and an isolated allowlisted signer.
+  recovery state, renewal policy, authenticated signer IPC, an isolated allowlisted signer, and a
+  separate exact-bytes broadcaster that cannot access the signing key.
 
 The requesting application never supplies the displayed organization, attester policy, canonical
 contract, or verdict. Origin establishes provenance claims, not contract or transaction safety.
@@ -67,11 +69,39 @@ contract, or verdict. Origin establishes provenance claims, not contract or tran
 - No PR has been opened against `leather-io/mono`.
 - The Leather work started at upstream `dev` commit `d98bd9a61`. Rebase and full verification are
   required before an upstream PR.
-- The live registry remains v1. The v2 contract, isolated-attester rotation, fixture predeployment,
-  manifest replacement, and Leather principal updates are one future coordinated Testnet cutover;
-  no Tier 1 implementation command has broadcast a transaction.
+- The live registry is `ST23YP5Q1WZKDV87KDDB1FQ3W916CQ3MSD09A2VAN.origin-registry-v2`.
+- `https://origin-iota-ashy.vercel.app` is the public applicant/demo host and
+  `https://origin-evidence.vercel.app/evidence` is the distinct public evidence host.
+- The Origin and Leather compatibility manifests are v2 and trust the isolated canonical and
+  domain attesters. The prior shared-mnemonic principal is absent.
+- The domain signer is stopped after its single bounded issuance. Its key, IPC token, database,
+  and transaction journals remain ignored local mode-`0600` state.
 
 ## Verification snapshot
+
+Completed v2 cutover checks on August 8, 2026:
+
+- Recovery-tested GPG ciphertext for all seven isolated roles is stored locally and as an
+  encrypted GitHub Actions variable; a round-trip fetch, SHA-256 match, decrypt, and principal
+  validation passed without committing seed material.
+- The six exact funding transfers, four exact-source deployments, four canonical fixture claims,
+  and one domain-control claim are confirmed on Testnet. The immutable transaction IDs are in
+  `deployments/testnet-fixtures.json` and the completed cutover packet.
+- `pnpm testnet:verify` passed at burn height `3,487`, confirming seven exact-source contracts,
+  five exact claims, and the unknown same-name/different-deployer lookalike.
+- The domain verifier fetched a public, redirect-free signed proof from
+  `origin-iota-ashy.vercel.app`, validated public DNS, pinned TLS, strict JSON, and the SIP-018
+  deployer signature, then authorized the exact claim. The isolated signer produced one
+  journaled transaction, the keyless broadcaster submitted the same bytes, and the request
+  reached durable `confirmed` state.
+- Origin verification passed 25 files/269 tests, formatting, secret scan, TypeScript, all five
+  Clarity contracts, and the production build. Leather formatting and typecheck passed; the full
+  extension suite passed 93 files/617 tests; unused exports reported zero; and the Origin demo
+  build passed. Full lint still reports exactly the four documented unrelated `apps/web` errors,
+  and Knip still reports exactly the documented 11 unused tool files plus `commander`.
+- A fresh production testing-runtime extension build and the installed Chromium journey against
+  `https://origin-iota-ashy.vercel.app` passed all three live Testnet provenance states in 14.5
+  seconds. Every request was closed without broadcasting an application transaction.
 
 Current v2 foundation checks on August 7, 2026:
 
@@ -140,17 +170,14 @@ fields as intrinsically trusted would violate the design.
 
 ## Immediate next actions
 
-1. Back up and recovery-check all seven isolated seed files without placing seed material in Git or chat.
-2. Select a controlled fictional eTLD+1 and a distinct evidence/profile host.
-3. Review the pre-signing v2 packet, then separately approve the faucet request, local transaction signing, funding, cutover, and final promotion stages.
-4. Provision the distinct public evidence host, then replace the checked-in v1 profile values only
-   as part of the reviewed atomic v2 compatibility promotion.
-5. Review the local safe-floor implementation and its requirement-to-test map, then demonstrate
-   the outbound firewall, pinned TLS connection, filesystem/process isolation, and controlled
-   public test host before connecting the verifier to the isolated signing key.
-6. Rebase the consolidated Leather staging branch onto current upstream `dev` and run Leather's
-   complete required verification.
-7. Open an upstream Leather PR with `leather-review-manifest.md` as the review guide.
+1. Review the two local commits and the immutable Testnet/evidence records before publishing Git
+   branches. No Git push or upstream PR was performed by this completion run.
+2. Rebase the consolidated Leather staging branch onto current upstream `dev`, resolve any new
+   upstream drift, and repeat the complete required verification.
+3. Open an upstream Leather PR with `leather-review-manifest.md` as the review guide.
+4. Before any second domain claim, provision a deployment environment with an independently
+   enforced outbound firewall and process/mount isolation; the one-shot Testnet exercise proved
+   application-level address rejection and pinned TLS, not an infrastructure firewall boundary.
 
 Stacks Connect standardization and production attester governance remain post-hackathon work rather
 than unfinished proof-of-concept requirements.

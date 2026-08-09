@@ -45,14 +45,18 @@ function claim(recognized: boolean): OriginEvidenceClaim {
 describe(EvidenceView.name, () => {
   test("keeps the explanatory profile aligned with wallet compatibility", () => {
     expect(publicProfile).toEqual(profile);
-    expect(profile.principals).toEqual(
+    expect(
+      profile.principals.map(({ state: _state, ...principal }) => principal),
+    ).toEqual(
       fixtures.compatibility.trustedAttesters.map((attester) => ({
         principal: attester.principal,
         validFromBurnBlock: attester.validFromBurnBlock,
         maxClaimLifetimeBurnBlocks: attester.maxClaimLifetimeBurnBlocks,
-        state: "current-v1",
       })),
     );
+    expect(
+      profile.principals.every(({ state }) => state.startsWith("current-v2")),
+    ).toBe(true);
   });
 
   test("renders the attester identity, exact evidence, and Testnet warning", () => {

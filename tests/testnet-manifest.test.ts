@@ -20,6 +20,15 @@ function v2Manifest() {
     subject: "STPROOF.origin-domain-proof",
     contractTxId: "proof-tx",
     stacksBlockHeight: 10,
+    claim: {
+      attester: manifest.attesters.domain!.principal,
+      issuerName: "origin-demo.vercel.app",
+      role: "Protocol contract",
+      issuedAt: manifest.fixtures.known.claim.issuedAt,
+      expiresAt: manifest.fixtures.known.claim.issuedAt + 4_320,
+      requestId: "55".repeat(32),
+      txId: "domain-claim-tx",
+    },
   };
   manifest.fixtures.lifecycle = {
     subject: "STLIFE.origin-lifecycle-action",
@@ -44,9 +53,9 @@ function v2Manifest() {
 }
 
 describe(validateFixtureManifest.name, () => {
-  test("accepts the current v1 compatibility record", () => {
+  test("accepts the current v2 compatibility record", () => {
     expect(validateFixtureManifest(cloneCurrentManifest()).schemaVersion).toBe(
-      1,
+      2,
     );
   });
 
@@ -79,6 +88,19 @@ describe(validateFixtureManifest.name, () => {
 
     expect(() => validateFixtureManifest(manifest)).toThrow(
       "Missing v2 expiry fixture",
+    );
+  });
+
+  test("rejects a domain trust interval that excludes its claim", () => {
+    const manifest = v2Manifest();
+    const domainPolicy = manifest.compatibility.trustedAttesters.find(
+      ({ principal }) => principal === manifest.attesters.domain!.principal,
+    )!;
+    domainPolicy.validUntilBurnBlock =
+      manifest.fixtures.domainProof!.claim.issuedAt;
+
+    expect(() => validateFixtureManifest(manifest)).toThrow(
+      "Domain-attester interval ends at or before the domain-proof claim",
     );
   });
 });

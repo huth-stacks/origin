@@ -17,3 +17,4 @@ settings/Testnet.toml
 costs-reports.json
 *.log
 .vercel
+.env*.local

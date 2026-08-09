@@ -1,12 +1,13 @@
 # Domain-Control Attester Prototype
 
-Status: local safe-floor implementation, August 8, 2026
+Status: live Testnet prototype completed, August 8, 2026
 
-This is the operator guide for Origin's Day 3 domain-control attester. The implementation reaches
-Rung C of the four-day execution plan: the durable verifier, constrained fetcher, proof policy,
-isolated signer, and adversarial suite exist locally. It does not authorize a Testnet write. A
-controlled public domain, outbound-firewall evidence, v2 trust cutover, isolated-key provisioning,
-and separate G3 approval are still required before signing or broadcasting.
+This is the operator guide for Origin's Day 3 domain-control attester. The durable verifier,
+constrained fetcher, proof policy, isolated signer, adversarial suite, and exact-bytes broadcaster
+have completed one bounded Testnet exercise. The wallet v2 policy trusted the domain attester
+before issuance; the public proof was fetched from a controlled Vercel tenant; and transaction
+`0xcba260a1d50d67ee75b99db89c8ce26a56e075323f21bbff9eeebdd68a009f18`
+confirmed the first claim. This prototype result does not authorize additional writes.
 
 ## Protocol shape
 
@@ -95,6 +96,7 @@ The normative controls in `domain-control-fetch-security.md` map to local eviden
 | Narrow signer calls, nonce ownership, kill switch, daily ceiling       | `signer-policy.ts`, `isolated-signer.ts`  | altered authorization, lifecycle, deterministic journal, and ceiling cases |
 | Authenticated local-only signing boundary                              | `signer-ipc.ts`                           | exact-shape/authentication, socket mode, and coarse-rejection cases        |
 | Reviewable operator sequencing with no broadcast action                | `operator.ts`, `run-domain-attester.ts`   | command allowlist, expanded arguments, and output-containment cases        |
+| Separate keyless exact-bytes submission and reconciliation             | `broadcast-domain-attestation.ts`         | preflight, attempted-before-I/O, and durable status transitions            |
 
 The outbound firewall, actual pinned socket/TLS capture, process mount isolation, and controlled
 public host are deployment evidence and cannot be established by unit tests. They remain explicit
@@ -136,9 +138,9 @@ The canonical attester uses the separate `canonical_attester` role and enables o
 lifecycle authorization. Domain and lifecycle policies cannot be selected through an arbitrary
 request field.
 
-## Local operator flow
+## Staged operator flow
 
-The operator command exposes only four staged actions. There is deliberately no broadcast action.
+The operator command exposes only four staged actions and deliberately has no broadcast action.
 
 ```sh
 pnpm attester:operator challenge \
@@ -161,6 +163,17 @@ HTTPS fetch, strict proof checks, renewal read, and durable authorization. `sign
 isolated signer over authenticated IPC and prints only the request ID, signer nonce, and local
 transaction ID; serialized bytes stay in the mode-`0600` SQLite journals. `status` prints the
 reviewable recovery state without private key material or the deployer signature.
+
+After the signer is stopped and the exact local transaction has been reviewed, the separate
+broadcaster can submit only the already journaled bytes:
+
+```sh
+pnpm attester:broadcast --request-id <request-id> --broadcast
+```
+
+The broadcaster never reads the role file, signer key, or IPC token. It performs a live nonce and
+transaction preflight, records uncertainty before network I/O, submits the durable bytes, and
+reconciles the resulting chain state into the operator database.
 
 The defaults can be redirected without command-line secret values:
 
@@ -187,9 +200,9 @@ authorizations are durably rejected so they cannot exhaust concurrency forever. 
 exact serialized bytes, signer nonce, and local transaction ID remain the recovery identity; an
 uncertain attempt must be reconciled and never replaced blindly.
 
-## G3 gate still required
+## Gate for any subsequent live claim
 
-Before the first live domain claim, the reviewer must verify all of the following in the actual
+Before another live domain claim, the reviewer must verify all of the following in the actual
 execution environment:
 
 1. The public hostname is a controlled fictional ICANN eTLD+1 or delegated private-suffix tenant
@@ -201,6 +214,9 @@ execution environment:
 5. The domain attester and validity interval already exist in wallet-owned v2 configuration.
 6. The reviewed authorization, fee, nonce, signed bytes, and local transaction ID are journaled
    before any network request.
-7. A separate approval explicitly permits the one bounded Testnet broadcast.
+7. A separate approval explicitly permits that bounded Testnet broadcast.
 
-Until that gate is complete, stop after local tests and authorization review.
+The first exercise satisfied the application-level hostname, public-address, pinned-TLS, wallet
+policy, exact-journal, isolated-key, and one-broadcast conditions. It did not establish a separate
+infrastructure firewall or mount namespace, so a repeat deployment must add and independently
+demonstrate those defense-in-depth controls before enabling the signer.
