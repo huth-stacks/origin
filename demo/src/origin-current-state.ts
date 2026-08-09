@@ -143,21 +143,19 @@ export async function readOriginCurrentState({
   requestTimeoutMs = 8_000,
   maxPairs = 100,
 }: ReadOriginCurrentStateArgs) {
-  if (pairs.length > maxPairs)
-    throw new Error("Origin current-state pair limit exceeded");
   const separator = registryPrincipal.indexOf(".");
   if (separator <= 0 || separator === registryPrincipal.length - 1)
     throw new Error("Invalid Origin registry principal");
   const contractAddress = registryPrincipal.slice(0, separator);
   const contractName = registryPrincipal.slice(separator + 1);
-  const uniquePairs = pairs.filter(
-    (pair, index, allPairs) =>
-      allPairs.findIndex(
-        (candidate) =>
-          candidate.attester === pair.attester &&
-          candidate.subject === pair.subject,
-      ) === index,
-  );
+  const seenPairs = new Set<string>();
+  const uniquePairs = pairs.filter((pair) => {
+    const key = `${pair.attester}\u0000${pair.subject}`;
+    if (seenPairs.has(key)) return false;
+    seenPairs.add(key);
+    return true;
+  });
+  const boundedPairs = uniquePairs.slice(0, maxPairs);
   const [info, lookups] = await Promise.all([
     fetchJsonWithTimeout(
       fetchFn,
@@ -166,7 +164,7 @@ export async function readOriginCurrentState({
       requestTimeoutMs,
     ),
     Promise.all(
-      uniquePairs.map((pair) =>
+      boundedPairs.map((pair) =>
         withDeadline(requestTimeoutMs, async (signal) => {
           const boundedFetch: typeof fetch = (input, init) =>
             fetchFn(input, {
@@ -206,5 +204,9 @@ export async function readOriginCurrentState({
     typeof infoValue.burn_block_height !== "number"
   )
     throw new Error("Origin burn-height lookup returned invalid data");
-  return { burnBlockHeight: infoValue.burn_block_height, lookups };
+  return {
+    burnBlockHeight: infoValue.burn_block_height,
+    lookups,
+    truncated: uniquePairs.length > maxPairs,
+  };
 }

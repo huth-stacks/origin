@@ -76,10 +76,26 @@ export async function startSignerIpcServer(options: {
   token: string;
   signer: IpcSigner;
   logger?: (entry: { disposition: string; requestId?: string }) => void;
+  timeoutMs?: number;
 }) {
   if (!validToken(options.token)) throw new Error("Invalid signer IPC token");
   const server = createServer((socket) => {
-    socket.setTimeout(IPC_TIMEOUT_MS, () => socket.destroy());
+    let closed = false;
+    const reply = (value: unknown) => {
+      if (closed || socket.destroyed || !socket.writable) return;
+      socket.end(`${JSON.stringify(value)}\n`);
+    };
+    socket.once("error", () => {
+      closed = true;
+      options.logger?.({ disposition: "connection-error" });
+    });
+    socket.once("close", () => {
+      closed = true;
+    });
+    socket.setTimeout(options.timeoutMs ?? IPC_TIMEOUT_MS, () => {
+      closed = true;
+      socket.destroy();
+    });
     let bytes = 0;
     let source = "";
     let handled = false;
@@ -89,9 +105,7 @@ export async function startSignerIpcServer(options: {
       bytes += Buffer.byteLength(chunk);
       if (bytes > IPC_MAX_MESSAGE_BYTES) {
         handled = true;
-        socket.end(
-          `${JSON.stringify({ ok: false, error: "signer-rejected" })}\n`,
-        );
+        reply({ ok: false, error: "signer-rejected" });
         return;
       }
       source += chunk;
@@ -108,12 +122,10 @@ export async function startSignerIpcServer(options: {
             disposition: "signed",
             requestId: signed.requestId,
           });
-          socket.end(`${JSON.stringify({ ok: true, signed })}\n`);
+          reply({ ok: true, signed });
         } catch {
           options.logger?.({ disposition: "rejected" });
-          socket.end(
-            `${JSON.stringify({ ok: false, error: "signer-rejected" })}\n`,
-          );
+          reply({ ok: false, error: "signer-rejected" });
         }
       })();
     });

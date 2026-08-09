@@ -244,7 +244,6 @@ export class DomainAttesterStore {
     nowSeconds: number,
   ) {
     return this.immediate(() => {
-      this.expireStaleUnverifiedInTransaction(nowSeconds);
       const current = this.get(requestId);
       if (current.state !== "challenge-issued")
         throw new Error("Domain request is not awaiting verification");
@@ -286,7 +285,11 @@ export class DomainAttesterStore {
           throw new Error("Signed domain request journal conflict");
         return current;
       }
-      if (current.state !== "authorized")
+      const recoverableExpiredAuthorization =
+        current.state === "rejected" &&
+        current.disposition === "authorization-expired" &&
+        current.authorization !== undefined;
+      if (current.state !== "authorized" && !recoverableExpiredAuthorization)
         throw new Error("Domain request is not authorized for signing");
       if (signed.requestId !== requestId)
         throw new Error("Signer returned a different request ID");
@@ -301,7 +304,7 @@ export class DomainAttesterStore {
         .prepare(
           `UPDATE domain_requests SET
             signer_nonce = ?, serialized_transaction = ?, tx_id = ?,
-            state = 'signed', updated_at = ?
+            state = 'signed', updated_at = ?, disposition = NULL
           WHERE request_id = ?`,
         )
         .run(

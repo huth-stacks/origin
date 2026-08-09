@@ -1,4 +1,4 @@
-:root {
+:root[data-surface="evidence"] {
   --evidence-paper: #f3efe6;
   --evidence-paper-deep: #e8e0d2;
   --evidence-ink: #15191b;

@@ -1,0 +1,34 @@
+# Four-day foundation review resolution
+
+Date: 2026-08-09
+
+This document records the disposition of
+`review-2026-08-08-four-day-foundation.md`. No live transaction was broadcast while resolving the
+review.
+
+| Finding                    | Disposition                           | Resolution                                                                                                                                                                                                                                                                                                     |
+| -------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1                         | Confirmed                             | The isolated signer reads burn height independently and bounds claim expiry against that value.                                                                                                                                                                                                                |
+| C2                         | Confirmed                             | Transaction construction and the complete serialized transaction journal now commit atomically; incomplete legacy rows are removed, the network nonce is the floor, local nonces must be contiguous, exact replay precedes authorization expiry checks, and issuer display fields enforce the registry bounds. |
+| C3                         | Confirmed                             | Accepted IPC sockets handle errors and closure, timeouts destroy the connection safely, and replies are suppressed after closure.                                                                                                                                                                              |
+| C4                         | Confirmed                             | Production startup requires explicit public service addresses and threads them, plus optional internal CIDRs, into the secure proof fetcher.                                                                                                                                                                   |
+| C5                         | Confirmed                             | Evidence root theme tokens apply only when the evidence surface marks the document root.                                                                                                                                                                                                                       |
+| C6                         | Confirmed                             | Event pairs are deduplicated in linear time before a bounded subset is queried; excess unique pairs produce partial evidence instead of bricking the page.                                                                                                                                                     |
+| C7                         | Rejected as stated; duplication fixed | The current Hiro v3 principal-mempool endpoint returns nested `sender.address` and `sender.nonce`, which the implementation already expected. Both preflights now share one strict parser, with nested-v3 acceptance and flat-v1 rejection covered by tests.                                                   |
+| C8                         | Confirmed                             | Attempt-marker temporary files use unique names outside the `.local.json` recovery glob.                                                                                                                                                                                                                       |
+| C9                         | Rejected as a bug                     | The execution plan intentionally keeps ordinary domain renewal behind the 80% gate after revocation. Immediate reissue is reserved for the separately authorized operator lifecycle path; the existing regression test remains authoritative.                                                                  |
+| B1                         | Confirmed                             | Testnet backup arguments now use an exact required-flag parser that rejects unknown, duplicate, and missing inputs.                                                                                                                                                                                            |
+| L1                         | Confirmed                             | Burn height is part of the ready lookup state, making a ready evaluation without chain height unrepresentable.                                                                                                                                                                                                 |
+| L2                         | Confirmed                             | Discovery attesters are derived as the deduplicated union of configured discovery and trusted attesters.                                                                                                                                                                                                       |
+| Leather dead `profileUrl`  | Confirmed                             | The unread model field and both inert configuration values were deleted.                                                                                                                                                                                                                                       |
+| Leather simplification set | Accepted                              | Ready evaluation assesses each claim once, lookup uses an attester map, subject is common evaluation state, the helper is removed, and URL/type guards are symmetric.                                                                                                                                          |
+
+The C7 schema disposition follows Hiro's current
+`GET /extended/v3/principals/{principal}/mempool/transactions` response, whose transaction schema
+exposes a nested `sender` object. The parser remains deliberately fail-closed for unknown shapes.
+
+The nonce repair treats serialized bytes as part of nonce reservation, not a later recovery step.
+The signer serializes requests, reads the independent policy inputs, constructs the exact signed
+transaction, and inserts nonce plus bytes plus transaction ID in one immediate SQLite transaction.
+A failed construction rolls the transaction back; a completed request is replayed byte-for-byte
+without requiring a still-live short authorization window.

@@ -1,7 +1,10 @@
 import { Cl } from "@stacks/transactions";
 import { describe, expect, test } from "vitest";
 
-import { parseOriginCurrentClaim } from "../demo/src/origin-current-state";
+import {
+  parseOriginCurrentClaim,
+  readOriginCurrentState,
+} from "../demo/src/origin-current-state";
 
 const pair = {
   attester: "ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC",
@@ -76,5 +79,26 @@ describe(parseOriginCurrentClaim.name, () => {
         2,
       ),
     ).toThrow("Invalid Origin request ID");
+  });
+});
+
+describe(readOriginCurrentState.name, () => {
+  test("deduplicates before applying a bounded partial lookup", async () => {
+    const result = await readOriginCurrentState({
+      apiUrl: "https://api.test",
+      registryPrincipal:
+        "ST23YP5Q1WZKDV87KDDB1FQ3W916CQ3MSD09A2VAN.origin-registry-v2",
+      schemaVersion: 2,
+      pairs: Array.from({ length: 101 }, () => pair),
+      maxPairs: 0,
+      fetchFn: () =>
+        Promise.resolve(Response.json({ burn_block_height: 3_500 })),
+    });
+
+    expect(result).toEqual({
+      burnBlockHeight: 3_500,
+      lookups: [],
+      truncated: true,
+    });
   });
 });

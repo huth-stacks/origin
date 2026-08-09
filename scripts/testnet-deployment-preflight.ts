@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { fetchJsonWithTimeout } from "../demo/src/fetch-with-timeout.ts";
+import { parsePrincipalMempoolTransaction } from "./testnet-mempool.ts";
 
 interface PlannedDeployment {
   txId: string;
@@ -116,30 +117,6 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function parseMempoolTransaction(value: unknown) {
-  if (
-    !isObject(value) ||
-    typeof value.tx_id !== "string" ||
-    !isObject(value.sender) ||
-    typeof value.sender.address !== "string" ||
-    !Number.isSafeInteger(value.sender.nonce) ||
-    typeof value.sender.nonce !== "number"
-  )
-    return null;
-  const contractPrincipal =
-    value.type === "smart_contract" &&
-    isObject(value.smart_contract) &&
-    typeof value.smart_contract.contract_id === "string"
-      ? value.smart_contract.contract_id
-      : undefined;
-  return {
-    txId: value.tx_id,
-    sender: value.sender.address,
-    nonce: value.sender.nonce,
-    contractPrincipal,
-  };
-}
-
 export async function readDeploymentPreflightEvidence({
   apiUrl,
   principal,
@@ -189,7 +166,7 @@ export async function readDeploymentPreflightEvidence({
   if (mempoolResponse?.ok) {
     const value = mempoolResponse.value;
     if (isObject(value) && Array.isArray(value.results)) {
-      const transactions = value.results.map(parseMempoolTransaction);
+      const transactions = value.results.map(parsePrincipalMempoolTransaction);
       if (transactions.every((transaction) => transaction !== null))
         mempool = {
           state: "available",

@@ -458,7 +458,9 @@ export function EvidenceApp() {
           }),
           burnBlockHeight: current.burnBlockHeight,
           condition:
-            pages.condition === "partial" || index.condition === "partial"
+            pages.condition === "partial" ||
+            index.condition === "partial" ||
+            current.truncated
               ? "partial"
               : "complete",
           rejectedEvents: index.rejectedEvents,

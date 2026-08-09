@@ -238,6 +238,34 @@ describe(DomainAttesterStore.name, () => {
     store.close();
   });
 
+  test("records signer bytes across an authorization-expiry race", () => {
+    const store = new DomainAttesterStore();
+    const value = challenge(1);
+    const authorized = authorization(value);
+    authorized.authorizationExpiresAt = 1_010;
+    store.issueChallenge(value, "8.8.8.8", 1_000);
+    store.authorize(value.requestId, authorized, 1_001);
+    store.expireStale(1_010);
+    expect(store.get(value.requestId)).toMatchObject({
+      state: "rejected",
+      disposition: "authorization-expired",
+    });
+
+    expect(
+      store.recordSigned(
+        value.requestId,
+        {
+          requestId: value.requestId,
+          signerNonce: 7,
+          serializedTransaction: "deadbeef",
+          txId: "aa".repeat(32),
+        },
+        1_011,
+      ),
+    ).toMatchObject({ state: "signed", signerNonce: 7 });
+    store.close();
+  });
+
   test("uses a mode-0600 SQLite file that survives process restart", () => {
     const directory = mkdtempSync(resolve(tmpdir(), "origin-attester-"));
     const path = resolve(directory, "requests.local.sqlite");

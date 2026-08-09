@@ -159,6 +159,7 @@ function validateDomainAuthorization(
   value: Record<string, unknown>,
   config: SignerPolicyConfig,
   nowSeconds: number,
+  currentBurnHeight: number,
 ): ValidatedSignerCall {
   assertExactKeys(value, DOMAIN_KEYS);
   assertCommon(value, config, nowSeconds);
@@ -170,23 +171,18 @@ function validateDomainAuthorization(
     throw new Error("Signer domain policy version is not allowed");
   if (authorization.verificationMethod !== DOMAIN_VERIFICATION_METHOD)
     throw new Error("Signer verification method is not allowed");
-  if (
-    normalizeRegistrableDomain(authorization.issuerName) !==
-    authorization.issuerName
-  )
+  const issuerName = assertString(authorization.issuerName, "issuer name", 64);
+  if (normalizeRegistrableDomain(issuerName) !== issuerName)
     throw new Error("Signer issuer name is not its canonical domain");
   parseDomainRole(authorization.role);
-  const verifiedBurnHeight = assertSafeInteger(
-    authorization.verifiedBurnHeight,
-    "verified burn height",
-  );
+  assertSafeInteger(authorization.verifiedBurnHeight, "verified burn height");
   const expiresAt = assertSafeInteger(
     authorization.expiresAt,
     "claim expiration",
   );
   if (
-    expiresAt <= verifiedBurnHeight ||
-    expiresAt > verifiedBurnHeight + DOMAIN_CLAIM_MAX_LIFETIME_BURN_BLOCKS
+    expiresAt <= currentBurnHeight ||
+    expiresAt > currentBurnHeight + DOMAIN_CLAIM_MAX_LIFETIME_BURN_BLOCKS
   )
     throw new Error("Signer claim expiration exceeds domain policy");
   return {
@@ -208,6 +204,7 @@ function validateLifecycleAuthorization(
   value: Record<string, unknown>,
   config: SignerPolicyConfig,
   nowSeconds: number,
+  currentBurnHeight: number,
 ): ValidatedSignerCall {
   const action = value.action;
   if (action !== "issue" && action !== "revoke" && action !== "reissue")
@@ -245,17 +242,19 @@ function validateLifecycleAuthorization(
     authorization.role !== config.lifecycleRole
   )
     throw new Error("Signer lifecycle display fields are not allowed");
+  assertString(authorization.issuerName, "lifecycle issuer name", 64);
+  assertString(authorization.role, "lifecycle role", 32);
   const expiresAt = assertSafeInteger(
     authorization.expiresAt,
     "lifecycle expiration",
   );
-  const verifiedBurnHeight = assertSafeInteger(
+  assertSafeInteger(
     authorization.verifiedBurnHeight,
     "lifecycle verified burn height",
   );
   if (
-    expiresAt <= verifiedBurnHeight ||
-    expiresAt > verifiedBurnHeight + config.lifecycleMaxLifetimeBurnBlocks
+    expiresAt <= currentBurnHeight ||
+    expiresAt > currentBurnHeight + config.lifecycleMaxLifetimeBurnBlocks
   )
     throw new Error("Signer lifecycle expiration exceeds policy");
   return {
@@ -275,6 +274,7 @@ export function validateSignerAuthorization(
   value: unknown,
   config: SignerPolicyConfig,
   nowSeconds: number,
+  currentBurnHeight: number,
 ) {
   if (!isObject(value))
     throw new Error("Signer authorization must be an object");
@@ -283,10 +283,24 @@ export function validateSignerAuthorization(
     !config.allowedKinds.has(value.kind as SignerAuthorization["kind"])
   )
     throw new Error("Signer authorization kind is not enabled");
+  const signerBurnHeight = assertSafeInteger(
+    currentBurnHeight,
+    "independently verified burn height",
+  );
   if (value.kind === "origin-domain-issue-v1")
-    return validateDomainAuthorization(value, config, nowSeconds);
+    return validateDomainAuthorization(
+      value,
+      config,
+      nowSeconds,
+      signerBurnHeight,
+    );
   if (value.kind === "origin-operator-lifecycle-v1")
-    return validateLifecycleAuthorization(value, config, nowSeconds);
+    return validateLifecycleAuthorization(
+      value,
+      config,
+      nowSeconds,
+      signerBurnHeight,
+    );
   throw new Error("Signer authorization kind is not allowed");
 }
 

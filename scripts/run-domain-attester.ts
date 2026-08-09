@@ -11,6 +11,8 @@ import {
 } from "@stacks/transactions";
 
 import { fetchJsonWithTimeout } from "../demo/src/fetch-with-timeout.ts";
+import { parseDomainFetchPolicy } from "./domain-attester/fetch-policy.ts";
+import { secureFetchDomainProof } from "./domain-attester/secure-fetch.ts";
 import {
   domainAttesterOperatorHelp,
   parseDomainAttesterOperatorCommand,
@@ -71,6 +73,7 @@ const tokenPath = resolve(
     "settings/origin-domain_attester-ipc.local.token",
 );
 const apiUrl = process.env.ORIGIN_ATTESTER_API_URL ?? manifest.apiUrl;
+const fetchPolicy = parseDomainFetchPolicy(process.env);
 const store = new DomainAttesterStore(databasePath);
 
 async function readBurnHeight() {
@@ -141,6 +144,7 @@ const service = new DomainAttesterService({
   attester: publicAccounts.domain_attester.address,
   registryPrincipal,
   denySubjects,
+  fetchProof: (domain) => secureFetchDomainProof(domain, fetchPolicy),
   readBurnHeight,
   readCurrentClaim,
   signer: {

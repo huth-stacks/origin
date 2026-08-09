@@ -1,6 +1,7 @@
 import { mkdtempSync, readdirSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 
 import {
   ClarityType,
@@ -111,6 +112,7 @@ describe(validateSignerAuthorization.name, () => {
       domainAuthorization(attester),
       policy,
       1_001,
+      1_000,
     );
     expect(call).toMatchObject({
       contractAddress: registry.split(".")[0],
@@ -142,6 +144,7 @@ describe(validateSignerAuthorization.name, () => {
         { ...domainAuthorization(attester), [field]: value },
         policy,
         1_001,
+        1_000,
       ),
     ).toThrow();
   });
@@ -155,11 +158,43 @@ describe(validateSignerAuthorization.name, () => {
         },
         policy,
         1_001,
+        1_000,
       ),
     ).toThrow("Unknown signer authorization field");
     expect(() =>
-      validateSignerAuthorization(domainAuthorization(attester), policy, 1_200),
+      validateSignerAuthorization(
+        domainAuthorization(attester),
+        policy,
+        1_200,
+        1_000,
+      ),
     ).toThrow("stale");
+  });
+
+  test("uses the signer-observed burn height and enforces the registry string bound", () => {
+    expect(() =>
+      validateSignerAuthorization(
+        {
+          ...domainAuthorization(attester),
+          verifiedBurnHeight: 9_000_000,
+          expiresAt: 9_004_320,
+        },
+        policy,
+        1_001,
+        1_000,
+      ),
+    ).toThrow("expiration exceeds domain policy");
+    expect(() =>
+      validateSignerAuthorization(
+        {
+          ...domainAuthorization(attester),
+          issuerName: `${"a".repeat(61)}.com`,
+        },
+        policy,
+        1_001,
+        1_000,
+      ),
+    ).toThrow("issuer name");
   });
 
   test("derives narrow issue, revoke, and immediate reissue lifecycle calls", () => {
@@ -168,6 +203,7 @@ describe(validateSignerAuthorization.name, () => {
         lifecycleAuthorization(attester, "issue"),
         policy,
         1_001,
+        1_000,
       ).functionName,
     ).toBe("issue-attestation");
     expect(
@@ -175,6 +211,7 @@ describe(validateSignerAuthorization.name, () => {
         lifecycleAuthorization(attester, "revoke"),
         policy,
         1_001,
+        1_000,
       ).functionName,
     ).toBe("revoke-attestation");
     expect(
@@ -182,6 +219,7 @@ describe(validateSignerAuthorization.name, () => {
         lifecycleAuthorization(attester, "reissue"),
         policy,
         1_001,
+        1_000,
       ).functionName,
     ).toBe("issue-attestation");
   });
@@ -194,13 +232,13 @@ describe(validateSignerAuthorization.name, () => {
       { ...lifecycleAuthorization(attester, "revoke"), role: "Demo contract" },
     ])
       expect(() =>
-        validateSignerAuthorization(authorization, policy, 1_001),
+        validateSignerAuthorization(authorization, policy, 1_001, 1_000),
       ).toThrow();
   });
 });
 
 describe(IsolatedOriginSigner.name, () => {
-  test("journals deterministic bytes and allocates exclusive nonces", async () => {
+  test("fails closed on an independently observed lifetime violation", async () => {
     const privateKey = makeRandomPrivKey();
     const attester = privateKeyToAddress(privateKey, "testnet");
     const readNetworkNonce = vi.fn().mockResolvedValue(7n);
@@ -208,13 +246,41 @@ describe(IsolatedOriginSigner.name, () => {
       privateKey,
       policy: config(attester),
       readNetworkNonce,
+      readBurnHeight: async () => 1_000,
       nowSeconds: () => 1_001,
+    });
+    await expect(
+      signer.sign({
+        ...domainAuthorization(attester),
+        verifiedBurnHeight: 9_000_000,
+        expiresAt: 9_004_320,
+      }),
+    ).rejects.toThrow("expiration exceeds domain policy");
+    expect(readNetworkNonce).not.toHaveBeenCalled();
+    signer.close();
+  });
+
+  test("journals deterministic bytes and allocates exclusive nonces", async () => {
+    const privateKey = makeRandomPrivKey();
+    const attester = privateKeyToAddress(privateKey, "testnet");
+    const readNetworkNonce = vi.fn().mockResolvedValue(7n);
+    let now = 1_001;
+    const readBurnHeight = vi.fn().mockResolvedValue(1_000);
+    const signer = new IsolatedOriginSigner({
+      privateKey,
+      policy: config(attester),
+      readNetworkNonce,
+      readBurnHeight,
+      nowSeconds: () => now,
       dailyLimit: 3,
     });
     const firstAuthorization = domainAuthorization(attester);
     const first = await signer.sign(firstAuthorization);
+    now = 1_300;
     expect(await signer.sign(firstAuthorization)).toEqual(first);
     expect(readNetworkNonce).toHaveBeenCalledTimes(1);
+    expect(readBurnHeight).toHaveBeenCalledTimes(1);
+    now = 1_001;
     const second = await signer.sign(
       domainAuthorization(attester, "12".repeat(32)),
     );
@@ -230,6 +296,46 @@ describe(IsolatedOriginSigner.name, () => {
     signer.close();
   });
 
+  test("discards legacy nonce-only rows and safely reuses the network nonce", async () => {
+    const directory = mkdtempSync(resolve(tmpdir(), "origin-signer-recovery-"));
+    const journalPath = resolve(directory, "signer.local.sqlite");
+    const privateKey = makeRandomPrivKey();
+    const attester = privateKeyToAddress(privateKey, "testnet");
+    const initial = new IsolatedOriginSigner({
+      privateKey,
+      journalPath,
+      policy: config(attester),
+      readNetworkNonce: async () => 7n,
+      readBurnHeight: async () => 1_000,
+      nowSeconds: () => 1_001,
+    });
+    initial.close();
+    const database = new DatabaseSync(journalPath);
+    database
+      .prepare(
+        `INSERT INTO signer_requests (
+          request_id, authorization_json, signer_nonce, created_at
+        ) VALUES (?, ?, ?, ?)`,
+      )
+      .run("ff".repeat(32), "{}", 7, 1_000);
+    database.close();
+
+    const recovered = new IsolatedOriginSigner({
+      privateKey,
+      journalPath,
+      policy: config(attester),
+      readNetworkNonce: async () => 7n,
+      readBurnHeight: async () => 1_000,
+      nowSeconds: () => 1_001,
+    });
+    await expect(
+      recovered.sign(domainAuthorization(attester)),
+    ).resolves.toMatchObject({
+      signerNonce: 7,
+    });
+    recovered.close();
+  });
+
   test("coalesces concurrent retries of the same authorization", async () => {
     const privateKey = makeRandomPrivKey();
     const attester = privateKeyToAddress(privateKey, "testnet");
@@ -238,6 +344,7 @@ describe(IsolatedOriginSigner.name, () => {
       privateKey,
       policy: config(attester),
       readNetworkNonce,
+      readBurnHeight: async () => 1_000,
       nowSeconds: () => 1_001,
     });
     const value = domainAuthorization(attester);
@@ -258,6 +365,7 @@ describe(IsolatedOriginSigner.name, () => {
           privateKey,
           policy: config("ST123Q4PK82XAH10Y4W9YERH6FZHE5G0XK4XR0VB0"),
           readNetworkNonce: async () => 0n,
+          readBurnHeight: async () => 1_000,
         }),
     ).toThrow("key does not match");
 
@@ -266,6 +374,7 @@ describe(IsolatedOriginSigner.name, () => {
       privateKey,
       policy: config(attester),
       readNetworkNonce: async () => 0n,
+      readBurnHeight: async () => 1_000,
       nowSeconds: () => 1_001,
       dailyLimit: 1,
       killSwitch: () => stopped,
@@ -291,6 +400,7 @@ describe(IsolatedOriginSigner.name, () => {
       journalPath,
       policy: config(attester),
       readNetworkNonce: async () => 0n,
+      readBurnHeight: async () => 1_000,
       nowSeconds: () => 1_001,
     });
     await signer.sign(domainAuthorization(attester));

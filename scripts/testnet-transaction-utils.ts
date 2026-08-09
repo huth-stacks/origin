@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   access,
   mkdir,
@@ -127,7 +128,10 @@ export async function markPreparedTransactionBroadcastAttempted(
     throw new Error(`Invalid prepared transaction journal at ${path}`);
   if (value.state === "broadcast-attempted") return { txId, path };
   const attempted = { ...value, state: "broadcast-attempted" };
-  const temporaryPath = resolve(directory, `${txId}.attempted.tmp.local.json`);
+  const temporaryPath = resolve(
+    directory,
+    `${txId}.attempted.${process.pid}.${randomUUID()}.tmp`,
+  );
   await writeFile(temporaryPath, `${JSON.stringify(attempted, null, 2)}\n`, {
     encoding: "utf8",
     flag: "wx",

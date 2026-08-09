@@ -205,7 +205,14 @@ export class DomainAttesterService {
         serializedTransaction: request.serializedTransaction!,
         txId: request.txId!,
       };
-    if (request.state !== "authorized" || !request.authorization)
+    const recoverableExpiredAuthorization =
+      request.state === "rejected" &&
+      request.disposition === "authorization-expired" &&
+      request.authorization !== undefined;
+    if (
+      (request.state !== "authorized" && !recoverableExpiredAuthorization) ||
+      !request.authorization
+    )
       throw new Error("Domain request is not authorized for signing");
     let signed: SignedAuthorization;
     try {

@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 
 import { fetchNonce } from "@stacks/transactions";
 
+import { fetchJsonWithTimeout } from "../demo/src/fetch-with-timeout.ts";
 import { IsolatedOriginSigner } from "./domain-attester/isolated-signer.ts";
 import {
   closeSignerIpcServer,
@@ -14,6 +15,7 @@ import {
 } from "./testnet-account-utils.ts";
 
 interface CurrentManifest {
+  apiUrl: string;
   fixtures: {
     known: { subject: string };
     unrecognized: { subject: string };
@@ -85,11 +87,33 @@ const denySubjects = new Set([
   lifecycleSubject,
   `${publicAccounts.expiry_deployer.address}.origin-expiry-action`,
 ]);
+async function readBurnHeight() {
+  const response = await fetchJsonWithTimeout(
+    fetch,
+    `${manifest.apiUrl}/v2/info`,
+    undefined,
+    8_000,
+  );
+  if (!response.ok || response.bodyError)
+    throw new Error("Signer burn height is unavailable");
+  const value = response.value;
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("burn_block_height" in value) ||
+    typeof value.burn_block_height !== "number" ||
+    !Number.isSafeInteger(value.burn_block_height) ||
+    value.burn_block_height < 0
+  )
+    throw new Error("Signer burn height is invalid");
+  return value.burn_block_height;
+}
 const signer = new IsolatedOriginSigner({
   privateKey,
   journalPath,
   readNetworkNonce: (attester) =>
     fetchNonce({ address: attester, network: "testnet" }),
+  readBurnHeight,
   killSwitch: async () => {
     try {
       await stat(killSwitchPath);

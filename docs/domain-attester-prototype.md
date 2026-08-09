@@ -182,7 +182,15 @@ ORIGIN_ATTESTER_DATABASE
 ORIGIN_ATTESTER_SIGNER_SOCKET
 ORIGIN_ATTESTER_IPC_TOKEN_FILE
 ORIGIN_ATTESTER_API_URL
+ORIGIN_ATTESTER_SERVICE_ADDRESSES
+ORIGIN_ATTESTER_INTERNAL_CIDRS
 ```
+
+`ORIGIN_ATTESTER_SERVICE_ADDRESSES` is required and contains the verifier service's
+comma-separated public IP addresses. The optional `ORIGIN_ATTESTER_INTERNAL_CIDRS` contains
+comma-separated operator-controlled ranges that must also be excluded from proof fetches. Startup
+fails closed on missing or malformed service-address policy so these SSRF controls cannot silently
+disappear in production.
 
 The token file must remain mode `0600`. The operator process receives the IPC token but never the
 signer key.

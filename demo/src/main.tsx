@@ -15,6 +15,8 @@ if (!root) throw new Error("Origin demo root is missing");
 const evidenceSurface =
   window.location.pathname.startsWith("/evidence") ||
   window.location.hostname.startsWith("origin-attester.");
+if (evidenceSurface) document.documentElement.dataset.surface = "evidence";
+else delete document.documentElement.dataset.surface;
 
 createRoot(root).render(
   <StrictMode>{evidenceSurface ? <EvidenceApp /> : <App />}</StrictMode>,

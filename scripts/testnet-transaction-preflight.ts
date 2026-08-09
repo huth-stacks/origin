@@ -1,4 +1,5 @@
 import { fetchJsonWithTimeout } from "../demo/src/fetch-with-timeout.ts";
+import { parsePrincipalMempoolTransaction } from "./testnet-mempool.ts";
 
 interface PlannedTransaction {
   txId: string;
@@ -104,23 +105,6 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function parseMempoolTransaction(value: unknown) {
-  if (
-    !isObject(value) ||
-    typeof value.tx_id !== "string" ||
-    !isObject(value.sender) ||
-    typeof value.sender.address !== "string" ||
-    !Number.isSafeInteger(value.sender.nonce) ||
-    typeof value.sender.nonce !== "number"
-  )
-    return null;
-  return {
-    txId: value.tx_id,
-    sender: value.sender.address,
-    nonce: value.sender.nonce,
-  };
-}
-
 function parseTransactionEvidence(value: unknown): TransactionEvidence {
   if (!isObject(value) || typeof value.tx_status !== "string")
     return { state: "unavailable" };
@@ -170,7 +154,7 @@ export async function readTransactionPreflightEvidence({
   if (mempoolResponse?.ok) {
     const value = mempoolResponse.value;
     if (isObject(value) && Array.isArray(value.results)) {
-      const transactions = value.results.map(parseMempoolTransaction);
+      const transactions = value.results.map(parsePrincipalMempoolTransaction);
       if (transactions.every((candidate) => candidate !== null))
         mempool = {
           state: "available",

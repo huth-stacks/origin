@@ -19,6 +19,7 @@ interface IsolatedSignerOptions {
   policy: SignerPolicyConfig;
   journalPath?: string;
   readNetworkNonce: (attester: string) => Promise<bigint>;
+  readBurnHeight: () => Promise<number>;
   nowSeconds?: () => number;
   dailyLimit?: number;
   killSwitch?: () => boolean | Promise<boolean>;
@@ -75,6 +76,11 @@ export class IsolatedOriginSigner {
       CREATE INDEX IF NOT EXISTS signer_requests_daily
         ON signer_requests(created_at);
     `);
+    this.database
+      .prepare(
+        "DELETE FROM signer_requests WHERE serialized_transaction IS NULL OR tx_id IS NULL",
+      )
+      .run();
     this.nowSeconds =
       options.nowSeconds ?? (() => Math.floor(Date.now() / 1_000));
     this.dailyLimit = options.dailyLimit ?? 20;
@@ -101,13 +107,8 @@ export class IsolatedOriginSigner {
     if (await this.options.killSwitch?.())
       throw new Error("Origin signer kill switch is active");
     const now = this.nowSeconds();
-    const call = validateSignerAuthorization(
-      authorization,
-      this.options.policy,
-      now,
-    );
     const canonicalAuthorization = canonicalize(authorization);
-    let row = this.database
+    const row = this.database
       .prepare("SELECT * FROM signer_requests WHERE request_id = ?")
       .get(authorization.requestId) as SignerRow | undefined;
     if (row) {
@@ -122,85 +123,85 @@ export class IsolatedOriginSigner {
           serializedTransaction: row.serialized_transaction,
           txId: row.tx_id,
         };
-    } else {
-      const networkNonce = await this.options.readNetworkNonce(
-        this.options.policy.attester,
-      );
-      this.database.exec("BEGIN IMMEDIATE");
-      try {
-        const dayStart = now - (now % 86_400);
-        const daily = this.database
-          .prepare(
-            "SELECT COUNT(*) AS count FROM signer_requests WHERE created_at >= ?",
-          )
-          .get(dayStart) as { count: number };
-        if (daily.count >= this.dailyLimit)
-          throw new Error("Origin signer daily issuance ceiling reached");
-        const maximum = this.database
-          .prepare("SELECT MAX(signer_nonce) AS nonce FROM signer_requests")
-          .get() as { nonce: number | null };
-        const reservedNonce =
-          maximum.nonce === null
-            ? networkNonce
-            : networkNonce > BigInt(maximum.nonce + 1)
-              ? networkNonce
-              : BigInt(maximum.nonce + 1);
-        if (reservedNonce > BigInt(Number.MAX_SAFE_INTEGER))
-          throw new Error("Signer nonce is too large");
-        this.database
-          .prepare(
-            `INSERT INTO signer_requests (
-              request_id, authorization_json, signer_nonce, created_at
-            ) VALUES (?, ?, ?, ?)`,
-          )
-          .run(
-            authorization.requestId,
-            canonicalAuthorization,
-            Number(reservedNonce),
-            now,
-          );
-        this.database.exec("COMMIT");
-        row = {
-          request_id: authorization.requestId,
-          authorization_json: canonicalAuthorization,
-          signer_nonce: Number(reservedNonce),
-          serialized_transaction: null,
-          tx_id: null,
-        };
-      } catch (error) {
-        this.database.exec("ROLLBACK");
-        throw error;
-      }
     }
-
-    const transaction = await makeContractCall({
-      contractAddress: call.contractAddress,
-      contractName: call.contractName,
-      functionName: call.functionName,
-      functionArgs: call.functionArgs,
-      nonce: BigInt(row.signer_nonce),
-      fee: call.fee,
-      senderKey: this.options.privateKey,
-      network: "testnet",
-    });
-    const signed: SignedAuthorization = {
-      requestId: authorization.requestId,
-      signerNonce: row.signer_nonce,
-      serializedTransaction: serializeTransaction(transaction),
-      txId: transaction.txid(),
-    };
-    this.database
-      .prepare(
-        `UPDATE signer_requests SET
-          serialized_transaction = ?, tx_id = ?, signed_at = ?
-        WHERE request_id = ? AND serialized_transaction IS NULL`,
-      )
-      .run(
-        signed.serializedTransaction,
-        signed.txId,
-        now,
-        authorization.requestId,
-      );
-    return signed;
+    const currentBurnHeight = await this.options.readBurnHeight();
+    const call = validateSignerAuthorization(
+      authorization,
+      this.options.policy,
+      now,
+      currentBurnHeight,
+    );
+    const networkNonce = await this.options.readNetworkNonce(
+      this.options.policy.attester,
+    );
+    if (networkNonce < 0n || networkNonce > BigInt(Number.MAX_SAFE_INTEGER))
+      throw new Error("Signer nonce is too large");
+    this.database.exec("BEGIN IMMEDIATE");
+    try {
+      this.database
+        .prepare(
+          "DELETE FROM signer_requests WHERE serialized_transaction IS NULL OR tx_id IS NULL",
+        )
+        .run();
+      const dayStart = now - (now % 86_400);
+      const daily = this.database
+        .prepare(
+          "SELECT COUNT(*) AS count FROM signer_requests WHERE created_at >= ?",
+        )
+        .get(dayStart) as { count: number };
+      if (daily.count >= this.dailyLimit)
+        throw new Error("Origin signer daily issuance ceiling reached");
+      const localNonces = this.database
+        .prepare(
+          `SELECT signer_nonce AS nonce
+           FROM signer_requests
+           WHERE signer_nonce >= ?
+           ORDER BY signer_nonce`,
+        )
+        .all(Number(networkNonce)) as { nonce: number }[];
+      let signerNonce = Number(networkNonce);
+      for (const local of localNonces) {
+        if (local.nonce !== signerNonce)
+          throw new Error("Signer journal contains a nonce gap");
+        signerNonce += 1;
+      }
+      const transaction = await makeContractCall({
+        contractAddress: call.contractAddress,
+        contractName: call.contractName,
+        functionName: call.functionName,
+        functionArgs: call.functionArgs,
+        nonce: BigInt(signerNonce),
+        fee: call.fee,
+        senderKey: this.options.privateKey,
+        network: "testnet",
+      });
+      const signed: SignedAuthorization = {
+        requestId: authorization.requestId,
+        signerNonce,
+        serializedTransaction: serializeTransaction(transaction),
+        txId: transaction.txid(),
+      };
+      this.database
+        .prepare(
+          `INSERT INTO signer_requests (
+            request_id, authorization_json, signer_nonce,
+            serialized_transaction, tx_id, created_at, signed_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          authorization.requestId,
+          canonicalAuthorization,
+          signerNonce,
+          signed.serializedTransaction,
+          signed.txId,
+          now,
+          now,
+        );
+      this.database.exec("COMMIT");
+      return signed;
+    } catch (error) {
+      this.database.exec("ROLLBACK");
+      throw error;
+    }
   }
 }

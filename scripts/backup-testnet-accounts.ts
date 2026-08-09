@@ -7,20 +7,13 @@ import {
   privateAccountPath,
   testnetAccountRoles,
 } from "./testnet-account-utils.ts";
+import { parseBackupArguments } from "./testnet-backup-arguments.ts";
 
 interface RecoveryBundle {
   accountSet: "testnet-v2";
   accounts: Array<{ path: string; source: string }>;
   publicManifest: { path: string; source: string };
   version: 1;
-}
-
-function readArgument(name: string) {
-  const index = process.argv.indexOf(name);
-  const value = process.argv[index + 1];
-  if (!value || value.startsWith("--"))
-    throw new Error(`Missing required ${name} argument`);
-  return value;
 }
 
 function runGpg(args: string[], input: Buffer, outputFd?: number) {
@@ -52,10 +45,11 @@ async function readPrivateSource(path: string) {
   return readFile(path, "utf8");
 }
 
-const recipient = readArgument("--recipient");
+const arguments_ = parseBackupArguments(process.argv.slice(2));
+const recipient = arguments_.recipient;
 if (!/^[0-9A-Fa-f]{40}$/.test(recipient))
   throw new Error("GPG recipient must be a full 40-character fingerprint");
-const outputPath = resolve(readArgument("--output"));
+const outputPath = resolve(arguments_.output);
 if (!outputPath.endsWith(".gpg"))
   throw new Error("Recovery output must use the .gpg extension");
 

@@ -1,6 +1,8 @@
 import { mkdtempSync, statSync } from "node:fs";
+import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { describe, expect, test, vi } from "vitest";
 
@@ -140,6 +142,46 @@ describe("signer Unix socket", () => {
       signOverIpc({ socketPath, token: "cd".repeat(32), authorization }),
     ).rejects.toThrow("Signer rejected authorization");
     expect(signer.sign).toHaveBeenCalledTimes(1);
+    await closeSignerIpcServer(server);
+  });
+
+  test("survives peer resets and a signing result that arrives after timeout", async () => {
+    const directory = mkdtempSync(resolve(tmpdir(), "origin-signer-ipc-"));
+    const socketPath = resolve(directory, "signer.sock");
+    let calls = 0;
+    const signer = {
+      async sign() {
+        calls += 1;
+        if (calls === 1) await delay(20);
+        return {
+          requestId: authorization.requestId,
+          signerNonce: 7,
+          serializedTransaction: "deadbeef",
+          txId: "aa".repeat(32),
+        };
+      },
+    };
+    const server = await startSignerIpcServer({
+      socketPath,
+      token,
+      signer,
+      timeoutMs: 5,
+    });
+    await new Promise<void>((resolvePromise) => {
+      const socket = createConnection(socketPath, () => {
+        socket.on("error", () => undefined);
+        socket.write('{"version":1');
+        socket.destroy();
+        resolvePromise();
+      });
+    });
+    await expect(
+      signOverIpc({ socketPath, token, authorization, timeoutMs: 50 }),
+    ).rejects.toThrow();
+    await delay(25);
+    await expect(
+      signOverIpc({ socketPath, token, authorization, timeoutMs: 50 }),
+    ).resolves.toMatchObject({ txId: "aa".repeat(32) });
     await closeSignerIpcServer(server);
   });
 });

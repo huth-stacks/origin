@@ -197,4 +197,28 @@ describe(findPreparedTransactionByJournalKey.name, () => {
       "planned-1",
     ]);
   });
+
+  test("ignores an orphaned atomic-write temp file", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "origin-journal-"));
+    await writeFile(
+      join(directory, "planned.local.json"),
+      JSON.stringify({
+        state: "signed",
+        txId: "planned",
+        serializedTransaction: "00",
+        intent: { journalKey: "fund:sender:recipient:0", nonce: "0" },
+      }),
+    );
+    await writeFile(
+      join(directory, "planned.attempted.123.uuid.tmp"),
+      '{"state":',
+    );
+
+    await expect(
+      findPreparedTransactionsByJournalKeyPrefix(
+        "fund:sender:recipient:",
+        directory,
+      ),
+    ).resolves.toHaveLength(1);
+  });
 });
