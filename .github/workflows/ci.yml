@@ -18,23 +18,25 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: false
+        uses: actions/checkout@v5
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
-          cache: pnpm
+
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.33.0 --activate
+          pnpm --version
 
       - name: Install Clarinet
         env:
           CLARINET_VERSION: v3.23.1
         run: |
+          install -d "${RUNNER_TEMP}/clarinet-install"
+          cd "${RUNNER_TEMP}/clarinet-install"
           curl --fail --location --silent --show-error \
             "https://github.com/stx-labs/clarinet/releases/download/${CLARINET_VERSION}/clarinet-linux-x64-glibc.tar.gz" \
             --output clarinet-linux-x64-glibc.tar.gz
