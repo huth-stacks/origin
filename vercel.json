@@ -2,5 +2,8 @@
   "buildCommand": "pnpm demo:build",
   "framework": "vite",
   "outputDirectory": "dist/demo",
-  "rewrites": [{ "source": "/evidence", "destination": "/" }]
+  "rewrites": [
+    { "source": "/evidence", "destination": "/" },
+    { "source": "/registry", "destination": "/" }
+  ]
 }

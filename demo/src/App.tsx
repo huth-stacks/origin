@@ -416,7 +416,7 @@ export function App() {
               Overview
             </a>
             <a href="#activity">Activity</a>
-            <a href="#">Help</a>
+            <a href="/registry">Origin proof</a>
           </nav>
           <div className="app-bar-right">
             <p className="network">
@@ -611,6 +611,9 @@ export function App() {
               Provenance checks in this demo use Origin. Origin proves
               provenance, not safety.
             </p>
+            <a className="band-link" href="/registry">
+              See how the registry works →
+            </a>
           </div>
         </section>
 

@@ -810,6 +810,27 @@ body[data-handoff="true"] .scrim {
   line-height: 1.5;
 }
 
+.band-link {
+  display: inline-flex;
+  margin-top: 18px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--ink-3);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    border-color 160ms var(--ease),
+    color 160ms var(--ease),
+    transform 160ms var(--ease);
+}
+
+.band-link:hover {
+  border-bottom-color: var(--acme);
+  color: var(--acme);
+  transform: translateX(3px);
+}
+
 /* ── Activity ────────────────────────────────────────────────────────────── */
 
 .activity {

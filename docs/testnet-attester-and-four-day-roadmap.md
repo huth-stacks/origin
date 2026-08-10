@@ -1,263 +1,152 @@
-# Origin Testnet Attester and Four-Day Roadmap
+# Origin Testnet Attester and Four-Day Foundation
 
-Status: August 7, 2026
+Status: completed Testnet foundation, August 10, 2026
 
 ## Executive summary
 
-The current Origin Testnet attester is a dedicated disposable Stacks account that issues narrowly scoped identity claims for exact Stacks principals. It is trusted only because the Leather Testnet build pins its principal in wallet-owned configuration. The registry itself is permissionless and does not decide who is trustworthy.
+Origin now has two wallet-recognized Testnet attesters and a permissionless v2 registry. The canonical attester supports the narrated Acme fixture. The domain-control attester issued a second, bounded claim after checking HTTPS evidence and a SIP-018 deployer signature through an isolated signer boundary.
 
-This is real on-chain Testnet behavior, but it is intentionally not yet a real verification business. The current attester does not perform domain control, KYB, representative-authority checks, audits, or automated revocation. It signs the fixture claim needed to prove the wallet trust model.
+Leather trusts neither the registry nor a requesting site to choose its policy. It derives the exact contract subject, queries wallet-configured attesters, checks the current lifecycle record, and recognizes a claim only when its attester and lifetime fit bundled wallet policy.
 
-The next credible step is an automated domain-control attester: an organization publishes a signed statement under a well-known HTTPS URL, proves control of the contract deployer, and receives a bounded on-chain claim from a wallet-recognized attester. Four focused days are enough to make that path tangible on Testnet without pretending it is production-ready.
+This is a working proof of concept, not a production verification business. It does not establish legal identity, representative authority, source-code safety, audit status, transaction intent, or production custody quality.
 
 ## Live Testnet anchors
 
-Stacks Testnet reset on August 6, 2026. The project was redeployed after the reset, preserving the same principals while replacing every transaction ID and block height.
+| Item                    | Current value                                                                                                                                                                 |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Registry                | [`ST23YP5Q1WZKDV87KDDB1FQ3W916CQ3MSD09A2VAN.origin-registry-v2`](https://explorer.hiro.so/address/ST23YP5Q1WZKDV87KDDB1FQ3W916CQ3MSD09A2VAN.origin-registry-v2?chain=testnet) |
+| Registry deployment     | [`0x8a2c71…46de3`](https://explorer.hiro.so/txid/0x8a2c71ba986643dab5a4e992e0edecf5b5c6c4752fdd1cbd9f42f572a8646de3?chain=testnet)                                            |
+| Canonical attester      | [`ST389QT3QNDV6A7K9SDTAKDJ7RY15FPCZ8RPZZ06R`](https://explorer.hiro.so/address/ST389QT3QNDV6A7K9SDTAKDJ7RY15FPCZ8RPZZ06R?chain=testnet)                                       |
+| Domain-control attester | [`ST123Q4PK82XAH10Y4W9YERH6FZHE5G0XK4XR0VB0`](https://explorer.hiro.so/address/ST123Q4PK82XAH10Y4W9YERH6FZHE5G0XK4XR0VB0?chain=testnet)                                       |
+| Known Acme subject      | [`ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action`](https://explorer.hiro.so/address/ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action?chain=testnet)               |
+| Known Acme claim        | [`0xeeaa16…79cb6`](https://explorer.hiro.so/txid/0xeeaa16f586079c7096433fa77d1496b6816cf294d789c2b84420a81d38279cb6?chain=testnet)                                            |
+| Domain-control claim    | [`0xcba260…09f18`](https://explorer.hiro.so/txid/0xcba260a1d50d67ee75b99db89c8ce26a56e075323f21bbff9eeebdd68a009f18?chain=testnet)                                            |
 
-| Item                      | Current value                                                                                                                                                           |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Registry                  | [`ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.origin-registry`](https://explorer.hiro.so/address/ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.origin-registry?chain=testnet) |
-| Wallet-trusted attester   | [`ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC`](https://explorer.hiro.so/address/ST121HDPNYM3PYBXM6EK0NY673DWCK54ZXEXX2HHC?chain=testnet)                                 |
-| Wallet display name       | `Origin Testnet Attester`                                                                                                                                               |
-| Known subject             | [`ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action`](https://explorer.hiro.so/address/ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action?chain=testnet)         |
-| Trusted claim transaction | [`0x57950d…b4025`](https://explorer.hiro.so/txid/0x57950d981c3a596aded2d28c0dec9bd2b225bb68895740eeae305dc2fe0b4025?chain=testnet)                                      |
-| Claim                     | `Origin Testnet Attester` says `Acme` is responsible for the exact subject in the role `Demo contract`                                                                  |
-| Issued at                 | Bitcoin burn block 2,745                                                                                                                                                |
-| Expires at                | Bitcoin burn block 102,745                                                                                                                                              |
+The immutable fixture record, including every transaction and height, is in [`deployments/testnet-fixtures.json`](../deployments/testnet-fixtures.json).
 
-The complete public record, including claim issue heights and all contract and claim transaction IDs, is in [`deployments/testnet-fixtures.json`](../deployments/testnet-fixtures.json).
+## What the v2 registry records
 
-## How the current attester works
-
-### 1. Leather derives the subject
-
-The Acme application sends a normal `stx_callContract` request. Leather decodes the requested contract address and contract name and constructs the exact contract principal itself:
-
-```text
-ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action
-```
-
-The application does not supply the organization name, role, attester, trust policy, reference contract, or verdict.
-
-### 2. Leather chooses which attesters to query
-
-The Testnet wallet build contains a small discovery list:
-
-- `Origin Testnet Attester`, which is in the wallet trust set.
-- A demonstration-unrecognized issuer, queried only so the hostile-claim scenario is deterministic.
-
-This distinction matters: querying an attester does not mean trusting it. The wallet owns both discovery and trust decisions.
-
-### 3. The registry returns one attester-scoped record
-
-The registry stores records under a composite map key:
+Records are keyed by the exact pair:
 
 ```clarity
 { attester: principal, subject: principal }
 ```
 
-The value contains:
+Each current record includes organization, role, issue height, expiry, revocation state, optional revocation height, and a replay-protected request ID. The registry:
 
-```text
-issuer-name
-role
-issued-at
-expires-at
-revoked
-```
+- derives the attester from `tx-sender`;
+- prevents cross-principal writes with `tx-sender == contract-caller`;
+- permits multiple attesters to claim the same subject without overwriting each other;
+- supports explicit replacement and revocation;
+- emits complete versioned lifecycle events; and
+- exposes read-only current state for reconciliation.
 
-`issue-attestation` uses `tx-sender` as the attester. The Stacks transaction therefore authenticates the issuer without a second custom signature scheme. Because the attester is part of the map key, one issuer cannot overwrite another issuer's record.
+The registry is deliberately permissionless. A record proves that its attester published a claim; it does not make that attester trustworthy.
 
-`get-attestation` is read-only. It returns the current optional record for one exact `(attester, subject)` pair and cannot write state.
+## How Leather recognizes a claim
 
-### 4. Leather evaluates the record
+The application sends a normal `stx_callContract` request. It supplies no organization, attester, policy, reference contract, or identity verdict.
 
-Leather treats the registry response as untrusted input and independently checks:
+Leather:
 
-1. The claim subject equals the decoded transaction subject.
-2. The claim's attester principal is in Leather's trust set.
-3. The claim is not revoked.
-4. The current Bitcoin burn height is below `expires-at`.
-5. The lookup itself completed successfully.
+1. Decodes `contractAddress` and `contractName` and constructs the exact subject.
+2. Queries its bundled discovery-attester list against the pinned Testnet API and registry.
+3. Checks the subject, revocation state, burn-height expiry, attester validity interval, and maximum claim lifetime.
+4. Promotes identity only when an active claim comes from a bundled trusted attester.
+5. Quarantines unrecognized organization and role strings from trusted wallet chrome.
+6. Treats timeouts, malformed responses, and registry failures neutrally.
 
-Only a claim that passes all five checks becomes **Known origin**. A registry or network failure is neutral and can never become a known result.
+Lookalike detection is separate: a familiar contract name under another deployer can produce a warning, but never an identity verdict.
 
-The Origin lookup transport is also wallet-owned. Leather uses the request's chain ID only to decide whether Origin is enabled; the requesting application cannot select the API base URL used for burn height or registry reads. Both calls are pinned to Leather's configured Testnet API.
+## Current wallet-owned policy
 
-### 5. Leather controls what enters trusted chrome
+Leather recognizes:
 
-For the trusted record, Leather can render `Acme`, `Demo contract`, and `Origin Testnet Attester`. For the demonstration-unrecognized record, Leather shows that a claim exists but quarantines its attacker-selected organization and role strings.
+- **Origin Testnet Attester** for the long-lived narrated fixtures; and
+- **Origin Domain Control Attester** for claims capped at 4,320 burn blocks.
 
-The known-origin surface now links directly to the attester's Testnet Explorer page. Advanced details expose the exact checked principal, attester principal, issue and expiry heights, registry principal, and a registry Explorer link.
+It also queries one demonstration-untrusted attester so the hostile-claim scenario is deterministic. Querying an attester is not trusting it. The retired shared-mnemonic attester remains only in public rotation history and is absent from the active trust set.
 
-## How issuance works today
+## Domain-control issuance delivered
 
-The restored v1 process was operator-driven:
-
-1. `scripts/create-testnet-accounts.ts` creates four disposable accounts from four independent seed phrases and writes them only to ignored local files.
-2. The deployer receives faucet STX.
-3. The operator funded the attester and fixture deployers.
-4. The operator published the registry and three harmless fixture contracts.
-5. The operator signed and broadcast one trusted claim and one deliberately unrecognized claim.
-6. The operator records the confirmed public transaction IDs and block heights in the fixture manifest.
-7. `pnpm testnet:verify` performs a secret-free live check of four contract sources, two claims, claim expiry, and the unknown lookalike.
-
-The restored fixture claims expire 100,000 Bitcoin blocks after their submission height so the narrated demo survives Testnet scheduling and resets. This is a long-lived fixture policy, not the Day 3 issuance policy. V2 tooling requires packet-approved absolute expiry integers, derives `validFromBurnBlock` from the confirmed claim's chain-read `issued-at`, and journals signed transactions before broadcast. The registry derives `issued-at` from the confirmation block's `burn-block-height`; callers cannot choose an arbitrary issue time.
-
-The currently restored fixtures predate the isolated-seed generator and were derived from one shared disposable mnemonic. They remain safe for the narrated offline demo, but that trusted attester must not be placed in a network service. Day 2 rotates the trusted attester to a new independently seeded principal before Day 3 can issue.
-
-## What the current attester does not prove
-
-The Testnet attester does not currently prove:
-
-- legal identity;
-- ownership of the `Acme` name;
-- control of an internet domain;
-- representative authority;
-- contract source safety or audit status;
-- transaction intent or asset safety;
-- production key management quality.
-
-It proves one narrower fact: the holder of the configured Testnet attester key issued the current on-chain record for one exact subject. Leather's decision to trust that key is local wallet policy.
-
-## A credible future attester
-
-### Automated domain-control flow
-
-The most practical bootstrap attester is an automated domain-control service:
+The prototype implements one narrow automated flow:
 
 ```text
 Organization
-  -> requests a five-minute challenge
-  -> signs a structured statement with the subject deployer's key
-  -> publishes the statement at /.well-known/stacks-origin.json
+  -> signs a versioned SIP-018 statement with the subject deployer's key
+  -> publishes it at a fixed HTTPS well-known location
 
-Origin attester
-  -> fetches the statement over HTTPS
-  -> checks the eTLD+1, freshness, nonce, domain-derived name, enumerated role, subject, and deployer signature
-  -> records its evidence hash and policy version
-  -> issues a Testnet attestation bounded to 4,320 burn blocks
+Verifier
+  -> validates domain, nonce, freshness, policy, subject, deployer signature, and response safety
+
+Isolated signer
+  -> independently enforces the policy envelope
+  -> signs the exact registry transaction bytes
+
+Broadcaster
+  -> journals and broadcasts those exact bytes
 
 Leather
-  -> derives the transaction subject
-  -> reads the attestation from a configured attester
-  -> displays the verified domain, attester, policy, and evidence links
+  -> reads the resulting claim and applies wallet-owned attester policy
 ```
 
-The fetch is a signing authorization boundary, not ordinary application data loading. [`domain-control-fetch-security.md`](domain-control-fetch-security.md) defines the required fixed URL shape, redirect denial, SSRF and metadata-address blocking, DNS-rebinding resistance, response limits, signer separation, logging, and adversarial test gate.
+The current domain claim covers `ST3WYMMN6AQ4AAQWBVKT2B72AVCCR574N9CGVQ4VN.origin-domain-proof`, identifies `origin-iota-ashy.vercel.app`, and expires at burn block `7,806`. The evidence explorer exposes its policy and public supporting facts.
 
-For a contract principal, the proof must come from the standard principal that deployed the contract. The off-chain path uses one versioned SIP-018 structured-data message with an Origin-specific domain separator. It binds the exact eTLD+1, domain-derived `issuer-name`, enumerated `role`, subject, request ID, nonce, intended attester, absolute expiry, and policy version. The signer enforces byte-for-byte agreement. The on-chain proof fixture may be predeployed, but multisig/contract-deployer verification is designed-not-implemented during the four-day build.
+The verifier and signer include fixed URL rules, public-address enforcement, service-address exclusions, redirect denial, DNS-rebinding resistance, response-size and content checks, bounded issuer strings, signer-owned burn-height reads, durable nonce recovery, and socket-error handling. The signer remains stopped except for controlled issuance.
 
-The prototype accepts only a registrable eTLD+1 derived with the Public Suffix List and does not support delegated subdomains. Shared-platform suffixes such as `github.io` and `vercel.app` do not establish control of the organization named in a claim merely because a tenant controls one hosted subdomain.
+## Evidence and lifecycle surfaces
 
-Day 3 claims last at most 4,320 Bitcoin burn blocks from submission, approximately one month at the target cadence. Renewal repeats domain and deployer control after 80% of that window has elapsed. A claim never renews silently, and confirmation drift can only shorten the resulting lifetime.
+The browser-side index discovers v2 lifecycle events, validates their tuple shape, deduplicates transaction/event identities, and reconciles them against `get-attestation` current state. This keeps event discovery separate from the registry's authoritative current record.
 
-### Attester profile
+The public evidence surface lets a viewer inspect:
 
-Leather should never learn who to trust from the transaction request or from an untrusted claim. Instead, each wallet trust-list entry should contain or resolve wallet-controlled metadata:
+- exact subjects and attesters;
+- issue, expiry, revocation, and reissue history;
+- claim and registry Explorer links;
+- the domain-control policy and profile; and
+- separate lifecycle and expired fixtures without mutating the canonical Acme claim.
 
-```text
-display name
-attester principal
-operator website
-verification method
-policy version and effective date
-supported claim types
-public evidence format
-key-rotation history
-revocation policy and response target
-status page
-security contact
-```
+## Four-day execution record
 
-The wallet should link from wallet-owned configuration to this attester-operated profile and to the attester principal on Explorer. The profile explains who operates the attester and what it checks; Explorer verifies which principal actually issued the on-chain record. Profile text fetched at runtime is never rendered in trusted wallet chrome. Trusted display names and policy are bundled with Leather; the runtime profile is only an outbound destination unless a future wallet release pins its content hash.
+### Day 1 — Evidence-complete wallet UX: complete
 
-### Evidence and privacy
+- Added exact principal, attester, registry, issue, and expiry evidence.
+- Separated provenance from post-condition protection.
+- Added known, unrecognized, unknown, no-longer-valid, loading, and unavailable states.
+- Added Explorer links and adversarial rendering tests.
 
-The registry should remain small. Detailed verification artifacts should normally stay off-chain, with the attestation committing to a canonical evidence document or policy version. Public evidence should prove the narrow fact without publishing KYB documents, personal data, or reusable authentication material.
+### Day 2 — V2 cutover and claim explorer: complete
 
-### Discovery
+- Deployed the v2 registry and rotated independently seeded attesters.
+- Reissued canonical fixtures and promoted one atomic compatibility record to both repositories.
+- Added event discovery, current-state reconciliation, evidence profile, and public claim explorer.
+- Removed the retired principal from active wallet trust.
 
-Leather can directly query every trusted attester because the trust list should remain small. Discovering arbitrary unrecognized claims is different: a production implementation should index issuance and revocation events rather than add an unbounded on-chain list or trust an attester hint from the requesting application.
+### Day 3 — Domain-control prototype: complete within Testnet scope
 
-### Key management and lifecycle
+- Implemented the canonical proof packet and SIP-018 verification.
+- Hardened outbound fetching and separated verification from signing.
+- Issued one bounded live Testnet claim through the isolated signer and exact-bytes broadcaster.
+- Added recovery, nonce, and policy-boundary tests.
 
-A production operator should separate the public service from the signing key, use an HSM or managed signer, maintain explicit key-rotation records, monitor issuance, and support prompt revocation. The network-facing fetcher must never receive a mnemonic. High-assurance providers may use multisig or governed signing policies, but the wallet still needs an unambiguous mapping from operator profile to active attester principal.
+### Day 4 — Lifecycle and demo polish: complete
 
-Each Leather trust entry is a wallet-owned ordered list of principals with inclusive `valid-from`, optional exclusive `valid-until`, and a maximum claim lifetime in burn blocks. A claim is eligible only when its chain-derived `issued-at` falls inside that principal's interval and `expires-at - issued-at` stays within its wallet policy. Rotation replaces the whole versioned configuration, adds the new principal, and removes or closes the old interval atomically. The shared-mnemonic fixture attester is removed entirely at v2 cutover. A compromise may remove an interval, making all of its claims immediately untrusted. For this four-day build the policy ships with the extension; compromise response therefore requires rebuild and redistribution. A signed out-of-band policy channel is production follow-up, not an untrusted profile fetch.
+- Added separate lifecycle and expiry fixtures.
+- Preserved the canonical Acme claim through all lifecycle demonstrations.
+- Added the three-scenario applicant, wallet storybook, evidence explorer, and registry explainer.
+- Added live verification and non-broadcasting end-to-end rehearsal paths.
 
-### Registry v2 migration decision
+## Production work that remains
 
-All known state-model changes are bundled in `origin-registry-v2.clar` so Testnet pays one redeployment and re-issuance cost:
+The prototype should not be represented as production-ready. Remaining work includes:
 
-- write calls require `tx-sender` to equal `contract-caller`, preventing cross-principal writes and user-misattribution through an intermediary; contract-principal attesters can still self-issue through their own public code paths, so the initial wallet trust list uses standard principals;
-- organization and role strings must be non-empty;
-- records persist `revoked-at` as an optional burn height;
-- issue/revoke operations carry an attester-scoped, replay-protected 32-byte request ID;
-- lifecycle events carry `version: u2`, and `get-schema-version` returns `u2`;
-- issuance and revocation events both contain the complete lifecycle record required by the event index;
-- a repeated revoke returns `(ok false)` without emitting another lifecycle event;
-- reissuance explicitly replaces the prior record, sets `revoked` to false, and clears `revoked-at` to `none`.
+- production HSM or managed-key custody and governed rotation;
+- signed, rapidly updateable wallet attester policy;
+- production monitoring, incident response, rate limiting, and availability targets;
+- generalized indexer reliability and independent API providers;
+- multisig and contract-principal deployer proofs;
+- independent security review of the complete deployed service;
+- privacy-preserving KYB or representative-authority attesters where those claims are needed; and
+- standardization across wallets and smart-contract recipient flows.
 
-The v2 contract and its cross-principal-write test proxy run only in Simnet today. Deployment, isolated-attester rotation, fixture predeployment, candidate manifest/config generation, re-issuance, and fresh live verification are one coordinated Day 2 cutover. The cutover excludes the proxy, uses a pending-aware crash-safe journal, and parameterizes all deployment/issuance/verifier tooling by contract name and schema. The candidate manifest and atomic Leather configuration are promoted only after the wallet journey passes. The current live v1 registry remains canonical until then.
-
-### Optional KYB providers
-
-KYB is an attester class, not a protocol requirement. A participating provider could verify legal entity, representative authority, principal control, and the exact operational contract before issuing from its own recognized principal. Leather could describe that provider's verification method without converting provenance into a general safety score.
-
-## Recommended four-day build
-
-The highest-value plan is to make one real issuance lifecycle work end to end rather than add more static scenarios.
-
-### Day 1 — Evidence-complete wallet UX
-
-Status: substantially complete.
-
-- Render full warning copy in review captures.
-- Rename the generic trusted issuer to `Origin Testnet Attester`.
-- Add attester and registry Explorer links.
-- Restore all fixtures after the Testnet reset.
-- Add a direct Stacks.js fixture deployment command.
-- Refresh the storybook from the restored live state.
-
-Acceptance: every provenance state is legible, every trusted result has inspectable on-chain anchors, and the live verifier passes.
-
-### Day 2 — Coordinated cutover, profile, and claim explorer
-
-- Publish an attester-operated profile page and machine-readable profile document on an evidence origin distinct from the Acme dapp; Leather links to it from wallet-owned configuration.
-- Show operator, principal validity intervals, method, policy version, revocation policy, and status. Treat this page only as linked explanatory content; trusted Leather labels remain bundled.
-- Build the browser-side event index around one cursor-paginated Hiro smart-contract-logs API, retain only the exactly configured registry's `print` events, validate versioned tuples, deduplicate by transaction/event index, and use `get-attestation` as current-state truth.
-- Build a small claim explorer on that index for subject, organization, role, issue height, expiry, status, issuance transaction, and registry. The checked-in manifest remains deployment evidence, not the enumeration source.
-- Link the Leather known-origin state to both the profile and Explorer.
-- Freeze and deploy the complete v2 ABI once, rotate to independently seeded canonical and Day 3 attesters, explicitly remove the shared-mnemonic principal from the atomic Leather configuration, and reissue the canonical claims.
-- Predeploy the Day 3 organization and Day 4 lifecycle fixture contracts so later work does not wait on Testnet confirmation.
-
-Acceptance: a user can answer “who did Leather trust, what do they claim to verify, and where is the on-chain proof?” without reading source code; a newly issued claim appears without editing the manifest; and v2 plus the isolated key pass a fresh live verification.
-
-### Day 3 — Domain-control issuance prototype
-
-- Define one canonical, versioned `stacks-origin.json` challenge document rather than a general-purpose claim schema.
-- Publish the exact JSON shape and a curl example first; build a developer page only if the security and lifecycle gates finish early.
-- Implement and adversarially test every control in `domain-control-fetch-security.md` before enabling a broadcast path.
-- Verify a domain-separated SIP-018 standard-deployer signature plus the hardened well-known HTTPS response, domain-derived name, enumerated role, and eTLD+1-only policy. Multisig verification is deferred.
-- Issue a Testnet attestation capped at 4,320 burn blocks through the isolated signer and rotated attester principal.
-- Persist only public request status and evidence commitments; keep the signing key outside application logs and client code.
-
-Acceptance: a second fictional organization can prove domain plus deployer control and receive a real Testnet claim without editing Leather's code.
-
-### Day 4 — Lifecycle, recovery, and demo polish
-
-- Add a separate lifecycle fixture so revocation never destroys the canonical known demo.
-- Demonstrate issue, known, revoke, no-longer-valid, and reissue transitions.
-- Make reset recovery produce an updated public manifest automatically.
-- Add end-to-end tests for profile links, issuance, revocation, registry failure, and capture stability.
-
-Acceptance: the demo shows not just a static badge but an attester operating a claim through its lifecycle on Testnet.
-
-## Scope to avoid in four days
-
-Do not spend the four days on mainnet deployment, real KYB document handling, generalized assurance scores, decentralized attester governance, a general-purpose claim schema, or production custody claims. Do not ship an unhardened outbound fetch, shared-seed material in the online attester, requesting-site attester hints, runtime profile text in trusted chrome, or “verified”/“safe” vocabulary. The build has one versioned domain-control challenge and one minimal registry event index; neither is a generalized identity platform.
-
-## Recommended product narrative after four days
-
-> Origin is an open registry with wallet-owned trust. A domain can prove control of its deployer, a recognized attester can issue or revoke a narrow claim on Testnet, and Leather can verify the exact transaction principal without trusting the requesting site. The wallet shows who attested, what they checked, and where the evidence lives—without calling provenance a safety guarantee.
+The next design question is not whether the Testnet demo works. It is how wallets and smart-contract recipients should consume the same narrow provenance fact without conflating open claims, attester trust, and contract safety.

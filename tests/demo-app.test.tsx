@@ -38,6 +38,8 @@ describe("Acme demo app", () => {
     expect(html.match(/>Check in</g)).toHaveLength(3);
     expect(html).toContain(fixtures.fixtures.known.subject);
     expect(html).toContain(fixtures.registry.principal);
+    expect(html).toContain('href="/registry"');
+    expect(html).toContain("See how the registry works");
   });
 
   test("keeps the forensic vocabulary and Leather's own wording off the page", () => {

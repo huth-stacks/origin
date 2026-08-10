@@ -2,174 +2,161 @@
 
 ## Demo outcome
 
-A fresh mock-site origin connects to a locally built Leather extension, requests three harmless Stacks Testnet contract calls, and produces three different wallet-owned provenance results from live Origin registry state.
+The applicant site sends three ordinary, harmless Stacks Testnet contract calls to a locally built Leather extension. Leather derives the exact target, reads live Origin v2 state, and renders three wallet-owned provenance outcomes. The recording then uses the registry explainer to open the underlying contracts and transactions in Stacks Explorer.
 
-The demonstration proves that the wallet can derive and label the exact transaction principal without accepting identity, attester, trust-policy, canonical-contract, or verdict data from the requesting site. It does not prove that a contract or transaction is safe.
+Origin proves public provenance and wallet-owned trust policy. It does not prove that a contract or transaction is safe.
 
-## Known-good checkpoints
+## Current locations
 
-| Surface                         | Checkpoint  | Evidence                                                                                             |
-| ------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
-| Origin registry and fixtures    | `a40d080`   | Four live contracts, two claims, and one unattested lookalike in `deployments/testnet-fixtures.json` |
-| Acme demo redesign              | `8b9251d`   | Final product-site UX, resilient provider flow, responsive capture, and adversarial-review fixes     |
-| Leather live registry client    | `2675a3142` | Configured-attester reads and fail-neutral evaluation                                                |
-| Leather three-scenario coverage | `2f2dcaf02` | Fresh connection, all live states, and independent post-condition assertions                         |
-| Leather approver redesign       | `e6675e94d` | Native approver section, advanced details, exact principals, and final review fixes                  |
-
-The current reviews are [Origin PR #11](https://github.com/huth-stacks/origin/pull/11) and [Leather fork PR #1](https://github.com/huth-stacks/leather-origin-demo/pull/1). Neither changes upstream Leather until a separate `leather-io/mono` proposal is opened.
+- Origin repository: `/Users/alexander/Code/contract-provenance-certificate`
+- Leather repository: `/Users/alexander/Code/leather-origin-demo`
+- Applicant: <https://origin-iota-ashy.vercel.app>
+- Registry explainer: `http://127.0.0.1:4173/registry` until the production deployment includes it
+- Evidence explorer: <https://origin-evidence.vercel.app/evidence>
+- Leather build: `/Users/alexander/Code/leather-origin-demo/apps/extension/dist`
 
 ## One-time setup
 
-Use a dedicated browser profile and a disposable wallet. Do not import a wallet that controls production funds.
+Use a dedicated Chrome profile and a disposable Stacks Testnet wallet. Do not import an account that controls production funds.
 
-### Origin repository
+### Verify Origin and its live fixtures
 
 ```sh
-cd /Users/alexander/Code/origin-feat-demo-visual
+cd /Users/alexander/Code/contract-provenance-certificate
 pnpm install --frozen-lockfile
 pnpm verify
 pnpm testnet:verify
 ```
 
-### Leather repository
+### Build the unmistakably labeled Leather demo
 
-Leather requires Node 22 for its supported local toolchain.
+Leather requires Node 22.
 
 ```sh
 cd /Users/alexander/Code/leather-origin-demo
 PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm install --frozen-lockfile
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm --filter @leather.io/extension build:dev
-```
-
-The development build is emitted to:
-
-```text
-/Users/alexander/Code/leather-origin-demo/apps/extension/dist
+PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm build:origin-demo
 ```
 
 In the dedicated Chrome profile:
 
-1. Open `chrome://extensions`.
-2. Enable Developer mode.
+1. Open `chrome://extensions` and enable Developer mode.
+2. Disable the regular Leather extension so two providers do not compete.
 3. Choose **Load unpacked** and select the `dist` directory above.
-4. Create or import a disposable wallet and leave production funds out of this profile.
+4. Confirm the extension is named **Leather Origin Demo**.
+5. Pin it, use a disposable account, and select **Stacks Testnet**.
 
-The development build currently completes with the baseline missing `.env`, stale Browserslist data, and `HiroMessage` re-export warnings recorded for this checkout. A successful `webpack ... compiled` result is the build gate.
+After rebuilding, press **Reload** on the unpacked extension before rehearsing.
 
-## Start the demo
+## Start the local presentation build
 
-The public URL is the release target. If its page title is still `Origin · Transaction Lab`, Vercel has not yet promoted the Acme build and the local branch should be used instead:
-
-```text
-https://origin-umber-six.vercel.app
-```
-
-For a review pinned to the final Acme source, use the local worktree because the PR preview is protected by Vercel SSO:
+The local build includes all three routes and is the safest recording target:
 
 ```sh
-cd /Users/alexander/Code/origin-feat-demo-visual
+cd /Users/alexander/Code/contract-provenance-certificate
 pnpm demo:dev
 ```
 
-Then open `http://127.0.0.1:4173` in the same browser profile.
+Open these tabs in the same Chrome profile:
 
-1. Select **Connect Leather**.
-2. Approve the Stacks Testnet account request in Leather.
-3. Confirm the dapp changes to **Leather connected**.
+1. `http://127.0.0.1:4173/`
+2. `http://127.0.0.1:4173/registry`
+3. `http://127.0.0.1:4173/evidence`
 
-The transaction action remains disabled until this connection succeeds.
+The deployed applicant and evidence URLs may be substituted after confirming they show the same current v2 data.
 
-## Ninety-second sequence
+On the applicant tab, select **Connect Leather**, approve only the address request, and confirm both the site and wallet are on Stacks Testnet.
 
-The site presents three check-in request cards inside the fictional Acme product. Cards one and three are byte-identical except for the exact target principal and the sending host; only the wallet separates them.
+## Recording sequence
+
+Never approve the three contract calls. Close each popup after showing its state; this avoids broadcasts and Testnet fees.
 
 ### 1. Known origin
 
-On the **Weekly check-in** card from `acme.example`, select **Check in**.
-
-Leather must show:
+On the Acme **Weekly check-in** card, select **Check in**. Confirm:
 
 - `Known origin`
 - `Acme`
 - `Origin Testnet Attester`
 - `ST14T2RC089K364JC6VX1310NER40F17FNCY8WPDY.acme-action`
-- The explicit statement that the identity claim does not guarantee contract or transaction safety
-- The separate Deny-mode post-condition statement that only fees can move
-
-Narration: the site supplied the transaction, but Leather derived the exact principal and applied its own trusted-attester policy.
+- The provenance-not-safety statement
+- Separate Deny-mode asset protection
 
 ### 2. Unrecognized identity claim
 
-Reject or close the first request; the card reports "Leather closed without returning a transaction." On the **Bonus check-in** card from `northwind.example`, select **Check in**.
-
-Leather must show:
+Close the first request. On the Northwind **Bonus check-in** card, select **Check in**. Confirm:
 
 - `Unrecognized identity claim`
 - `ST2EWCY9STYTS6FGJ0KP1FQNMKHJFXMP7KKM7FRX0.claimed-action`
-- No `Definitely Acme` or `Official contract` text
-
-Narration: the registry is permissionless, but a claim does not make its attester trusted and attacker-selected organization text does not enter the default wallet surface.
+- No promoted attacker-selected organization name
 
 ### 3. Unknown lookalike
 
-Reject or close the second request. On the second **Weekly check-in** card, the one from `mail.acme-rewards.example`, select **Check in**.
-
-Leather must show:
+Close the second request. On the Acme Rewards **Weekly check-in** card, select **Check in**. Confirm:
 
 - `Unknown origin`
 - `Potential lookalike contract`
 - `ST3B1B5SN96FXEP2EC2SE6K2XWEEBYR7TK70WF6XA.acme-action`
-- The explanation that the same contract name has a different deployer
+- Same contract name, different deployer
 
-Narration: deployer extraction is deterministic; the name collision is a separate heuristic and does not become an identity verdict.
+### 4. Registry and Explorer proof
 
-Rejecting each request avoids consuming Testnet fees. The fixtures are deliberately state-only—`record-demo-action()` changes only an invocation counter and declares no asset movement—but that design does not turn Origin into a safety guarantee.
+Close the third request and switch to `/registry`.
 
-## Automated end-to-end preflight
+1. Point out that the registry is a public Clarity contract on Stacks Testnet.
+2. Show that attesters publish claims while Leather independently decides whom to recognize.
+3. Open the registry contract in Explorer.
+4. Open the canonical Acme claim transaction in Explorer.
+5. Return to the explainer and connect those public facts to the Known origin result.
 
-The opt-in Leather test starts with no site permission, approves the dapp's normal `getAddresses` request, then checks all three approval states against live Testnet registry data. The source-pinned preflight targets the final Acme branch locally:
+Use `/evidence` only as an optional coda for lifecycle and domain-control evidence.
 
-```sh
-cd /Users/alexander/Code/origin-feat-demo-visual
-pnpm demo:dev
-```
+## Automated preflight
 
-Keep that server running, then use a second terminal:
-
-```sh
-cd /Users/alexander/Code/leather-origin-demo
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm --filter @leather.io/extension build:ext:test
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin ORIGIN_DEMO_URL=http://127.0.0.1:4173 pnpm --filter @leather.io/extension test:integration tests/specs/rpc-sip30-requests/origin-mock-dapp.spec.ts --project=chromium
-```
-
-Repeat the same command with `ORIGIN_DEMO_URL=https://origin-umber-six.vercel.app` as the release gate once the public page serves the Acme UI. Without `ORIGIN_DEMO_URL`, this live-network test skips so normal Leather CI does not depend on a sibling repository or Testnet availability. Before the redesign, the final production-origin run passed fresh connection and all three live states in 14.0 seconds on August 4, 2026 Pacific time; the redesigned local Acme journey subsequently passed in 13.2 seconds.
-
-## Screenshot capture
-
-`tests/specs/rpc-sip30-requests/origin-storybook.spec.ts` in the Leather repository captures the install label, site, connection request, all three approval states, and every advanced disclosure. It closes every transaction request without approval, so the evidence run never broadcasts.
+Keep `pnpm demo:dev` running, then in another terminal:
 
 ```sh
 cd /Users/alexander/Code/leather-origin-demo
-pnpm build:origin-demo
-ORIGIN_DEMO_URL=http://127.0.0.1:4173 \
-ORIGIN_STORYBOOK_DIR=/Users/alexander/Code/contract-provenance-certificate/docs/storybook/assets \
-pnpm --filter @leather.io/extension test:integration tests/specs/rpc-sip30-requests/origin-storybook.spec.ts --project=chromium
+PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm build:origin-demo
+PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin ORIGIN_DEMO_URL=http://127.0.0.1:4173 pnpm --filter @leather.io/extension test:integration specs/rpc-sip30-requests/origin-mock-dapp.spec.ts --project=chromium --config=tests/playwright.origin-demo.config.ts
 ```
 
-Start the Origin demo server on port 4173 before the capture command. The command builds the unmistakable production manifest on the telemetry-safe testing runtime, then replaces the checked-in storybook images only after the final bundle exists.
+The test starts with no site permission, connects through the normal address request, checks all three approval states against Testnet, and closes without broadcasting.
 
-## Failure behavior
+## Refresh the checked-in storybook
 
-- No injected provider: after a connection attempt, the dapp shows the retryable `Leather required` control and does not enable scenario requests.
-- Rejected connection: the dapp shows `Connection rejected — retry`.
-- Closed request: the card shows `Leather closed without returning a transaction.` It does not claim whether Leather signed when the site received no transaction response.
-- Timed-out request: the card tells the user to check Leather before trying again because the original request may still settle.
-- Successful response: fresh activity says `Broadcast`, not `Confirmed`; confirmation remains an Explorer fact.
-- Registry timeout or malformed response: Leather shows `Origin unavailable`, never `Known origin`.
-- Slow Testnet response: allow up to 20 seconds before treating the live lookup as failed.
-- Deployment retry: a mempool-pending contract still returns 404 from the confirmed-contract endpoint, so wait for the prior transaction to settle before rerunning a deployment command.
-- Wrong scenario wiring: `tests/demo-scenarios.test.ts` fails when a dapp subject diverges from the public fixture manifest.
+With the local demo server running:
 
-## Reset
+```sh
+cd /Users/alexander/Code/leather-origin-demo
+PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin ORIGIN_DEMO_URL=http://127.0.0.1:4173 \
+  ORIGIN_STORYBOOK_DIR=/Users/alexander/Code/contract-provenance-certificate/docs/storybook/assets \
+  pnpm --filter @leather.io/extension test:integration specs/rpc-sip30-requests/origin-storybook.spec.ts --project=chromium --config=tests/playwright.origin-demo.config.ts
+```
 
-Reload the dapp to reset its local connection and request status. Remove the unpacked extension from the dedicated browser profile after the demo. The Testnet contracts and claims remain public fixtures; no secret material is stored in this repository.
+This capture closes every request without approval and replaces the storybook images only after the current extension build exists.
+
+## Pre-recording checklist
+
+- Run `pnpm testnet:verify` immediately before recording.
+- Confirm **Leather Origin Demo**, Stacks Testnet, and the disposable account.
+- Use 1440 × 900 or 1920 × 1080 at 100% browser zoom.
+- Hide notifications, bookmarks, unrelated extensions, and personal profile details.
+- Pre-open applicant, registry, evidence, and the two Explorer targets.
+- Keep the sequence Known → Unrecognized → Lookalike → Registry proof.
+- Allow up to 20–30 seconds for a live Testnet lookup.
+- Open Advanced only for the known case if time permits.
+- Keep the attester signer stopped.
+- Do not issue, revoke, renew, or reissue canonical claims.
+- Record one complete rehearsal before the final take.
+
+## Failure and reset behavior
+
+- No provider: the applicant offers a retryable **Leather required** control.
+- Rejected connection: it shows **Connection rejected — retry**.
+- Closed request: the card says Leather closed without returning a transaction.
+- Timed-out request: check Leather before retrying because the request may still settle.
+- Registry timeout or malformed response: Leather shows **Origin unavailable**, never Known origin.
+- Wrong scenario wiring: `tests/demo-scenarios.test.ts` fails when a subject diverges from the fixture manifest.
+
+Reload the applicant to reset local connection and request state. Remove the unpacked extension from the dedicated profile after recording. The public Testnet fixtures remain unchanged.
