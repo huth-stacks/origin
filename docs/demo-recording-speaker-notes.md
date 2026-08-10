@@ -1,6 +1,6 @@
-# Origin Demo Recording Guide and Speaker Notes
+# Origin Demo Recording Script and Technical Q&A
 
-Use this document to prepare and record the current Origin demo. The notes are prompts, not prose to read verbatim. Keep the delivery conversational and explain what is happening in your own words.
+Use the recording script word for word or as a close guide. Text under **Operator** is an action, not narration. Text in block quotes is spoken copy. The technical appendix is for questions after the walkthrough.
 
 ## Current demo status
 
@@ -54,7 +54,7 @@ The evidence site presents public supporting evidence. It does not override Leat
 
 ## Build and browser setup
 
-Build the explicitly labeled Origin version of Leather:
+If the currently installed **Leather Origin Demo** already produces all three expected states, do not rebuild it. Rebuild only when the unpacked extension is missing, stale, or loading a different `dist` directory:
 
 ```sh
 cd /Users/alexander/Code/leather-origin-demo
@@ -89,127 +89,151 @@ pnpm testnet:verify
 
 Confirm that it reports the intended contracts and claims without an error. Do not issue, revoke, or reissue claims during rehearsal or filming.
 
-## Speaker notes — approximately two minutes
+## Recording script — approximately six to seven minutes
 
-These are reminders of the point to make in each segment. Do not try to say every bullet.
+Before recording, connect the applicant to Leather so the header says **Leather connected**. Arrange the tabs in this order:
 
-### 0:00–0:12 — Establish the problem
+1. Acme applicant
+2. Origin Registry
+3. Origin evidence
 
-**On screen:** Applicant page, with all three check-in cards visible.
+Do not pre-open a transaction approval. Start on the applicant with the three cards visible.
 
-**Reminders:**
+### Scene 1 — Introduction
 
-- Wallets already explain what a transaction does.
-- Origin adds the question: who published this exact contract?
-- Provenance is distinct from transaction simulation or asset protection.
+**Operator:** Stay on the Acme applicant. Let the audience see the fictional product and three check-in cards; do not click yet.
 
-### 0:12–0:25 — Explain the trust boundary
+> Security is becoming a priority across every layer of software. But in crypto, one of the biggest risks is still remarkably simple: signing a transaction with the wrong counterparty, or interacting with a contract you didn't mean to trust.
+>
+> Wallets are getting better at explaining what a transaction is expected to do. Simulation can preview its effects, and post-conditions can constrain which assets are allowed to move.
+>
+> But there's still a more basic question: is this actually the contract I think it is?
+>
+> That's the problem Origin is trying to address: provenance.
+>
+> Provenance is not transaction simulation, and it is not a guarantee that a contract is safe. It provides context about the exact contract involved: who has made an identity claim about it, who issued that claim, and whether your wallet recognizes that issuer.
+>
+> The idea is simple. Before you sign, your wallet should help you understand not only what a transaction may do, but who you may be doing it with.
 
-**On screen:** Connect Leather, then return to the three cards.
+### Scene 2 — Establish the controlled comparison
 
-**Reminders:**
+**Operator:** Move the pointer across the three cards. Briefly point to **Exact target**, `record-demo-action()`, and **Assets: None move**. End over the left Acme **Check in** button.
 
-- This is a normal SIP-30 contract-call request.
-- The site supplies no organization name, verdict, or trusted-attester hint.
-- Leather derives the contract principal itself.
-- The registry is permissionless; Leather decides whom it trusts.
+> This fictional Acme application gives us three controlled examples. Each card requests the same harmless, state-only function on Stacks Testnet. The asset behavior is the same in every case. What changes is the exact contract principal and the provenance evidence Leather finds for it.
+>
+> These are normal SIP-30 contract-call requests. The website does not send Leather an organization name, an attester, or a provenance verdict. Leather has to decode the target and make that decision itself.
 
-### 0:25–0:52 — Known Acme origin
+### Scene 3 — Known Acme origin
 
-**On screen:** Click the left Acme **Check in** button.
+**Operator:** Click the left **Check in** button on **Weekly check-in** from `acme.example`. Wait for Leather to show **Known origin**. Point first to **Known origin**, then **Acme**, then the exact principal.
 
-**Point out:**
+> In the first case, Leather shows a known origin for Acme.
+>
+> Leather derived this exact principal from the transaction request. It found an active claim for that principal from the Origin Testnet Attester, which is an attester this build of Leather recognizes.
 
-- **Known origin** verdict.
-- Acme identity and **Origin Testnet Attester** attribution.
-- Exact `ST14…acme-action` principal.
-- Provenance-not-safety disclaimer.
-- Optionally open Advanced briefly to show the attester and registry.
+**Operator:** Point to the separate asset-protection language and the provenance-not-safety disclaimer.
 
-**Reminders:**
+> Notice that provenance and asset protection remain separate. The transaction declares that no assets should move, but the identity claim still does not guarantee that the contract or transaction is safe.
 
-- The claim matches the exact deployer and contract name.
-- The claim is active and comes from an attester Leather recognizes.
-- “Known origin” does not mean “safe contract.”
-- Post-condition protection remains a separate signal.
+**Operator:** Click **Show advanced details**. Point to **Checked principal**, **Attester principal**, **Attested at**, **Expires**, and **Registry**. Do not open an Explorer link from the popup.
 
-Close the popup without approving the transaction.
+> Under advanced details, Leather exposes exactly what it evaluated: the complete subject, the attester principal, the issuance and expiry heights, and the registry it queried. The website did not supply any of these conclusions.
 
-### 0:52–1:15 — Claim from an unrecognized attester
+**Operator:** Click **Cancel**. Do not click **Approve**. Wait until the applicant card reports that Leather closed without returning a transaction.
 
-**On screen:** Click the middle Northwind **Check in** button.
+### Scene 4 — Real claim, unrecognized attester
 
-**Point out:**
+**Operator:** Click the middle **Check in** button on **Bonus check-in** from `northwind.example`. Wait for **Unrecognized identity claim**. Point to that heading and then the exact `ST2E…claimed-action` principal.
 
-- **Unrecognized identity claim**.
-- Exact `ST2E…claimed-action` principal.
-- The absence of a promoted organization identity in trusted wallet chrome.
+> The second contract also has a real claim in the registry. But this time, the issuer is not in Leather's trusted-attester policy, so Leather calls it an unrecognized identity claim.
+>
+> The registry is permissionless. Anyone can make a claim from their own attester principal. That does not mean the wallet has to trust it.
 
-**Reminders:**
+**Operator:** Point to the warning explaining that Leather will not repeat the claim's identity text. Do not open Advanced.
 
-- A real claim exists on-chain.
-- Its attester is not in Leather's trusted policy.
-- The evidence remains inspectable, but untrusted brand text cannot become a known identity.
-- This is the key distinction: claim existence is not wallet trust.
+> The claim actually calls itself “Definitely Acme” and “Official contract.” Leather deliberately keeps that attacker-controlled text out of the trusted identity surface. The evidence can exist without becoming the wallet's verdict.
+>
+> This is the most important distinction in the demo: a claim exists, but Leather does not recognize its attester.
 
-Close the popup without approving the transaction.
+**Operator:** Click **Cancel**, never **Approve**.
 
-### 1:15–1:40 — Same-name lookalike
+### Scene 5 — Same-name lookalike
 
-**On screen:** Click the right Acme Rewards **Check in** button.
+**Operator:** Click the right **Check in** button on **Weekly check-in** from `mail.acme-rewards.example`. Wait for both **Unknown origin** and **Potential lookalike contract**. Point to each label, then the `ST3B…acme-action` principal.
 
-**Point out:**
+> The third contract has no recognized claim for this exact principal, so its origin is unknown.
+>
+> It also uses the same `acme-action` contract name as the known Acme contract, but under a different deployer. Leather shows that as a separate potential-lookalike warning.
+>
+> The warning is a heuristic, not an identity claim. Leather is drawing attention to the name collision without pretending it knows who published this contract.
 
-- **Unknown origin**.
-- Separate **Potential lookalike** warning.
-- Exact `ST3B…acme-action` principal.
-- Same contract name, different deployer.
+**Operator:** Click **Cancel**, never **Approve**. Return to the applicant and pause briefly on all three cards.
 
-**Reminders:**
+> So the same transaction shape produced three different results: known origin, a real claim from an unrecognized attester, and an unknown same-name lookalike.
 
-- This contract borrowed the known Acme contract name.
-- There is no trusted identity claim for this exact principal.
-- Lookalike detection is a separate heuristic; it does not invent an identity verdict.
+### Scene 6 — Origin Registry and Stacks Explorer
 
-Close the popup without approving the transaction.
+**Operator:** Switch to tab 2, the [Origin Registry](https://origin-iota-ashy.vercel.app/registry). Point to **Open evidence. Wallet-owned trust.**, the **Live contract** stamp, and **Stacks Testnet**.
 
-### 1:40–2:05 — Prove the registry is real
+> Now let's look at where those results come from.
+>
+> Origin is a public Clarity registry on Stacks Testnet. It records which attester made a claim about which exact principal. The registry stores attributable evidence, but it does not decide which attesters a wallet should trust.
 
-**On screen:** Switch to the registry explainer. Open the registry and canonical claim links in Stacks Explorer.
+**Operator:** Click **Open the registry on Explorer**. It opens a new tab. Wait for Stacks Explorer, then point to the Testnet network and the full `origin-registry-v2` contract principal. If the contract source panel is visible, point to it briefly. Do not navigate further inside Explorer. Close the Explorer tab and return to Origin Registry.
 
-**Point out:**
+> This is the live v2 registry contract in Stacks Explorer. The contract and its deployment are public; this is not a label mocked inside the wallet.
 
-- The live v2 registry is a public Clarity contract on Stacks Testnet.
-- The canonical Acme subject and its claim transaction.
-- Explorer is independently showing the same on-chain anchors.
-- Open registry facts are separate from Leather's recognition policy.
+**Operator:** Click **Follow one lookup**. Point across **Decode the request**, **Read the registry**, and **Apply wallet policy**.
 
-**Reminders:**
+> A lookup has three steps. Leather decodes the exact target from the request. It reads the attester-and-subject record from the registry. Then it applies its own policy for attester trust, issuance, expiration, and revocation.
+>
+> That final step is why claim existence and wallet trust are not the same thing.
 
-- This is not a mocked wallet label; the claim is inspectable on-chain.
-- Multiple attesters can publish to the open registry.
-- Leather's bundled trust policy remains authoritative for Leather.
-- Registry membership alone does not make an attester trusted.
+**Operator:** Scroll to **This record is on Testnet now**. Point to **Exact subject**, **Attester**, **Issued at Bitcoin block**, and **Expires at Bitcoin block**.
 
-### 2:05–2:20 — Evidence coda and close
+> This is the current Acme fixture record. It binds one attester to one exact subject, with chain-derived issuance and an explicit expiration. Another attester can make a different claim about the same subject, but it cannot overwrite this attester's record.
 
-**On screen:** Optionally show the evidence page's lifecycle or domain-control evidence, then return to the applicant.
+**Operator:** Click **View claim transaction**. In the new Explorer tab, point to the confirmed Testnet transaction, its transaction ID, and the `issue-attestation` contract call. Close the Explorer tab and return to Origin Registry.
 
-**Reminders:**
+> And this is the actual issuance transaction. Anyone can independently inspect when the claim was written, who submitted it, and which registry function was called.
 
-- Exact principals.
-- Open evidence.
-- Wallet-owned trust.
-- Provenance, not safety certification.
+**Operator:** Scroll to **Anyone can write a claim. Leather chooses whom to believe.** Pause on the Open, Local, and Exact cards.
 
-## Short 90-second version
+> The model is open issuance, local trust, and exact-principal matching. Origin makes claims inspectable. Leather decides which issuers it recognizes.
 
-If the recording must be shorter:
+### Scene 7 — Public evidence and lifecycle
 
-- Skip Advanced details in the known-origin popup.
-- Spend roughly 20 seconds on each of the three wallet states.
-- Give the registry explainer and Explorer only a five-to-eight-second closing shot.
-- Preserve the Northwind explanation; it carries the most important trust-model distinction.
+**Operator:** Switch to tab 3, [Origin evidence](https://origin-evidence.vercel.app/evidence). Wait until **Claims and lifecycle** shows a current burn height and claim count. Point to the attester profile on the left and the claims explorer on the right.
+
+> The evidence surface adds the human-readable layer. It explains who operates the Testnet attesters, what verification method they claim to use, their policy and lifetime limits, and the exact records they have placed on chain.
+
+**Operator:** Click **Claims** in the top navigation. Paste the exact domain-proof subject, `ST3WYMMN6AQ4AAQWBVKT2B72AVCCR574N9CGVQ4VN.origin-domain-proof`, into the search field. Point to the resulting exact subject, its attester, status, issue and expiry heights, and on-chain evidence links.
+
+> This example is a bounded domain-control attestation. The prototype checked a published HTTPS proof and a SIP-018 signature from the subject's deployer before issuing the claim through an isolated signer.
+>
+> Even here, the claim is deliberately narrow. It records provenance under a particular attester policy. It does not certify the contract's code or guarantee that a future transaction is safe.
+
+**Operator:** If visible, click **Lifecycle history** once, then close it. Do not open another Explorer tab unless you need a longer ending.
+
+> The explorer discovers lifecycle events, but it reconciles them with current registry state. That matters because an old issuance event should not look active after a claim has expired, been revoked, or been replaced.
+
+### Scene 8 — Closing
+
+**Operator:** Return to tab 1 and leave the three applicant cards visible.
+
+> Origin adds a provenance layer to the wallet decision: exact principals, open evidence, and wallet-owned trust.
+>
+> It does not replace simulation, post-conditions, or transaction review. It gives the user another critical piece of context before they sign: is this the contract I think it is?
+
+## Shorter cut
+
+To reduce the recording to roughly two and a half minutes:
+
+- Keep the introduction as written.
+- Skip Advanced details in the Known-origin popup.
+- Remove the final sentence from each wallet scenario.
+- On the registry tab, show the three-step lookup and claim transaction, but skip the registry-contract Explorer tab.
+- Skip the evidence tab and close immediately after the registry trust-boundary section.
 
 ## Language guardrails
 
@@ -237,8 +261,8 @@ Avoid:
 - Use 1440 × 900 or 1920 × 1080 at 100% browser zoom.
 - Disable notifications and hide personal bookmarks, extensions, and profile information.
 - Keep the scenario order: Known → Unrecognized → Lookalike.
-- Pre-open the applicant, registry, evidence, and Explorer tabs.
-- Pre-position the registry page at the live anchors section if a smooth cut matters.
+- Pre-open the applicant, registry, and evidence tabs in that order. Open Explorer only from the scripted links.
+- Leave the registry and evidence tabs at the top of their pages before recording.
 - Never approve the contract-call transactions; close each popup after showing it.
 - Allow up to 20–30 seconds for a live Testnet lookup.
 - Show Advanced details only for the known case.
@@ -248,7 +272,7 @@ Avoid:
 
 ## Storybook note
 
-The checked-in storybook is a visual reference, not the recording order. The canonical live sequence is always Known → Unrecognized → Lookalike → Registry proof.
+The checked-in storybook is a visual reference, not the recording order. The canonical live sequence is always Known → Unrecognized → Lookalike → Registry proof → optional evidence.
 
 ---
 
