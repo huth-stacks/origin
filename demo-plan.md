@@ -66,12 +66,12 @@ Use `/evidence` to show claim lifecycle and domain-control evidence if time perm
 
 ## Current demo surfaces
 
-| Surface            | Public URL                                    | Purpose                                      |
-| ------------------ | --------------------------------------------- | -------------------------------------------- |
-| Applicant          | <https://origin-iota-ashy.vercel.app>         | Initiates the three ordinary SIP-30 requests |
-| Registry explainer | `/registry` locally; public after deployment  | Explains the registry and links to Explorer  |
-| Evidence explorer  | <https://origin-evidence.vercel.app/evidence> | Shows public claim and domain evidence       |
-| Wallet             | Local **Leather Origin Demo** build           | Derives subjects and applies wallet policy   |
+| Surface            | Public URL                                     | Purpose                                      |
+| ------------------ | ---------------------------------------------- | -------------------------------------------- |
+| Applicant          | <https://origin-iota-ashy.vercel.app>          | Initiates the three ordinary SIP-30 requests |
+| Registry explainer | <https://origin-iota-ashy.vercel.app/registry> | Explains the registry and links to Explorer  |
+| Evidence explorer  | <https://origin-evidence.vercel.app/evidence>  | Shows public claim and domain evidence       |
+| Wallet             | Local **Leather Origin Demo** build            | Derives subjects and applies wallet policy   |
 
 ## Live Testnet anchors
 

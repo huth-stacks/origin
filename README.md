@@ -50,7 +50,7 @@ Future v2 transaction commands have three explicit modes: the unsuffixed command
 
 ## Run the demo surfaces
 
-The current applicant is live at [origin-iota-ashy.vercel.app](https://origin-iota-ashy.vercel.app), and the public claim explorer is live at [origin-evidence.vercel.app/evidence](https://origin-evidence.vercel.app/evidence). The same Vite application also contains the Origin Registry explainer at `/registry`; use the local route until the next production deployment includes it.
+The applicant is live at [origin-iota-ashy.vercel.app](https://origin-iota-ashy.vercel.app), the registry explainer is live at [origin-iota-ashy.vercel.app/registry](https://origin-iota-ashy.vercel.app/registry), and the public claim explorer is live at [origin-evidence.vercel.app/evidence](https://origin-evidence.vercel.app/evidence).
 
 Start the current checkout:
 

@@ -11,7 +11,7 @@ Origin proves public provenance and wallet-owned trust policy. It does not prove
 - Origin repository: `/Users/alexander/Code/contract-provenance-certificate`
 - Leather repository: `/Users/alexander/Code/leather-origin-demo`
 - Applicant: <https://origin-iota-ashy.vercel.app>
-- Registry explainer: `http://127.0.0.1:4173/registry` until the production deployment includes it
+- Registry explainer: <https://origin-iota-ashy.vercel.app/registry>
 - Evidence explorer: <https://origin-evidence.vercel.app/evidence>
 - Leather build: `/Users/alexander/Code/leather-origin-demo/apps/extension/dist`
 

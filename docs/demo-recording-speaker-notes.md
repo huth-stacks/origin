@@ -15,7 +15,7 @@ The demo is ready for final rehearsal:
 ## Sites to use
 
 - Applicant demo: <https://origin-iota-ashy.vercel.app>
-- Registry explainer: `http://127.0.0.1:4173/registry` until the public deployment is promoted
+- Registry explainer: <https://origin-iota-ashy.vercel.app/registry>
 - Public evidence: <https://origin-evidence.vercel.app/evidence>
 
 Do not use the older `origin-umber-six.vercel.app` deployment.

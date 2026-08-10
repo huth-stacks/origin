@@ -12,15 +12,15 @@ prompts are in `docs/demo-recording-speaker-notes.md`.
 
 ## Demo surfaces
 
-| Surface            | Current location                              | Purpose                                                                 |
-| ------------------ | --------------------------------------------- | ----------------------------------------------------------------------- |
-| Applicant          | <https://origin-iota-ashy.vercel.app>         | Three ordinary `stx_callContract` requests                              |
-| Registry explainer | `/registry` in the current Vite build         | How the registry and wallet trust policy work, with real Explorer links |
-| Evidence explorer  | <https://origin-evidence.vercel.app/evidence> | Public attester profile, claim search, and lifecycle history            |
-| Leather            | Local unpacked extension build                | Wallet-owned Origin evaluation and approval UI                          |
+| Surface            | Current location                               | Purpose                                                                 |
+| ------------------ | ---------------------------------------------- | ----------------------------------------------------------------------- |
+| Applicant          | <https://origin-iota-ashy.vercel.app>          | Three ordinary `stx_callContract` requests                              |
+| Registry explainer | <https://origin-iota-ashy.vercel.app/registry> | How the registry and wallet trust policy work, with real Explorer links |
+| Evidence explorer  | <https://origin-evidence.vercel.app/evidence>  | Public attester profile, claim search, and lifecycle history            |
+| Leather            | Local unpacked extension build                 | Wallet-owned Origin evaluation and approval UI                          |
 
-The registry explainer is available locally at `http://127.0.0.1:4173/registry`. Treat the public
-`/registry` URL as ready only after the current Origin changes are deployed and checked.
+The three routes are also available from one local `pnpm demo:dev` process for a source-pinned
+recording.
 
 ## Live Testnet anchors
 
@@ -61,8 +61,9 @@ contract, or verdict. Origin establishes provenance claims, not contract or tran
 
 ## Repository state
 
-- Origin PR #14 is merged to `main`; local demo-readiness changes are being prepared on top of it.
-- Leather fork PR #3 is merged into `agent/origin-three-scenario-flow`; no PR has been opened
+- Origin demo-readiness commit `a7b5594` is published on `main` and deployed to production.
+- Leather demo-readiness commit `e512e99f9` is published on `agent/origin-three-scenario-flow`;
+  no PR has been opened
   against `leather-io/mono`.
 - Origin and Leather compatibility records are schema v2 and omit the retired shared-mnemonic
   attester from active trust.
@@ -104,10 +105,8 @@ August 10 final demo preflight:
 
 ## Remaining actions before recording
 
-1. Publish the current Origin and Leather changes.
-2. Confirm the production `/registry` route after deployment.
-3. Build and reload `Leather Origin Demo` in the dedicated Chrome profile.
-4. Record one rehearsal, then the final take using `docs/demo-recording-speaker-notes.md`.
+1. Build and reload `Leather Origin Demo` in the dedicated Chrome profile.
+2. Record one rehearsal, then the final take using `docs/demo-recording-speaker-notes.md`.
 
 Stacks Connect standardization, upstream Leather integration, wallet-recipient recognition, and
 production attester governance remain follow-up work rather than demo blockers.
