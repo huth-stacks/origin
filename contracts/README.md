@@ -1,62 +1,90 @@
 # Origin Clarity Contracts
 
-## Registry
+## Canonical registry: v2
 
-`origin-registry.clar` is a permissionless attestation registry with no administrator and no custom signature scheme. The Stacks transaction authenticates `tx-sender`, and every record is namespaced by the composite key:
+[`origin-registry-v2.clar`](origin-registry-v2.clar) is the registry deployed for the current Testnet proof of concept. It is permissionless, has no administrator, and relies on the Stacks transaction to authenticate the attester.
+
+Records are namespaced by:
 
 ```clarity
 { attester: principal, subject: principal }
 ```
 
-The v1 value contains five fields: `issuer-name`, `role`, `issued-at`, `expires-at`, and `revoked`. Together with the key, these are the seven base provenance fields. `issued-at` is derived from `burn-block-height`; callers must supply an `expires-at` strictly greater than the current burn height.
+One attester can replace or revoke only its own record for an exact subject. Multiple attesters can make independent claims about the same subject without overwriting one another.
 
-The public surface is intentionally limited to:
+### Public interface
 
-- `issue-attestation`
-- `revoke-attestation`
-- `get-attestation`
+- `issue-attestation(subject, issuer-name, role, expires-at, request-id)`
+- `revoke-attestation(subject, request-id)`
+- `get-attestation(attester, subject)`
+- `get-schema-version()` → `u2`
 
-Issuance replaces only the sender's record for the exact subject. Revocation changes only the sender's namespace. Both writes emit structured print events and move no assets.
+### Record and lifecycle behavior
 
-`origin-registry-v2.clar` is the single planned migration bundle and is not the currently deployed registry. Its write guard requires `tx-sender` and `contract-caller` to match, preventing cross-principal writes and user-misattribution through an intermediary. A contract-principal attester can still self-issue through its own public code paths, so the initial wallet trust list is limited to standard-principal attesters. V2 also rejects empty display fields, persists `revoked-at`, and requires an exact 32-byte request ID for every state-changing operation. Request IDs are replay-protected within an attester namespace, stored with current state, and included in events.
+The stored value contains:
 
-The complete v2 ABI is frozen before Testnet deployment:
+- bounded non-empty `issuer-name` and `role` strings;
+- chain-derived `issued-at` burn height;
+- caller-supplied absolute `expires-at` burn height;
+- `revoked` and optional `revoked-at` state; and
+- an exact 32-byte request ID.
 
-- `get-schema-version` returns `u2`;
-- issue/revoke events contain `version: u2`, the operation request ID, and the complete resulting record;
-- error `u400` rejects non-future expiry, `u403` rejects forwarded writes, `u404` reports a missing revoke target, `u409` rejects a consumed request ID, `u422` rejects empty display strings, and `u423` rejects a request ID that is not 32 bytes;
-- the map value contains the five non-key base provenance fields plus `revoked-at` and `request-id`;
-- reissuing replaces the prior record, sets `revoked` to false, and clears `revoked-at` to `none`;
-- revoking an already-revoked record returns `(ok false)` without consuming the proposed request ID or emitting another lifecycle event.
+Request IDs are replay-protected within an attester namespace. Issue and revoke calls emit complete versioned lifecycle events. Reissuance replaces the prior record, clears revocation state, and requires a new request ID. Repeating an already-complete revocation returns `(ok false)` without consuming the proposed request ID or emitting another event.
 
-The contract deliberately has no global maximum lifetime because different attesters in a permissionless registry may have different policies. The signer and wallet enforce per-attester lifetime limits. ASCII types and length bounds do not solve control-character or confusable-name display risks; clients and attester policy must contain those strings. V2 also has no permanent tombstone: a valid direct reissue clears revocation. A defect discovered after canonical deployment requires a parameterized successor-contract cutover and wallet interval cap; it cannot mutate the deployed ABI.
+The write guard requires `tx-sender` to equal `contract-caller`, preventing an intermediary contract from attributing its write to a user. [`origin-registry-caller.clar`](origin-registry-caller.clar) exists only to test this rule in Simnet and is not deployed as a fixture.
 
-`origin-registry-caller.clar` exists only to prove the write guard in Simnet tests and must not be deployed as a fixture.
+The registry intentionally has no global maximum claim lifetime. Attesters and wallets enforce different lifetime policies. `get-attestation` also intentionally returns expired and revoked records so each consumer can evaluate lifecycle state against the current Bitcoin burn height.
 
-`origin-domain-proof.clar` is immutable evidence, not an attester. Publishing requires a direct call and inserts each `{deployer, request-id}` only once, preventing forwarded principal misattribution and proof overwrite. Its accepted subject and domain are intentionally untrusted evidence fields; the off-chain verifier must match both against the signed challenge before authorizing issuance.
+### Errors
 
-`get-attestation` intentionally returns stored records even after their expiration height. Every consumer must compare `expires-at` with the current Bitcoin burn block height; the wallet evaluator owns that check. Simnet tests mine through expiration to pin this contract.
+|   Code | Meaning                                          |
+| -----: | ------------------------------------------------ |
+| `u400` | Expiry is not in the future                      |
+| `u403` | Forwarded write (`tx-sender != contract-caller`) |
+| `u404` | Revoke target does not exist                     |
+| `u409` | Request ID already consumed by this attester     |
+| `u422` | Empty display field                              |
+| `u423` | Request ID is not exactly 32 bytes               |
 
-Both registry contracts and their two test fixtures pin Clarity 5 to Stacks epoch 3.4 in `Clarinet.toml`; deployment plans must retain that explicit epoch.
+## Supporting contracts
 
-## Testnet Accounts
+### `origin-demo-target.clar`
 
-Run `pnpm testnet:accounts` once to create one ignored `settings/testnet-v2-<role>.local.json` credential per cutover role and an ignored `deployments/testnet-v2-accounts.local.json` public-address manifest. The independently seeded roles are registry deployer, canonical attester, network-attached domain attester, unrecognized issuer, proof deployer, lifecycle deployer, and expiry deployer. The command preflights every output and refuses to overwrite any file. Each loader opens only the requested role credential. The existing v1 account files remain untouched. Never commit a `*.local.*` file, and run `pnpm secrets:scan` before committing.
+A harmless state-only fixture. `record-demo-action()` increments an invocation counter and moves no assets. The same source is deployed under separate principals for the known, unrecognized, lookalike, lifecycle, and expiry scenarios.
 
-After funding the deployer from the official Testnet faucet, `pnpm testnet:fund-accounts` brings each remaining fixture account up to a 10 Testnet STX target. These tokens have no real value, but the command writes to Testnet and should only be run for the demo wallet.
+### `origin-domain-proof.clar`
 
-`pnpm testnet:fund-accounts`, `pnpm testnet:deploy-fixtures`, and `pnpm testnet:issue-attestations -- --intent-id <reviewed-id> --canonical-expires-at <height> --short-expires-at <height>` are dry-run commands. Their `:broadcast` variants additionally require the explicit broadcast path. An issuance intent ID persists one exact argument set and stable request IDs for safe retries; a renewal or lifecycle reissue requires a new reviewed intent ID. Funding uses an ordered journal sequence per `{sender, recipient}`: every prior transaction must be confirmed before the live balance is read and a new shortfall top-up is planned. Prepared signed transactions are journaled to ignored local files before network I/O, and deployment preflight checks confirmed source, principal mempool transactions, and the account's possible next nonce. HTTP deadlines cover both headers and response-body consumption. A node rejection remains a failure even if it includes a transaction ID.
+Immutable public evidence used by the domain-control prototype. A direct caller can publish one `{deployer, request-id}` record. The contract prevents forwarding and overwrite, but its subject and domain fields remain untrusted until the off-chain verifier matches them against the signed challenge.
 
-The v2 deployment publishes only the new registry, the designed-not-implemented domain-proof fixture, and dedicated lifecycle/expiry fixtures. Existing canonical known, unrecognized, and lookalike subjects are not redeployed. Issuance uses exact operator-supplied expiry integers and includes the canonical, hostile, lifecycle, and short-expiry claims in the reviewed write list.
+### `origin-registry.clar`
 
-The public principals, transaction IDs, and confirmation heights live in `deployments/testnet-fixtures.json`. Run `pnpm testnet:verify` without any mnemonic to compare the live contract sources with this checkout, validate both claims, confirm the known claim is current, and prove the lookalike uses the same contract name under a different deployer with no trusted claim.
+The original v1 proof-of-concept registry. It remains in the repository for historical tests and migration context but is not the canonical live registry.
 
-Stacks Testnet reset on August 6, 2026. The fixture manifest records the replacement deployments from burn height 2,745. The principals stayed stable because the same ignored disposable accounts were reused; every transaction ID and block height changed.
+## Testnet deployment
 
-## Demo Target
+The live v2 registry is:
 
-`origin-demo-target.clar` exposes one harmless state-only action that increments an invocation counter. The Testnet deployment publishes this source as three separate fixture principals for known, unrecognized, and lookalike scenarios. The fixture manifest records the final deployers, contract names, transaction IDs, and burn heights.
+```text
+ST23YP5Q1WZKDV87KDDB1FQ3W916CQ3MSD09A2VAN.origin-registry-v2
+```
 
-## Analyzer Warning
+[`deployments/testnet-fixtures.json`](../deployments/testnet-fixtures.json) records the registry deployment, six fixture contracts, three configured attesters, and five claims. Verify the live sources and current state without credentials:
 
-Clarinet's check-checker reports registry `subject`, `issuer-name`, and `role`, plus domain-proof `subject` and `domain`, as potentially unchecked persisted inputs. This is expected: the registry is deliberately permissionless and proof/attestation fields remain untrusted until an attester or wallet applies its independent policy. Adding an administrator or pretending the inputs are intrinsically trusted would violate the product's trust model. Clarity still enforces principal and bounded ASCII types, and Leather never renders display text from unrecognized attesters in trusted chrome.
+```sh
+pnpm testnet:verify
+```
+
+## Local verification
+
+All contracts target Clarity 5 and Stacks epoch 3.4 in [`Clarinet.toml`](../Clarinet.toml).
+
+```sh
+pnpm check
+pnpm test
+```
+
+Clarinet's check-checker reports persisted subject and display fields as potentially unchecked input. This is expected: the registry is deliberately permissionless. Principal and bounded ASCII types constrain representation, while attesters and wallets remain responsible for policy, lifecycle evaluation, and safe display. Unrecognized claim strings never enter trusted wallet chrome.
+
+## Network-writing tools
+
+Account creation, funding, deployment, and issuance tooling lives under [`scripts/`](../scripts/). Ordinary commands are dry runs; only explicit `:broadcast` variants write to Testnet. Credentials, signed transaction journals, signer databases, and `*.local.*` files are ignored and must never be committed.

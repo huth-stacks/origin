@@ -8,12 +8,16 @@ Origin proves public provenance and wallet-owned trust policy. It does not prove
 
 ## Current locations
 
-- Origin repository: `/Users/alexander/Code/contract-provenance-certificate`
-- Leather repository: `/Users/alexander/Code/leather-origin-demo`
 - Applicant: <https://origin-iota-ashy.vercel.app>
 - Registry explainer: <https://origin-iota-ashy.vercel.app/registry>
 - Evidence explorer: <https://origin-evidence.vercel.app/evidence>
-- Leather build: `/Users/alexander/Code/leather-origin-demo/apps/extension/dist`
+
+Set checkout paths once in each terminal:
+
+```sh
+export ORIGIN_REPO=/absolute/path/to/origin
+export LEATHER_REPO=/absolute/path/to/leather-origin-demo
+```
 
 ## One-time setup
 
@@ -22,7 +26,7 @@ Use a dedicated Chrome profile and a disposable Stacks Testnet wallet. Do not im
 ### Verify Origin and its live fixtures
 
 ```sh
-cd /Users/alexander/Code/contract-provenance-certificate
+cd "$ORIGIN_REPO"
 pnpm install --frozen-lockfile
 pnpm verify
 pnpm testnet:verify
@@ -33,16 +37,16 @@ pnpm testnet:verify
 Leather requires Node 22.
 
 ```sh
-cd /Users/alexander/Code/leather-origin-demo
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm install --frozen-lockfile
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm build:origin-demo
+cd "$LEATHER_REPO"
+pnpm install --frozen-lockfile
+pnpm build:origin-demo
 ```
 
 In the dedicated Chrome profile:
 
 1. Open `chrome://extensions` and enable Developer mode.
 2. Disable the regular Leather extension so two providers do not compete.
-3. Choose **Load unpacked** and select the `dist` directory above.
+3. Choose **Load unpacked** and select `apps/extension/dist` in the Leather checkout.
 4. Confirm the extension is named **Leather Origin Demo**.
 5. Pin it, use a disposable account, and select **Stacks Testnet**.
 
@@ -53,7 +57,7 @@ After rebuilding, press **Reload** on the unpacked extension before rehearsing.
 The local build includes all three routes and is the safest recording target:
 
 ```sh
-cd /Users/alexander/Code/contract-provenance-certificate
+cd "$ORIGIN_REPO"
 pnpm demo:dev
 ```
 
@@ -116,9 +120,9 @@ Use `/evidence` only as an optional coda for lifecycle and domain-control eviden
 Keep `pnpm demo:dev` running, then in another terminal:
 
 ```sh
-cd /Users/alexander/Code/leather-origin-demo
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm build:origin-demo
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin ORIGIN_DEMO_URL=http://127.0.0.1:4173 pnpm --filter @leather.io/extension test:integration specs/rpc-sip30-requests/origin-mock-dapp.spec.ts --project=chromium --config=tests/playwright.origin-demo.config.ts
+cd "$LEATHER_REPO"
+pnpm build:origin-demo
+ORIGIN_DEMO_URL=http://127.0.0.1:4173 pnpm --filter @leather.io/extension test:integration specs/rpc-sip30-requests/origin-mock-dapp.spec.ts --project=chromium --config=tests/playwright.origin-demo.config.ts
 ```
 
 The test starts with no site permission, connects through the normal address request, checks all three approval states against Testnet, and closes without broadcasting.
@@ -128,9 +132,9 @@ The test starts with no site permission, connects through the normal address req
 With the local demo server running:
 
 ```sh
-cd /Users/alexander/Code/leather-origin-demo
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin ORIGIN_DEMO_URL=http://127.0.0.1:4173 \
-  ORIGIN_STORYBOOK_DIR=/Users/alexander/Code/contract-provenance-certificate/docs/storybook/assets \
+cd "$LEATHER_REPO"
+ORIGIN_DEMO_URL=http://127.0.0.1:4173 \
+  ORIGIN_STORYBOOK_DIR="$ORIGIN_REPO/docs/storybook/assets" \
   pnpm --filter @leather.io/extension test:integration specs/rpc-sip30-requests/origin-storybook.spec.ts --project=chromium --config=tests/playwright.origin-demo.config.ts
 ```
 

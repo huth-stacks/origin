@@ -18,8 +18,6 @@ The demo is ready for final rehearsal:
 - Registry explainer: <https://origin-iota-ashy.vercel.app/registry>
 - Public evidence: <https://origin-evidence.vercel.app/evidence>
 
-Do not use the older `origin-umber-six.vercel.app` deployment.
-
 ## Current Testnet configuration
 
 - Registry: `ST23YP5Q1WZKDV87KDDB1FQ3W916CQ3MSD09A2VAN.origin-registry-v2`
@@ -27,9 +25,7 @@ Do not use the older `origin-umber-six.vercel.app` deployment.
 - Domain-control attester: `ST123Q4PK82XAH10Y4W9YERH6FZHE5G0XK4XR0VB0`
 - Demonstration-untrusted attester: `ST3C1VMZB3SP3NCR93SMZGFDA7SKAN5TXVA2HW2MZ`
 
-The current source of truth for Leather's demo policy is:
-
-`/Users/alexander/Code/leather-origin-demo/apps/extension/src/app/features/rpc-stacks-transaction-request/stacks/origin/origin-testnet.compatibility.json`
+The current source of truth for Leather's demo policy is `apps/extension/src/app/features/rpc-stacks-transaction-request/stacks/origin/origin-testnet.compatibility.json` in the companion Leather checkout.
 
 ## How the demo works
 
@@ -57,8 +53,8 @@ The evidence site presents public supporting evidence. It does not override Leat
 If the currently installed **Leather Origin Demo** already produces all three expected states, do not rebuild it. Rebuild only when the unpacked extension is missing, stale, or loading a different `dist` directory:
 
 ```sh
-cd /Users/alexander/Code/leather-origin-demo
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin pnpm build:origin-demo
+cd leather-origin-demo
+pnpm build:origin-demo
 ```
 
 Then prepare Chrome:
@@ -66,8 +62,7 @@ Then prepare Chrome:
 1. Use a dedicated Chrome profile if possible.
 2. Open `chrome://extensions`.
 3. Enable Developer mode.
-4. Choose **Load unpacked** and select:
-   `/Users/alexander/Code/leather-origin-demo/apps/extension/dist`
+4. Choose **Load unpacked** and select `apps/extension/dist` in the Leather checkout.
 5. Confirm the extension is named **Leather Origin Demo**.
 6. Disable the regular Leather extension so two providers do not compete.
 7. Pin the demo extension.
@@ -83,7 +78,7 @@ After rebuilding the extension, return to `chrome://extensions` and press **Relo
 Immediately before recording, verify the live fixtures:
 
 ```sh
-cd /Users/alexander/Code/contract-provenance-certificate
+cd origin
 pnpm testnet:verify
 ```
 

@@ -1,5 +1,7 @@
 # Origin UX Exercise Plan — August 6, 2026
 
+> Historical record: this plan preserves the August 6 review method and results. Its branches and commands are not the current demo runbook. Use [Demo Runbook](../demo-runbook.md) for the maintained workflow.
+
 ## Outcome
 
 By the end of today's review, one evidence folder and one written disposition should show whether
@@ -17,11 +19,11 @@ production funds. Reject every request except the one explicitly marked for appr
 
 ## Review target
 
-| Surface                        | Required checkout                                                                                                                                  |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Acme demo and Origin contracts | `/Users/alexander/Code/origin-feat-demo-visual`, branch `feat/demo-visual-redesign`, commit `8b9251d` plus documentation-only working-tree changes |
-| Leather extension              | `/Users/alexander/Code/leather-origin-demo`, branch `agent/origin-visual-polish`, commit `e6675e94d`                                               |
-| Evidence                       | `/Users/alexander/Code/leather-origin-demo/output/ux-review/2026-08-06`                                                                            |
+| Surface                        | Historical checkout                                                     |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| Acme demo and Origin contracts | Origin feature checkout at commit `8b9251d`                             |
+| Leather extension              | Companion Leather feature checkout at commit `e6675e94d`                |
+| Evidence                       | `output/ux-review/2026-08-06` in the companion Leather feature checkout |
 
 Do not use the public production demo for visual sign-off today: it still serves the pre-redesign
 transaction lab. The PR preview is behind Vercel SSO, so the local Acme server is the stable target.
@@ -44,7 +46,7 @@ verified security properties, but they must be recorded rather than silently acc
 ### Terminal A — Origin
 
 ```sh
-cd /Users/alexander/Code/origin-feat-demo-visual
+cd /path/to/origin
 pnpm install --frozen-lockfile
 pnpm verify
 pnpm testnet:verify
@@ -56,7 +58,7 @@ Keep the server running at `http://127.0.0.1:4173`.
 ### Terminal B — Leather
 
 ```sh
-cd /Users/alexander/Code/leather-origin-demo
+cd /path/to/leather-origin-demo
 PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin \
 pnpm install --frozen-lockfile
 PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin \
@@ -91,10 +93,10 @@ claim is still current.
 Create fresh screenshots through the real extension flow without approving a transaction:
 
 ```sh
-cd /Users/alexander/Code/leather-origin-demo
+cd /path/to/leather-origin-demo
 pnpm build:origin-demo
 ORIGIN_DEMO_URL=http://127.0.0.1:4173 \
-ORIGIN_STORYBOOK_DIR=/Users/alexander/Code/contract-provenance-certificate/docs/storybook/assets \
+ORIGIN_STORYBOOK_DIR=/path/to/origin/docs/storybook/assets \
 pnpm --filter @leather.io/extension test:integration \
 tests/specs/rpc-sip30-requests/origin-storybook.spec.ts --project=chromium
 ```
@@ -121,7 +123,7 @@ Review the captures in this order:
 ## 3. Manual primary-journey checks
 
 Use Chrome with the unpacked extension from
-`/Users/alexander/Code/leather-origin-demo/apps/extension/dist` and a disposable wallet.
+`apps/extension/dist` in the companion Leather checkout and a disposable wallet.
 
 ### Connection
 

@@ -1,10 +1,21 @@
 {
   "name": "origin",
   "version": "0.1.0",
+  "description": "Wallet-owned contract provenance for Stacks transaction approvals",
   "private": true,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/huth-stacks/origin.git"
+  },
+  "homepage": "https://origin-iota-ashy.vercel.app",
+  "bugs": "https://github.com/huth-stacks/origin/issues",
+  "engines": {
+    "node": ">=22.13 <23",
+    "pnpm": ">=10.33"
+  },
   "scripts": {
-    "check": "clarinet check",
+    "check": "clarinet check --use-computed-deployment-plan",
     "demo:build": "vite build --config vite.demo.config.ts",
     "demo:dev": "vite --config vite.demo.config.ts",
     "demo:preview": "vite preview --config vite.demo.config.ts",

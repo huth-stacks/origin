@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install Clarinet
+        env:
+          CLARINET_VERSION: v3.23.1
+        run: |
+          curl --fail --location --silent --show-error \
+            "https://github.com/stx-labs/clarinet/releases/download/${CLARINET_VERSION}/clarinet-linux-x64-glibc.tar.gz" \
+            --output clarinet-linux-x64-glibc.tar.gz
+          curl --fail --location --silent --show-error \
+            "https://github.com/stx-labs/clarinet/releases/download/${CLARINET_VERSION}/checksums.txt" \
+            --output clarinet-checksums.txt
+          grep 'clarinet-linux-x64-glibc.tar.gz' clarinet-checksums.txt | sha256sum --check --strict
+          tar --extract --gzip --file clarinet-linux-x64-glibc.tar.gz
+          sudo install --mode 0755 clarinet /usr/local/bin/clarinet
+          clarinet --version
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify
+        run: pnpm verify

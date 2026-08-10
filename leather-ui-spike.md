@@ -2,6 +2,8 @@
 
 Status: Phase 0 insertion-point spike completed locally on August 4, 2026.
 
+> Historical record: this describes the first insertion-point experiment, not the current implementation. See [Leather Review Manifest](leather-review-manifest.md) for the current review boundary.
+
 ## Outcome
 
 The active Leather extension can host an Origin section in its real `stx_callContract` approval flow without replacing or disrupting the existing contract details, fee controls, or post-condition behavior.
@@ -10,7 +12,7 @@ This spike intentionally hardcodes one `Known origin` presentation. It validates
 
 ## Source
 
-- Leather checkout: `/Users/alexander/Code/leather-origin-demo`
+- Leather checkout: a local clone of the companion Leather repository
 - Upstream baseline: `leather-io/mono` `dev`
 - Baseline commit: `d98bd9a61b2f066041082b85256da9a96519d7b6`
 - Local branch: `agent/origin-ui-spike`

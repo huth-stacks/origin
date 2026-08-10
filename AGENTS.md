@@ -1,131 +1,95 @@
-# Origin Project Guide
+# Origin Agent Guide
 
-This repository is the coordination and implementation home for the Origin hackathon proof of concept. Origin adds wallet-side provenance for the exact Stacks principal targeted by a transaction. The first reference integration is a locally built Leather extension; the longer-term proposal is an addendum to Stacks Connect.
+This repository contains the Origin Stacks Testnet proof of concept: Clarity contracts, attester infrastructure, public evidence surfaces, deployment tooling, and cross-repository documentation for the Leather reference integration.
 
-## Read This First
+## Read first
 
-Use these documents in this order:
+1. [`README.md`](README.md) — public overview, trust model, and setup.
+2. [`docs/architecture.md`](docs/architecture.md) — component boundaries and known follow-ups.
+3. [`PROJECT-STATUS.md`](PROJECT-STATUS.md) — live deployment and current verification.
+4. [`SECURITY.md`](SECURITY.md) — security scope and reporting.
+5. [`CONTRIBUTING.md`](CONTRIBUTING.md) — development and pull-request expectations.
+6. [`origin-hackathon-plan.md`](origin-hackathon-plan.md) — canonical product and trust decisions.
+7. [`demo-plan.md`](demo-plan.md) and [`demo-runbook.md`](demo-runbook.md) — presentation behavior and operation.
 
-1. [README](README.md) — project boundary and starting point.
-2. [Current project status](PROJECT-STATUS.md) — repositories, active branches, deployments, reviews, verification, and immediate next actions.
-3. [Testnet attester and four-day roadmap](docs/testnet-attester-and-four-day-roadmap.md) — current issuer mechanics, trust boundary, future attester design, and the recommended short build.
-4. [Domain-control fetch security](docs/domain-control-fetch-security.md) — required SSRF, redirect, DNS-rebinding, response, signer, and test controls for the future attester.
-5. [Hackathon product plan](origin-hackathon-plan.md) — canonical product, trust, scope, schema, and UX decisions.
-6. [Executable demo plan](demo-plan.md) — demo sequence, data flow, code ownership, delivery phases, and acceptance criteria.
-7. [Demo runbook](demo-runbook.md) — exact build, connection, presentation, live verification, and reset procedure.
-8. [Dated UX exercise plan](docs/ux-exercise-2026-08-06.md) — today's complete live and deterministic experience review.
-9. [Leather review manifest](leather-review-manifest.md) — exact local commit range, review boundary, security invariants, and verification evidence for the extension integration.
-10. [Repository map](repository-map.md) — local checkouts, upstream repositories, and modification boundaries.
-11. [Leather baseline](leather-baseline.md) — known-good toolchain, build, tests, runtime smoke test, and pre-existing warnings.
-12. [Leather UI spike](leather-ui-spike.md) — completed approval-surface experiment, verification results, and the boundary between the hardcoded spike and real implementation.
-13. [Clarity contracts](contracts/README.md) — registry behavior, fixture contract, verification commands, and the intentional permissionless-input analyzer warning.
-14. [Original proposal](contract-provenance-certificate-plan.md) — historical source only. It is intentionally superseded by the smaller hackathon plan and must not silently expand scope.
+When documents disagree, prefer the user's latest instruction, then the product plan, architecture, current status, demo plan, and remaining dated records. Update the canonical document instead of adding a contradictory note.
 
-When documents disagree, prefer this order: the user's latest instruction, `origin-hackathon-plan.md`, `demo-plan.md`, then the remaining references. Update the canonical document when a product decision changes instead of recording contradictory decisions elsewhere.
+## Non-negotiable invariants
 
-## Non-Negotiable Product Invariants
+- Origin establishes provenance claims, not contract safety, transaction safety, legality, or regulatory status.
+- Claim existence does not imply that a wallet trusts the attester.
+- The wallet derives the exact subject from decoded transaction fields.
+- A requesting application must not provide the organization name, attester hint, trust policy, canonical-contract hint, or provenance verdict.
+- Wallet trust policy is wallet-owned. The registry is permissionless.
+- Treat unrecognized organization and role strings as attacker-controlled input.
+- Keep provenance, simulation, post-conditions, and lookalike heuristics independent.
+- Registry and network failures are unavailable, never Known origin.
+- Always show the exact principal involved.
+- Use fictional organizations unless a real organization explicitly approves its name and branding.
 
-- Origin proves provenance claims, not contract safety, transaction safety, legality, or regulatory status.
-- A claim's existence is not evidence that Leather trusts its attester.
-- Leather derives the exact subject from the decoded transaction. The requesting application must not provide the organization name, attestation verdict, attester hint, trust policy, or canonical-contract hint.
-- Wallet trust policy is wallet-owned. The registry is permissionless and does not confer trust.
-- Never render attacker-controlled organization names from unrecognized claims in trusted wallet chrome.
-- Keep provenance, post-condition asset protection, simulation, and lookalike heuristics as separate signals. None may upgrade, suppress, or soften another.
-- Registry failure is neutral or unavailable, never `Known origin`.
-- Always show the exact principal involved in the transaction.
-- Use fictional demo organizations unless a real organization explicitly approves its name and branding.
+## Repository boundaries
 
-## Hackathon Scope Guardrails
+This repository owns:
 
-Build only what the three contract-call scenarios require:
+- Clarity registry and fixture contracts;
+- domain-control verification, signer, IPC, persistence, and broadcaster code;
+- Testnet deployment and recovery tooling;
+- the applicant, registry explainer, and evidence explorer;
+- the public fixture/compatibility record; and
+- product, security, demo, and integration documentation.
 
-- One Clarity registry with the fixed seven-field logical attestation schema.
-- Three harmless Testnet contract fixtures.
-- One trusted mock attester and one configured demonstration-untrusted attester.
-- Four mutually exclusive provenance verdicts, with lookalike detection and lookup availability modeled as separate signals.
-- One mock site using the normal Leather request path.
-- One active Leather extension integration.
+The reference Leather modification remains in a separate `huth-stacks/leather-origin-demo` fork of `leather-io/mono`. Do not vendor Leather into this repository. The archived `leather-io/extension` repository is reference-only.
 
-Do not add production KYC, attester governance, generalized claim discovery, wallet-recipient demo UI, application-supplied hints, custom signature schemes, NFTs, assurance levels, multiple schemas, or Stacks.js/Stacks Connect changes during the hackathon. The Day 2 exception is a minimal event index for the single Origin registry so the claim explorer does not depend on a stale manifest. Automated domain control is the plausible bootstrap attester; KYC/KYB providers are an optional future attester class.
-
-## Repository Boundaries
-
-### This repository
-
-Primary local path: `/Users/alexander/Code/contract-provenance-certificate`
-
-Active visual-review worktree: `/Users/alexander/Code/origin-feat-demo-visual`
-
-Owns product and demo documentation, Clarity contracts and tests, Testnet deployment fixtures, the mock site, and cross-repository integration notes.
-
-### Active Leather checkout
-
-Local path: `/Users/alexander/Code/leather-origin-demo`
-
-Owns decoded-principal derivation, Origin lookup and evaluation, wallet trust configuration, approval UI, and Leather tests. Before changing it, read its root `AGENTS.md` and follow its formatting, testing, and code-style rules. The active review branch is `agent/origin-visual-polish` in the `huth-stacks/leather-origin-demo` fork; rebase it onto current upstream `dev` before proposing it to Leather.
-
-The current approval insertion point is:
+## Implementation shape
 
 ```text
-apps/extension/src/app/pages/rpc-stx-call-contract/rpc-stx-call-contract.tsx
-```
-
-### Archived extension checkout
-
-Local path: `/Users/alexander/Code/leather-extension-archive`
-
-Reference only. Do not modify it or build the demo there.
-
-## Implementation Shape
-
-Prefer the smallest architecture that preserves the trust boundary:
-
-```text
-mock site request
-  -> Leather decodes the transaction target
-  -> read-only registry client queries configured attesters
-  -> pure evaluator applies trust and lifecycle rules
+application transaction request
+  -> wallet derives exact principal
+  -> registry client queries configured attesters
+  -> pure policy evaluation checks trust and lifecycle
   -> approval UI renders provenance separately from asset protection
 ```
 
-Keep the evaluator independent of React and networking. Keep UI components presentational. Do not introduce a new request-protocol field merely to carry Origin data.
-
-For contract calls, derive the subject as:
+For contract calls:
 
 ```text
-contract principal = contractAddress + "." + contractName
+subject = contractAddress + "." + contractName
 ```
 
-For expiration, use Bitcoin `burn-block-height`.
+Use Bitcoin burn height for claim lifecycle. Use registry events for discovery and `get-attestation` for authoritative current state.
+
+The domain attester must keep the network-facing verifier separate from the key-holding signer. The signer independently enforces policy and burn-height bounds, owns nonce allocation, and must make signed bytes recoverable before committing the nonce. The broadcaster may submit only those exact recovered bytes.
+
+## Safety
+
+- Never read, print, commit, or transmit `.env` files, seed phrases, private keys, IPC tokens, signer databases, or ignored `*.local.*` files unless a user explicitly requests the specific operation.
+- Use disposable Testnet accounts only.
+- Unsuffixed deployment, funding, and issuance commands are dry runs.
+- `:prepare` signs and journals locally; `:broadcast` writes to Testnet. Do not run either without explicit authority.
+- Preserve existing ignored local recovery state.
+- Do not modify generated build output or unrelated user changes.
 
 ## Verification
 
-Test proportionally at each boundary:
-
-- Clarity: namespace isolation, same-attester replacement, revocation, expiration, principal types, and no asset movement.
-- Evaluator: trusted, untrusted, unknown, no-longer-valid, lookalike, unavailable, and independence from post-condition state.
-- UI: approved wording, exact principal, trusted-attester attribution, and quarantine of untrusted brand text.
-- Extension: a real `stx_callContract` reaches the approval route and uses the decoded target rather than site metadata.
-
-For Leather commands, use Node 22 explicitly:
+Run the complete local gate before publishing:
 
 ```sh
-PATH=/opt/homebrew/opt/node@22/bin:/opt/homebrew/bin:/usr/bin:/bin
+pnpm verify
+git diff --check
 ```
 
-Run the checks required by Leather's own `AGENTS.md`. Compare failures with [the recorded baseline](leather-baseline.md), and do not attribute documented pre-existing monorepo failures or build warnings to Origin. Any new failure introduced by Origin must be fixed before handoff.
+Use focused tests while iterating. For deployment/configuration changes, also run the secret-free live check:
 
-## Working Practices
+```sh
+pnpm testnet:verify
+```
 
-- Keep hackathon code and pitch honest about what the proof of concept establishes.
-- Prefer deterministic fixtures and pure tests; use live Testnet state for the recorded demo.
-- Record deployed principals, transaction IDs, burn heights, and attester roles in a fixture manifest.
-- Keep secrets, seed phrases, private keys, and local environment files out of Git.
-- Do not modify generated build output or vendor Leather source into this repository.
-- Preserve unrelated user changes in every checkout.
-- Use conventional commits and small, reviewable changes.
-- Before publishing Leather changes, create or select a writable fork; retain `leather-io/mono` as upstream.
+Changes to the separate Leather repository must follow that repository's own `AGENTS.md`, Node version, formatting, lint, typecheck, dependency, and unused-export requirements.
 
-## Definition of Done
+## Working practices
 
-The proof of concept is complete only when all three mock-site scenarios open the locally built Leather extension, Leather derives each exact principal internally, live Testnet Origin state produces the intended provenance result, existing post-condition signals remain independent, and the user can still reject or approve the harmless transaction.
+- Prefer deterministic fixtures and pure tests; use live Testnet only for final verification.
+- Record public principals, transaction IDs, heights, and attester roles in the fixture manifest.
+- Keep commits conventional, small, and reviewable.
+- Add tests at the trust boundary being changed.
+- Avoid broad refactors in security-critical state, nonce, fetch, IPC, or recovery paths without a failing test that demonstrates the intended behavior.

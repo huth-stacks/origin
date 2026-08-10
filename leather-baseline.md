@@ -2,12 +2,14 @@
 
 Baseline established on August 4, 2026 before any Origin source changes.
 
+> Historical record: this captures the original development baseline. For the current integration scope, see [Leather Review Manifest](leather-review-manifest.md).
+
 ## Source
 
 - Repository: `leather-io/mono`
 - Branch: `dev`
 - Commit: `d98bd9a61b2f066041082b85256da9a96519d7b6`
-- Local path: `/Users/alexander/Code/leather-origin-demo`
+- Checkout: a local clone of the companion Leather repository
 - Worktree after verification: clean
 
 ## Toolchain
@@ -44,7 +46,7 @@ pnpm build:extension
 Result: passed, 20 of 20 Turborepo tasks successful. The generated extension is at:
 
 ```text
-/Users/alexander/Code/leather-origin-demo/apps/extension/dist
+apps/extension/dist
 ```
 
 The generated manifest is Manifest V3, identifies itself as `Leather Dev`, and registers `background.js` as a module service worker.
