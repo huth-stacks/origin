@@ -3,7 +3,7 @@
 - **As of:** August 10, 2026
 - **Repository:** <https://github.com/huth-stacks/origin>
 - **State:** reviewed proof of concept on Stacks Testnet
-- **Wallet integration:** demonstrated in a separate Leather fork; not proposed or merged upstream
+- **Wallet integration:** [public Leather review snapshot](https://github.com/huth-stacks/leather-origin-demo); not proposed or merged upstream
 - **Production status:** not production-ready
 
 ## Live surfaces

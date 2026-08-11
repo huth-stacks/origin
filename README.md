@@ -63,7 +63,7 @@ See [Architecture](docs/architecture.md) for the component boundaries and [Secur
 | [`deployments/testnet-fixtures.json`](deployments/testnet-fixtures.json) | Public Testnet deployment and claim receipts                                             |
 | [`docs/`](docs/README.md)                                                | Current design, security, demo, review, and historical documentation                     |
 
-The Leather integration remains a separate patch against `leather-io/mono`; Leather source is not vendored here. [`leather-review-manifest.md`](leather-review-manifest.md) records that review boundary.
+The wallet implementation is public in [`huth-stacks/leather-origin-demo`](https://github.com/huth-stacks/leather-origin-demo), as a review snapshot against `leather-io/mono`. Leather source is not vendored here. [`leather-review-manifest.md`](leather-review-manifest.md) records the exact branch, base, head, changed-file scope, and review questions.
 
 ## Quick start
 

@@ -13,7 +13,7 @@ The reference wallet integration is maintained as a separate patch against `leat
 | Reviewed head  | `e512e99f9273472faeed9be476f415f1b92e406b`           |
 | Complete range | 36 files, 2,424 insertions, 57 deletions             |
 
-The fork may remain unavailable to unauthenticated reviewers until its owner explicitly makes it public or opens an upstream proposal. The boundary and verification record here are informational; they are not a substitute for reviewing the wallet patch itself.
+The fork is public so wallet engineers can review the implementation directly. It is an independent review snapshot, not an official Leather release or upstream proposal. Review the complete range against the pinned upstream base rather than treating the fork's default branch as a production branch.
 
 ## Responsibilities
 

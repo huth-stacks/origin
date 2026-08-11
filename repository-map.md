@@ -11,7 +11,7 @@
 
 - Upstream: <https://github.com/leather-io/mono>
 - Upstream default branch: `dev`
-- Working fork: `huth-stacks/leather-origin-demo`
+- Working fork: <https://github.com/huth-stacks/leather-origin-demo>
 - Package: `apps/extension`
 - Purpose: exact-principal derivation, registry reads, wallet trust evaluation, approval UI, and integration tests
 
